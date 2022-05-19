@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings version="1.0">
+	<category name="fragment.frag" />
+	<category name="opengl.c">
+		<category name="Window">
+			<property name="Left" type="integer">0</property>
+			<property name="Top" type="integer">0</property>
+			<property name="Right" type="integer">1440</property>
+			<property name="Bottom" type="integer">555</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="source.c">
+		<category name="Window">
+			<property name="Left" type="integer">26</property>
+			<property name="Top" type="integer">26</property>
+			<property name="Right" type="integer">1466</property>
+			<property name="Bottom" type="integer">581</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="levelgen.c">
+		<category name="Window">
+			<property name="Left" type="integer">52</property>
+			<property name="Top" type="integer">52</property>
+			<property name="Right" type="integer">1492</property>
+			<property name="Bottom" type="integer">607</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="commands.c" />
+	<category name="entities.c">
+		<category name="Window">
+			<property name="Left" type="integer">78</property>
+			<property name="Top" type="integer">78</property>
+			<property name="Right" type="integer">1518</property>
+			<property name="Bottom" type="integer">633</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="sound.c">
+		<category name="Window">
+			<property name="Left" type="integer">104</property>
+			<property name="Top" type="integer">104</property>
+			<property name="Right" type="integer">1544</property>
+			<property name="Bottom" type="integer">659</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="fontfrag.frag" />
+	<category name="fontvert.vert" />
+	<category name="vertex.vert" />
+	<category name="shaders\fragment.frag">
+		<category name="Window">
+			<property name="Left" type="integer">130</property>
+			<property name="Top" type="integer">130</property>
+			<property name="Right" type="integer">1570</property>
+			<property name="Bottom" type="integer">685</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="shaders\fontfrag.frag" />
+	<category name="staticEntities.c" />
+	<category name="tools.c">
+		<category name="Window">
+			<property name="Left" type="integer">156</property>
+			<property name="Top" type="integer">156</property>
+			<property name="Right" type="integer">1596</property>
+			<property name="Bottom" type="integer">711</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="shaders\fontvert.vert" />
+	<category name="ittmap.c">
+		<category name="Window">
+			<property name="Left" type="integer">182</property>
+			<property name="Top" type="integer">182</property>
+			<property name="Right" type="integer">1622</property>
+			<property name="Bottom" type="integer">737</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="shaders\vertex.vert" />
+	<category name="camera.c">
+		<category name="Window">
+			<property name="Left" type="integer">4294967288</property>
+			<property name="Top" type="integer">4294967265</property>
+			<property name="Right" type="integer">1439</property>
+			<property name="Bottom" type="integer">749</property>
+			<property name="Maximized" type="integer">1</property>
+			<property name="Active" type="integer">1</property>
+		</category>
+	</category>
+	<category name="light.c">
+		<category name="Window">
+			<property name="Left" type="integer">234</property>
+			<property name="Top" type="integer">234</property>
+			<property name="Right" type="integer">1674</property>
+			<property name="Bottom" type="integer">789</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="buttons.c">
+		<category name="Window">
+			<property name="Left" type="integer">0</property>
+			<property name="Top" type="integer">0</property>
+			<property name="Right" type="integer">1440</property>
+			<property name="Bottom" type="integer">555</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+</settings>
