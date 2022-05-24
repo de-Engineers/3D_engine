@@ -353,6 +353,11 @@ vec3 blockLight(){
 }
 
 void lightEffect(){
+	if(fog.a!=0.0){
+		fog.rgb /= fog.a;
+	}
+	fog.rgb *= FragColor.rgb;
+	FragColor.rgb = mix(FragColor.rgb,fog.rgb,fog.a);
 }
 	
 void main(){
@@ -445,7 +450,7 @@ void main(){
 			wallY = fract(wallYa);
 			block[0] *= 255;
 			float pattern;
-			if(state / 4 % 2 == 1 &&i<15&&(wallX < 0.02 || wallY < 0.02 || wallX > 0.98 || wallY > 0.98)){
+			if(state / 4 % 2 == 1&&(wallX < 0.02 || wallY < 0.02 || wallX > 0.98 || wallY > 0.98)){
 				FragColor.rgb = vec3(random(block[0]),random(block[0]+0.1),random(block[0]+0.2));
 				return;
 			}
@@ -551,22 +556,8 @@ void main(){
 				float r = iSphere(tr-0.5,ang,0.4);
 				if(r > 0.0){
 					tr += ang * r;
-					ang = reflect(ang,normalize(tr-0.5));
-					tr += ang;
-					tr = normalize(tr);
-					if(tr.x == 1.0){
-						wallXa = tr.y+y;
-						wallYa = tr.z+z;
-					}
-					else if(tr.y == 1.0){
-						wallXa = tr.x+x;
-						wallYa = tr.z+z;
-					}
-					else if(tr.z == 1.0){
-						wallXa = tr.x+x;
-						wallYa = tr.y+y;
-					}
-					FragColor.rgb = blockLight();
+					FragColor.rgb = texelFetch(mapdata,ivec3(vec3(x+tr.x,y+tr.y,z+tr.z)*lmapsz),0).rgb;
+					lightEffect();
 					return;
 				}	
 				break;
@@ -948,30 +939,15 @@ void main(){
 				break;
 			case 21:{
 				vec3 tr = getSubCoords();
-				vec4 xdt = texelFetch(mapdata,ivec3(x,y,z),0);
 				vec2 glscrd;
 				float d;
-				switch(int(xdt.a*255.0)){
-				case 0:
-					d = iPlane(tr,ang,vec4(1.0,0.0,0.0,-0.5));
-					tr += ang * d;
-					glscrd = tr.yz+vec2(x,z);
-					break;
-				case 1:
-					d = iPlane(tr,ang,vec4(0.0,1.0,0.0,-0.5));
-					tr += ang * d;
-					glscrd = tr.xz+vec2(x,z);
-					break;
-				case 2:
-					d = iPlane(tr,ang,vec4(0.0,0.0,1.0,-0.999));
-					tr += ang * d;
-					glscrd = tr.xy+vec2(x,y);
-				}
+				d = iPlane(tr,ang,vec4(1.0,0.0,0.0,-0.5));
+				tr += ang * d;
+				glscrd = tr.yz+vec2(x,z);
 				if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
 					vec2 fp = glscrd;
-					fog.a += max(max(xdt.r,xdt.g),xdt.b);
-					fog.rgb += xdt.rgb;
-
+					fog.a += 0.1;
+					fog.rgb += block.gba;
 				}
 				break;
 			}

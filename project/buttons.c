@@ -1,21 +1,30 @@
-﻿#include <main.h>
-#include <windows.h>
+﻿#include <windows.h>
+#include <stdio.h>
+#include <main.h>
 
 char buttonId;
+
 BUTTON *button;
+
 unsigned char buttonC;
 
+STRINGS fileNames;
+
+inline void buttonCreate(VEC2 pos,unsigned char id){
+	button[buttonC].pos.x = pos.x;
+	button[buttonC].pos.y = pos.y;
+	button[buttonC].id    = id;
+	buttonC++;
+}
+
 void quitButton(){
-	HANDLE h = CreateFile("level.lvl",GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
-	WriteFile(h,map,MAPRAM,0,0);
-	WriteFile(h,mapdata,MAPRAM,0,0);
-	CloseHandle(h);
+	levelSave("level");
 	ExitProcess(0);	
 }
 
 void genNewWorldButton(){
 	memset(map,0,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
-	memset(mapdata,0,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
+	memset(mapdata,0,properties->lvlSz*properties->lvlSz*properties->lvlSz*4*properties->lmapSz3);
 	for(int i = 0;i < properties->lvlSz*properties->lvlSz*4;i+=4){
 		map[i] = 28;
 		map[i+1] = 255;
@@ -34,4 +43,32 @@ void genNewWorldButton(){
 	glMesC++;
 }
 
-void (*buttons[2])() = {quitButton,genNewWorldButton};
+void EnumLevelsButton(){
+	menuSel = 2;
+	buttonC = 0;
+	WIN32_FIND_DATAA windt;
+	HANDLE h = FindFirstFile("levels/*.lvl",&windt);
+	if((int)h!=-1){
+		fileNames.str = HeapAlloc(GetProcessHeap(),8,sizeof(char*)*(fileNames.strC+1));
+		fileNames.str[fileNames.strC] = HeapAlloc(GetProcessHeap(),8,strlen(windt.cFileName)+1);
+		memcpy(fileNames.str[fileNames.strC],windt.cFileName,strlen(windt.cFileName)-4);
+		fileNames.strC++;
+		buttonCreate((VEC2){0.05f,0.28f},100);
+		buttonCreate((VEC2){0.25f,0.28f},110);
+		while(FindNextFile(h,&windt)){
+			fileNames.str = HeapReAlloc(GetProcessHeap(),8,fileNames.str,sizeof(char*)*(fileNames.strC+1));
+			fileNames.str[fileNames.strC] = HeapAlloc(GetProcessHeap(),8,strlen(windt.cFileName)+1);
+			memcpy(fileNames.str[fileNames.strC],windt.cFileName,strlen(windt.cFileName)-4);
+			buttonCreate((VEC2){0.05f,0.28f-(float)fileNames.strC/14.0f},100+fileNames.strC);
+			buttonCreate((VEC2){0.25f,0.28f-(float)fileNames.strC/14.0f},110+fileNames.strC);
+			fileNames.strC++;
+		}
+	}
+}
+
+void saveLevelButton(){
+	menuSel = 3;
+	buttonC = 0;
+}
+
+void (*buttons[4])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton};

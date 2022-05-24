@@ -14,7 +14,7 @@ CVEC3 map2crds(int map){
 void ittmap(){
 	for(;;){
 		if((settings & 0x05) == 0){
-			for(int i = 0;i < MAPRAM;i+=4){
+			for(int i = 0;i < properties->lvlSz;i+=4){
 				switch(map[i]){
 				case 5:{
 					if(mapdata[i] == 0){

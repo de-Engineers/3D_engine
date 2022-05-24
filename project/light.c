@@ -83,11 +83,45 @@ inline VEC3 vec3div(VEC3 v,float x){
 	v.z /= x;
 	return v;
 }
-
+	
 inline VEC3 vec3fract(VEC3 v){
 	v.x -= (int)v.x;
 	v.y -= (int)v.y;
 	v.z -= (int)v.z;
+	return v;
+}
+
+inline float vec3distance(VEC3 v,VEC3 v2){
+	float x = v.x-v2.x;
+	float y = v.y-v2.y;
+	float z = v.z-v2.z;
+	return sqrtf(x*x+y*y+z*z);
+}
+
+inline float vec3dot(VEC3 v,VEC3 v2){
+	return v.x * v2.x + v.y * v2.y + v.z * v2.z;
+}
+
+inline VEC3 vec3reflect(VEC3 v,VEC3 v2){
+	float d = vec3dot(v2,v);
+	v.x = v.x - 2.0f * d * v2.x;
+	v.y = v.y - 2.0f * d * v2.y;
+	v.z = v.z - 2.0f * d * v2.z;
+	return v;
+}
+
+inline VEC3 vec3normalize(VEC3 v){
+	float m = fmaxf(fmaxf(v.x,v.y),v.z);
+	v.x /= m;
+	v.y /= m;
+	v.z /= m;
+	return v;
+}
+
+inline VEC3 vec3sub(VEC3 v,VEC3 v2){
+	v.x -= v2.x;
+	v.y -= v2.y;
+	v.z -= v2.z;
 	return v;
 }
 
@@ -101,6 +135,17 @@ void updateLightRay(RAY *ray,float red,float green,float blue){
 		int block2 = crds2lmap(ray->ix,ray->iy,ray->iz);
 		if(map[block]){
 			switch(map[block]){
+			case 4:{
+				VEC3 p = vec3fract(vec3div(getSubCoords(ray),properties->lmapSz2));
+				if(vec3distance(p,(VEC3){0.5f,0.5f,0.5f})<0.4f){
+					VEC3 d = vec3reflect((VEC3){ray->vx,ray->vy,ray->vz},vec3normalize(vec3sub(p,(VEC3){0.5f,0.5f,0.5f})));
+					red /= 2.0f;
+					green /= 2.0f;
+					blue /= 2.0f;
+					*ray = rayCreate(p.x,p.y,p.z,d.x,d.y,d.z);
+				}
+				break;
+			}
 			case 9:
 				break;
 			case 12:{
@@ -169,53 +214,56 @@ void updateLightRay(RAY *ray,float red,float green,float blue){
 			default:{
 				VEC3 p = getSubCoords(ray);
 				VEC3 d;
-				float r1 = (float)(rand()^_rdtsc())/RAND_MAX * 3.14f - 3.14f;
-				float r2 = (float)(rand()^_rdtsc())/RAND_MAX * 3.14f - 3.14f;
+				float r1 = (float)(rand()^_rdtsc());
+				float r2 = (float)(rand()^_rdtsc());
 				float r3 = r1 + r2;
-				float r4 = (float)(rand()^_rdtsc())/RAND_MAX * 6.28f - 3.14f;
+				float r4 = (float)(rand()^_rdtsc());
 				d.x = cosf(r4) * cosf(r3);
 				d.y = sinf(r4) * cosf(r3);
 				d.z = sinf(r3);
+				red   *= (float)map[block+1]*0.002f;
+				green *= (float)map[block+2]*0.002f;
+				blue  *= (float)map[block+3]*0.002f;
 				switch(ray->side){
 				case 0:
-					if(ray->vx < 0.0f && d.x < 0.0f){
-						red = 0.0f;
-						green = 0.0f;
-						blue = 0.0f;
+					if(ray->vx < 0.0f){
+						if(d.x < 0.0f){
+							d.x = -d.x;
+						}
 					}
-					if(ray->vx >= 0.0f && d.x >= 0.0f){
-						red = 0.0f;
-						green = 0.0f;
-						blue = 0.0f;
+					if(ray->vx >= 0.0f){
+						if(d.x >= 0.0f){
+							d.x = -d.x;
+						}
 					}
 					break;
 				case 1:
-					if(ray->vy < 0.0f && d.y < 0.0f){
-						red = 0.0f;
-						green = 0.0f;
-						blue = 0.0f;
+					if(ray->vy < 0.0f){
+						if(d.y < 0.0f){
+							d.y = -d.y;
+						}
 					}
-					if(ray->vy >= 0.0f && d.y >= 0.0f){
-						red = 0.0f;
-						green = 0.0f;
-						blue = 0.0f;
+					if(ray->vy >= 0.0f){
+						if(d.y >= 0.0f){
+							d.y = -d.y;
+						}
 					}
 					break;
 				case 2:
-					if(ray->vz < 0.0f && d.z < 0.0f){
-						red = 0.0f;
-						green = 0.0f;
-						blue = 0.0f;
+					if(ray->vz < 0.0f){
+						if(d.z < 0.0f){
+							d.z = -d.z;
+						}
 					}
-					if(ray->vz >= 0.0f && d.z >= 0.0f){
-						red = 0.0f;
-						green = 0.0f;
-						blue = 0.0f;
-					}
+					if(ray->vz >= 0.0f){
+						if(d.z >= 0.0f){
+							d.z = -d.z;
+						}
+					}	
 					break;
 				}
 				*ray = rayCreate(p.x,p.y,p.z,d.x,d.y,d.z);
-				break;
+				continue;
 				}
 			}
 			switch(map[block]){
@@ -259,6 +307,7 @@ void updateLightRay(RAY *ray,float red,float green,float blue){
 				blue  *= 0.95f;
 				continue;
 			case 12:
+			case 4:
 				break;
 			case 20:
 				if(lightmap[block+1] > 255 || lightmap[block+2] > 255 || lightmap[block+3] > 255){
@@ -269,23 +318,21 @@ void updateLightRay(RAY *ray,float red,float green,float blue){
 				lightmap[block2+3] += blue * 0.45f;
 				continue;
 			case 21:{
-				float r = map[block+1];
-				float g = map[block+2];
-				float b = map[block+3];
-				float m = fmaxf(r,fmaxf(g,b));
-				r /= m;
-				g /= m;
-				b /= m;
-				red   *= r;
-				green *= g;
-				blue  *= b;
+				VEC3 p = vec3fract(vec3div(getSubCoords(ray),properties->lmapSz2));
+				if(p.x > 0.45f && p.x < 0.55f){
+					float r = map[block+1];
+					float g = map[block+2];
+					float b = map[block+3];
+					float m = fmaxf(r,fmaxf(g,b));
+					r /= m;
+					g /= m;
+					b /= m;
+					red   *= r;
+					green *= g;
+					blue  *= b;
+				}
 				break;
 			}
-			case 28:
-				red   *= (float)map[block+1]*0.005f;
-				green *= (float)map[block+2]*0.005f;
-				blue  *= (float)map[block+3]*0.005f;
-				continue;
 			case 29:
 				red   *= 0.5f;
 				green *= 0.05f;
@@ -316,9 +363,6 @@ void updateLight(int pos,float r,float g,float b){
 	bpos.x *= properties->lmapSz2;
 	bpos.y *= properties->lmapSz2*2;
 	bpos.z *= properties->lmapSz2;
-	printf("%f\n",bpos.x);
-	printf("%f\n",bpos.y);
-	printf("%f\n",bpos.z);
 	for(float i = -0.78f; i < 0.78f;i+= 0.003f/properties->lmapSz2){
 		for(float i2 = -0.78f; i2 < 0.78f;i2+= 0.003f/properties->lmapSz2){
 			float i3 = (float)rand() /RAND_MAX * 6.28f - 3.14f;
@@ -343,7 +387,6 @@ void updateLight2(){
 		mapdata[i+2] = lightmap[i+2];
 	}
 	HeapFree(GetProcessHeap(),0,lightmap);
-	printf("done\n");
 	glMes[glMesC].id = 6;
 	glMesC++;
 }

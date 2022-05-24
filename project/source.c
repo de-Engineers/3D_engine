@@ -4,7 +4,6 @@
 #include <intrin.h>
 #include <stdio.h>
 #include <glew.h>
-#include <GL/gl.h>
 
 #define resx 512
 #define resy 512
@@ -19,20 +18,25 @@
 
 #define PI_2 1.57079632679489661923
 
-#define LMAPSZ 8
+#define LMAPSZ 2
 #define LMAPSZT LMAPSZ*LMAPSZ*LMAPSZ
+
 
 unsigned char *map;
 unsigned char *mapdata;
 
+unsigned char menuSel;
+
+
 int settings;
+
 /*
 bit
 1: fly/walk
 2: fullScreen
 3: lighting
 4: fog
-5: menus
+5: 
 6:
 7:
 8: pauze
@@ -93,18 +97,6 @@ inline void buttonCreate(VEC2 pos,unsigned char id){
 	button[buttonC].id    = id;
 	buttonC++;
 }
-
-inline void buttonDestroy(unsigned char id){
-	for(int i = 0;i < buttonC;i++){
-		if(button[i].id == id){
-			
-		}
-	}
-	for(int i = id;i < buttonC;i++){
-		button[i] = button[i+1];
-	}
-	buttonC--;
-}	
 
 void blockDetection(float x,float y,float z,int axis){
 	int block = crds2map(x,y,z);
@@ -336,7 +328,6 @@ void deleteBlock(int pos){
 	map[pos] = 0;
 	glMes[glMesC].id = 3;
 	glMesC++;
-
 }
 
 
@@ -352,18 +343,56 @@ void spawnEntity(float x,float y,float z,float vx,float vy,float vz,float sz,int
 	entityC++;
 }
 
+void levelSave(char *lname){
+	char name[strlen(lname)+12];
+	memcpy(name,"levels/",7);
+	memcpy(name+7,lname,strlen(lname));
+	memcpy(name+strlen(lname)+7,".lvl\0",5);
+	CreateDirectory("levels",0);
+	HANDLE h = CreateFile(name,GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
+	WriteFile(h,&properties->lvlSz,1,0,0);
+	WriteFile(h,&properties->lmapSz2,1,0,0);
+	WriteFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
+	WriteFile(h,mapdata,properties->lvlSz*properties->lvlSz*properties->lvlSz*properties->lmapSz3*4,0,0);
+	CloseHandle(h);
+}
+
+void levelLoad(char *lname){
+	char name[strlen(lname)+12];
+	memcpy(name,"levels/",7);
+	memcpy(name+7,lname,strlen(lname));
+	memcpy(name+strlen(lname)+7,".lvl\0",5);
+	HANDLE h = CreateFile(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	ReadFile(h,&properties->lvlSz,1,0,0);
+	ReadFile(h,&properties->lmapSz2,1,0,0);
+	properties->lmapSz3 = properties->lmapSz2*properties->lmapSz2*properties->lmapSz2;
+	properties->lmapSz  = properties->lmapSz2*properties->lvlSz;
+	map        = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
+	mapdata    = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*properties->lmapSz3*4);
+	ReadFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
+	ReadFile(h,mapdata,properties->lvlSz*properties->lvlSz*properties->lvlSz*properties->lmapSz3*4,0,0);
+	CloseHandle(h);
+	glMes[glMesC].id = 3;
+	glMesC++;
+	glMes[glMesC].id = 6;
+	glMesC++;
+}
+
+void levelDelete(char *lname){
+	char name[strlen(lname)+12];
+	memcpy(name,"levels/",7);
+	memcpy(name+7,lname,strlen(lname));
+	memcpy(name+strlen(lname)+7,".lvl\0",5);
+	DeleteFile(name);
+}
+
 long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	switch(msg){
 	case WM_QUIT:
 	case WM_CLOSE:
-	case WM_DESTROY:{
-		CreateDirectory("levels",0	);
-		HANDLE h = CreateFile("levels/level.lvl",GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
-		WriteFile(h,map,MAPRAM,0,0);
-		WriteFile(h,mapdata,MAPRAM*properties->lmapSz3,0,0);
-		CloseHandle(h);
+	case WM_DESTROY:
+		levelSave("level");
 		ExitProcess(0);
-		}
 	case WM_ACTIVATE:
 		switch(wParam){
 		case WA_INACTIVE:
@@ -377,7 +406,45 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		break;
 	case WM_KEYDOWN:
+		switch(menuSel){
+		case 3:
+			if(wParam>0x2f&&wParam<0x3a){
+				inputStr[strlen(inputStr)] = wParam-0x33;
+			}
+			else if(wParam>0x40&&wParam<0x60){
+				inputStr[strlen(inputStr)] = wParam-0x3a;
+			}
+			break;
+		}
 		switch(wParam){
+		case VK_RETURN:
+			switch(menuSel){
+			case 3:
+				for(int i = 0;i < strlen(inputStr);i++){
+					if(inputStr[i]<10){
+						inputStr[i]+=0x33;
+					}
+					else{
+						inputStr[i]+=0x5a;
+					}
+				}
+				levelSave(inputStr);
+				menuSel = 1;
+				buttonC = 0;
+				buttonCreate((VEC2){0.05f,-0.35f},1);
+				buttonCreate((VEC2){0.05f,-0.42f},0);
+				buttonCreate((VEC2){0.05f,-0.28f},2);
+				buttonCreate((VEC2){0.05f,-0.21f},3);
+				break;
+			}
+			break;
+		case VK_BACK:
+			switch(menuSel){
+			case 3:
+				inputStr[strlen(inputStr)-1] = 0;
+				break;
+			}
+			break;
 		case VK_F2:
 			settings ^= 4;
 			if(settings & 0x04){
@@ -396,20 +463,41 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			}
 			break;
 		case VK_ESCAPE:
-			settings ^= 0x10;
-			if(settings & 0x10){	
+			switch(menuSel){
+			case 0:
+				menuSel = 1;
 				buttonCreate((VEC2){0.05f,-0.35f},1);
 				buttonCreate((VEC2){0.05f,-0.42f},0);
+				buttonCreate((VEC2){0.05f,-0.28f},2);
+				buttonCreate((VEC2){0.05f,-0.21f},3);
+				SetCursorPos(properties->xres/2,properties->yres/2);
+				break;
+			case 1:
+				menuSel = 0;
+				buttonC = 0;
+				break;
+			case 2:
+				menuSel = 1;
+				buttonC = 0;
+				buttonCreate((VEC2){0.05f,-0.35f},1);
+				buttonCreate((VEC2){0.05f,-0.42f},0);
+				buttonCreate((VEC2){0.05f,-0.28f},2);
+				buttonCreate((VEC2){0.05f,-0.21f},3);
+				fileNames.strC = 0;
+				break;
+			case 3:
+				menuSel = 1;
+				buttonCreate((VEC2){0.05f,-0.35f},1);
+				buttonCreate((VEC2){0.05f,-0.42f},0);
+				buttonCreate((VEC2){0.05f,-0.28f},2);
+				buttonCreate((VEC2){0.05f,-0.21f},3);
+				ZeroMemory(inputStr,255);
+				break;
 			}
-			else{
-				buttonDestroy(0);
-				buttonDestroy(1);
-			}
-			SetCursorPos(properties->xres/2,properties->yres/2);
 			break;
 		case VK_LCONTROL:
 			if(!abilities & 0x01){ 
-				player->xvel *= 2.5	;
+				player->xvel *= 2.5;
 				player->yvel *= 2.5;
 				player->zvel -= 0.3;
 				abilities ^= 0x01;
@@ -498,21 +586,28 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			toolSel--;
 		}
 		if(GetKeyState(0x46) & 0x80){
-			settings ^= 2;
-			if(settings & 2){
-				SetWindowPos(window,0,0,0,GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),0);	
-				properties->xres = GetSystemMetrics(SM_CXSCREEN);
-				properties->yres = GetSystemMetrics(SM_CYSCREEN);
-				glMes[glMesC].id = 0;
-				glMesC++;
+			switch(menuSel){
+			case 3:
+				break;
+			default:
+				settings ^= 2;
+				if(settings & 2){
+					SetWindowPos(window,0,0,0,GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),0);	
+					properties->xres = GetSystemMetrics(SM_CXSCREEN);
+					properties->yres = GetSystemMetrics(SM_CYSCREEN);
+					glMes[glMesC].id = 0;
+					glMesC++;
+				}
+				else{
+					SetWindowPos(window,0,0,0,256,256,0);	
+					properties->xres = 256;
+					properties->yres = 256;
+					glMes[glMesC].id = 0;
+					glMesC++;
+				}
+				break;
 			}
-			else{
-				SetWindowPos(window,0,0,0,256,256,0);	
-				properties->xres = 256;
-				properties->yres = 256;
-				glMes[glMesC].id = 0;
-				glMesC++;
-			}
+
 		}
 		if(GetKeyState(VK_ADD) & 0x80){
 			selarea.x = 0;
@@ -649,7 +744,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		break;
 	case WM_MOUSEMOVE:
-		if((settings & 0x10) == 0){
+		if(!menuSel){
 			POINT curp;
 			GetCursorPos(&curp);
 			mousex = (float)(curp.x - 50) / 250;
@@ -728,12 +823,26 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 	case WM_LBUTTONDOWN:{
-			if((settings & 0x10) == 0){
+			if(!menuSel){
 				tools();
 			}
 			else{
 				if(buttonId!=-1){
-					buttons[buttonId]();
+					if(buttonId<100){
+						buttons[buttonId]();
+					}
+					else if (buttonId < 110){
+						levelLoad(fileNames.str[buttonId-100]);
+					}
+					else{
+						levelDelete(fileNames.str[buttonId-110]);
+						menuSel = 1;
+						buttonC = 0;
+						buttonCreate((VEC2){0.05f,-0.35f},1);
+						buttonCreate((VEC2){0.05f,-0.42f},0);
+						buttonCreate((VEC2){0.05f,-0.28f},2);
+						buttonCreate((VEC2){0.05f,-0.21f},3);
+					}
 				}
 			}
 		break;
@@ -1071,7 +1180,7 @@ void main(){
 	properties = HeapAlloc(GetProcessHeap(),8,sizeof(PROPERTIES));
 	entity     = HeapAlloc(GetProcessHeap(),8,sizeof(ENTITY) * 512);
 	button     = HeapAlloc(GetProcessHeap(),8,sizeof(BUTTON) * 256);
-
+	inputStr   = HeapAlloc(GetProcessHeap(),8,256);
 
 	wndclass.hInstance = GetModuleHandle(0);
 	RegisterClass(&wndclass);
@@ -1079,7 +1188,7 @@ void main(){
 	hInstance = wndclass.hInstance;
 	dc = GetDC(window);
 
-	HICON hIcon = LoadImage(0,"textures/phill.ico",IMAGE_ICON,32,32,LR_LOADFROMFILE);
+	HICON hIcon = LoadImage(0,"textures/bol.ico",IMAGE_ICON,48,48,LR_LOADFROMFILE);
 	SendMessage(window,WM_SETICON,ICON_SMALL,(long int)hIcon);
 
 
@@ -1100,12 +1209,10 @@ void main(){
 	properties->lmapSz         = MAPSZ*LMAPSZ;
 	properties->lmapSz2        = LMAPSZ;
 	properties->lmapSz3        = LMAPSZT;
+	printf("%i\n",properties->lmapSz2);
 
 	settings = 1;
 	ShowCursor(0);
-
-
-	levelgen();
 
 	initSound();
 
@@ -1113,6 +1220,8 @@ void main(){
 	physicsThread        = CreateThread(0,0,physics,0,0,0);
 	entitiesThread       = CreateThread(0,0,entities,0,0,0);
 	ittmapThread         = CreateThread(0,0,ittmap,0,0,0);
+
+	levelgen();
 
 	for(;;){
 		while(PeekMessage(&Msg,window,0,0,0)){

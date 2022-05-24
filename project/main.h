@@ -128,6 +128,11 @@ typedef struct{
 	unsigned char id;
 }BUTTON;
 
+typedef struct{
+	unsigned int strC;
+	char **str;
+}STRINGS;
+
 extern unsigned char buttonC;
 extern BUTTON *button;
 
@@ -155,7 +160,11 @@ extern int settings;
 extern RGB colorSel;
 extern CVEC3 selarea;
 extern Mat3 cameraMatrix;
-extern void (*buttons[2])();
+extern void (*buttons[4])();
+extern unsigned char menuSel;
+extern STRINGS fileNames;
+
+extern unsigned char *inputStr;
 
 inline void buttonCreate(VEC2 pos,unsigned char id);
 inline void buttonDestroy(unsigned char id);
@@ -173,6 +182,8 @@ void ittmap();
 void spawnEntity(float x,float y,float z,float vx,float vy,float vz,float sz,int id);
 void updateCamera();
 void updateLight2();
+void levelSave();
+void levelLoad();
 
 RAY rayCreate(float x,float y,float z,float rx,float ry,float rz);
 

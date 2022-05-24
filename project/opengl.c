@@ -52,6 +52,8 @@ long long fps = 1;
 
 VEC2 mousePos;
 
+unsigned char *inputStr;
+
 PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR), 1,
 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,PFD_TYPE_RGBA,
 24,0, 0, 0, 0, 0, 0,0,0,0,
@@ -175,7 +177,13 @@ void drawWord(char *str,float x,float y,float id){
 		if(str[i] == ' '){
 			continue;
 		}
-		drawChar(str[i] - 87,x+i*0.0235,y,-0.1,id,0.04,0.04);
+		if(str[i] > 0x2f && str[i] < 0x3a){
+			drawChar(str[i] - 0x30,x+i*0.0235,y,-0.1,id,0.04,0.04);
+		}
+		else{
+			drawChar(str[i] - 87,x+i*0.0235,y,-0.1,id,0.04,0.04);
+		}
+
 	}
 }
 
@@ -380,26 +388,64 @@ void openGL(){
 				if(distance(mousePos,buttonMiddle)<0.03f){
 					buttonId = button[i].id;
 					drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,4,0.03f,0.05f);
+					for(;i < buttonC;i++){
+						drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,3,0.03f,0.05f);
+					}
+					goto foundButton;
 				}
 				else{
 					drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,3,0.03f,0.05f);
 				}
 			}
+			buttonId = -1;
+		foundButton:
 			drawSprite(0.8,-0.65,-0.2,7,0.1,0.1);
-			if(settings & 0x10){
+			switch(menuSel){
+			case 0:
+				drawChar(36,-0.01,-0.02,-0.99,0,0.04,0.04);
+				break;
+			case 1:{
 				POINT p;
 				GetCursorPos(&p);
 				ScreenToClient(window,&p);
 				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
 				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
 				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
-				drawWord("settings",-0.11,0.42,0.0);
-				drawWord("create new world",-0.45,-0.35,0.0);
-				drawWord("quit",-0.45,-0.42,0.0);
+				drawWord("settings",-0.11f,0.42f,0.0f);
+				drawWord("save world",-0.45f,-0.21f,0.0f);
+				drawWord("load world",-0.45f,-0.28f,0.0f);
+				drawWord("create world",-0.45f,-0.35f,0.0f);
+				drawWord("quit",-0.45f,-0.42f,0.0f);
+				drawSprite(-0.5f,-0.5f,0.0f,2,1.0f,1.0f);
+				break;
+				}
+			case 2:{
+				POINT p;
+				GetCursorPos(&p);
+				ScreenToClient(window,&p);
+				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
+				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
+				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
+				drawWord("worlds",-0.11f,0.42f,0.0f);
+				drawWord("load",0.02f,0.35f,0.0f);
+				drawWord("delete",0.19f,0.35f,0.0f);
+				for(int i = 0;i < fileNames.strC;i++){
+					drawWord(fileNames.str[i],-0.45f,0.28f-(float)i/15.0f,0.0f);
+				}
 				drawSprite(-0.5,-0.5,0.0,2,1.0,1.0);
-			}
-			else{
-				drawChar(36,-0.01,-0.02,-0.99,0,0.04,0.04);
+				break;
+				}
+			case 3:{
+				POINT p;
+				GetCursorPos(&p);
+				ScreenToClient(window,&p);
+				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
+				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
+				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
+				drawWord("save",-0.11f,0.42f,0.0f);
+				drawWord(inputStr,-0.45f,0.0f,0.0f);
+				drawSprite(-0.5,-0.5,0.0,2,1.0,1.0);
+				}
 			}
 			while(glMesC > 0){
 				glMesC--;
