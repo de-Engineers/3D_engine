@@ -1,18 +1,35 @@
 ﻿#pragma once
 
+#define PI_05  1.57079632679f
+#define PI_2   6.28318530718f
+#define PI     3.14159265358f
+#define PI_025 0.78539816339f
+
+
 #include <windows.h>
+#include "vec3.h"
+
+typedef struct{
+	unsigned char id;
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+}MAP;
+
+typedef struct{
+	unsigned int p1;
+	unsigned int p2;
+	unsigned int p3;
+	unsigned int p4;
+	unsigned int p5;
+	unsigned int p6;
+}LPMAP;
 
 typedef struct{ 
 	unsigned char x;
 	unsigned char y;
 	unsigned char z;
 }CVEC3;
-
-typedef struct{
-	float x;
-	float y;
-	float z;
-}VEC3;
 
 typedef struct {
 	VEC3 Right;
@@ -83,6 +100,12 @@ typedef struct{
 	unsigned char g;
 	unsigned char b;
 	unsigned char a;
+}RGBA;
+
+typedef struct{
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
 }RGB;
 
 typedef struct{
@@ -145,8 +168,9 @@ extern PLAYERDATA     *player;
 extern PROPERTIES     *properties;
 extern ENTITY         *entity;
 extern OPENGLMESSAGE  *glMes;
-extern unsigned char  *map;
-extern unsigned char  *mapdata;
+extern MAP            *map;
+extern LPMAP          *lpmap;
+extern RGB            *lmap;
 
 extern HDC dc;
 extern HWND window;
@@ -157,12 +181,17 @@ extern char buttonId;
 extern int tick;
 extern int staticentityC;
 extern int settings;
-extern RGB colorSel;
+extern RGBA colorSel;
 extern CVEC3 selarea;
 extern Mat3 cameraMatrix;
-extern void (*buttons[4])();
+extern void (*buttons[6])();
 extern unsigned char menuSel;
 extern STRINGS fileNames;
+extern unsigned char tempVar[2];
+extern float quad[8192];
+extern unsigned int totalCar;
+extern unsigned int lmapC;
+extern long long fps;
 
 extern unsigned char *inputStr;
 
@@ -184,8 +213,12 @@ void updateCamera();
 void updateLight2();
 void levelSave();
 void levelLoad();
+void drawUI();
+void drawSprite(float x,float y,float z,float id,float xsize,float ysize);
+void updateLight(int pos,float r,float g,float b);
+void updateLightSingle(unsigned int block);
 
-RAY rayCreate(float x,float y,float z,float rx,float ry,float rz);
+RAY rayCreate(VEC3 pos,VEC3 dir);
 
 unsigned int crds2map(int x,int y,int z);
 unsigned int crds2lmap(int x,int y,int z);

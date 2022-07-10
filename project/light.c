@@ -1,43 +1,43 @@
 ﻿#include <windows.h>
-#include <main.h>
+#include "main.h"
 #include <math.h>
 #include <stdio.h> 
 #include <intrin.h>
 
-float *lightmap;
+#include "vec3.h"
 
-typedef union{
-	float f;
-	unsigned int ui;
-}FLOATINT;
+#define PI 3.141592653f
 
-typedef struct{
-	FLOATINT x;
-	FLOATINT y;
-}FLOATINTVEC2;
+unsigned int lmapC;
+RGB *lmap;
+VEC3 *lmapb;
 
-unsigned int hash(unsigned int x){
-    x += x << 10;
-    x ^= x >>  6;
-    x += x <<  3;
-    x ^= x >> 11;
-    x += x << 15;
-    return x;
+inline unsigned int hash(unsigned int x) {
+	x += (x << 10);
+	x ^= (x >> 6);
+	x += (x << 3);
+	x ^= (x >> 11);
+	x += (x << 15);
+	return x;
 }
 
-float random(FLOATINTVEC2 x){
-	FLOATINT r;
-	r.ui = hash(x.x.ui) ^ hash(x.y.ui);
-	r.ui &= 0x007fffff;
-	r.ui |= 0x3F800000;
-	return r.f-1.0f;
+inline float rnd() {
+	union p {
+		float f;
+		unsigned int u;
+	}r;
+	r.u = hash(__rdtsc());
+	r.u &= 0x007fffff;
+	r.u |= 0x3f800000;
+	return r.f;
 }
 
-float randoms(FLOATINT x){
-	x.ui = hash(x.ui);
-	x.ui &= 0x007fffff;
-	x.ui |= 0x3F800000;
-	return x.f-1.0f;
+inline int irnd() {
+	return hash(__rdtsc());
+}
+
+inline float fract(float p){
+	return p - (int)p;
 }
 
 VEC3 getSubCoords(RAY *ray){
@@ -77,316 +77,270 @@ VEC3 getSubCoords(RAY *ray){
 	return p;
 }
 
-inline VEC3 vec3div(VEC3 v,float x){
-	v.x /= x;
-	v.y /= x;
-	v.z /= x;
-	return v;
-}
-	
-inline VEC3 vec3fract(VEC3 v){
-	v.x -= (int)v.x;
-	v.y -= (int)v.y;
-	v.z -= (int)v.z;
-	return v;
-}
-
-inline float vec3distance(VEC3 v,VEC3 v2){
-	float x = v.x-v2.x;
-	float y = v.y-v2.y;
-	float z = v.z-v2.z;
-	return sqrtf(x*x+y*y+z*z);
-}
-
-inline float vec3dot(VEC3 v,VEC3 v2){
-	return v.x * v2.x + v.y * v2.y + v.z * v2.z;
-}
-
-inline VEC3 vec3reflect(VEC3 v,VEC3 v2){
-	float d = vec3dot(v2,v);
-	v.x = v.x - 2.0f * d * v2.x;
-	v.y = v.y - 2.0f * d * v2.y;
-	v.z = v.z - 2.0f * d * v2.z;
-	return v;
-}
-
-inline VEC3 vec3normalize(VEC3 v){
-	float m = fmaxf(fmaxf(v.x,v.y),v.z);
-	v.x /= m;
-	v.y /= m;
-	v.z /= m;
-	return v;
-}
-
-inline VEC3 vec3sub(VEC3 v,VEC3 v2){
-	v.x -= v2.x;
-	v.y -= v2.y;
-	v.z -= v2.z;
-	return v;
-}
-
-void updateLightRay(RAY *ray,float red,float green,float blue){
+inline void updateLightRay(RAY *ray,float red,float green,float blue){
 	while(green > 0.003f || red > 0.003f || blue > 0.003f){
 		rayItterate(ray);
-		if(ray->ix < 0 || ray->iy < 0 || ray->iz < 0 || ray->ix >= properties->lvlSz*properties->lmapSz2 || ray->iy >= properties->lvlSz*properties->lmapSz2 || ray->iz >= properties->lvlSz*properties->lmapSz2){
+		if(ray->ix < 0 || ray->iy < 0 || ray->iz < 0 || ray->ix >= properties->lvlSz || ray->iy >= properties->lvlSz || ray->iz >= properties->lvlSz){
 			break;
 		}
-		int block  = crds2map(ray->ix/properties->lmapSz2,ray->iy/properties->lmapSz2,ray->iz/properties->lmapSz2);
-		int block2 = crds2lmap(ray->ix,ray->iy,ray->iz);
-		if(map[block]){
-			switch(map[block]){
-			case 4:{
-				VEC3 p = vec3fract(vec3div(getSubCoords(ray),properties->lmapSz2));
-				if(vec3distance(p,(VEC3){0.5f,0.5f,0.5f})<0.4f){
-					VEC3 d = vec3reflect((VEC3){ray->vx,ray->vy,ray->vz},vec3normalize(vec3sub(p,(VEC3){0.5f,0.5f,0.5f})));
-					red /= 2.0f;
-					green /= 2.0f;
-					blue /= 2.0f;
-					*ray = rayCreate(p.x,p.y,p.z,d.x,d.y,d.z);
+		unsigned int block = crds2map(ray->ix,ray->iy,ray->iz);
+		switch(map[block].id){
+		case 0:
+		case 8:
+			break;
+		case 28:{
+			VEC2 wall;
+			switch(ray->side){
+			case 0:{
+				wall.x = fract(ray->y + (ray->sidex - ray->deltax) * ray->vy);
+				wall.y = fract(ray->z + (ray->sidex - ray->deltax) * ray->vz);
+				unsigned int offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
+				if(ray->vx>0.0f){
+					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].x += red;
+					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].y += green;
+					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].z += blue;
+					red   *= (float)map[block].r/265.0f;
+					green *= (float)map[block].g/265.0f;
+					blue  *= (float)map[block].b/265.0f;
+					VEC3 dir;
+					dir.x = rnd()-2.0f;
+					dir.x = -sqrtf(-dir.x);
+					dir.y = rnd()*2.0f-3.0f;
+					dir.z = rnd()*2.0f-3.0f;
+					*ray = rayCreate((VEC3){ray->ix,(float)ray->iy+wall.y,(float)ray->iz+wall.x},dir);
+				}
+				else{
+					lmapb[lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset].x += red;
+					lmapb[lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset].y += green;
+					lmapb[lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset].z += blue;
+					red   *= (float)map[block].r/265.0f;
+					green *= (float)map[block].g/265.0f;
+					blue  *= (float)map[block].b/265.0f;
+					VEC3 dir;
+					dir.x = rnd()-1.0f;
+					dir.x = sqrtf(dir.x);
+					dir.y = rnd()*2.0f-3.0f;
+					dir.z = rnd()*2.0f-3.0f;
+					*ray = rayCreate((VEC3){ray->ix+1,(float)ray->iy+wall.y,(float)ray->iz+wall.x},dir);
+				}
+				break;
+				}
+			case 1:{
+				wall.x = fract(ray->x + (ray->sidey - ray->deltay) * ray->vx);
+				wall.y = fract(ray->z + (ray->sidey - ray->deltay) * ray->vz);
+				unsigned int offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
+				if(ray->vy>0.0f){
+					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].x += red;
+					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].y += green;
+					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].z += blue;
+					red   *= (float)map[block].r/265.0f;
+					green *= (float)map[block].g/265.0f;
+					blue  *= (float)map[block].b/265.0f;
+					VEC3 dir;
+					dir.x = rnd()*2.0f-3.0f;
+					dir.y = rnd()-2.0f;
+					dir.y = -sqrtf(-dir.y);
+					dir.z = rnd()*2.0f-3.0f;
+					*ray = rayCreate((VEC3){(float)ray->ix+wall.x,ray->iy,(float)ray->iz+wall.y},dir);
+				}
+				else{
+					lmapb[lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset].x += red;
+					lmapb[lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset].y += green;
+					lmapb[lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset].z += blue;
+					red   *= (float)map[block].r/265.0f;
+					green *= (float)map[block].g/265.0f;
+					blue  *= (float)map[block].r/265.0f;
+					VEC3 dir;
+					dir.x = rnd()*2.0f-3.0f;
+					dir.y = rnd()-1.0f;
+					dir.y = sqrtf(dir.y);
+					dir.z = rnd()*2.0f-3.0f;
+					*ray = rayCreate((VEC3){(float)ray->ix+wall.x,ray->iy+1,(float)ray->iz+wall.y},dir);
 				}
 				break;
 			}
-			case 9:
-				break;
-			case 12:{
-				VEC3 p = vec3fract(vec3div(getSubCoords(ray),properties->lmapSz2));
-				if(p.x < 0.625f && p.x > 0.425f && p.y < 0.625f && p.y > 0.425f){
-					VEC3 d;
-					float r1 = (float)(rand()^_rdtsc())/RAND_MAX * 3.14f - 3.14f;
-					float r2 = (float)(rand()^_rdtsc())/RAND_MAX * 3.14f - 3.14f;
-					float r3 = r1 + r2;
-					float r4 = (float)(rand()^_rdtsc())/RAND_MAX * 6.28f - 3.14f;
-					d.x = cosf(r4) * cosf(r3);
-					d.y = sinf(r4) * cosf(r3);
-					d.z = sinf(r3);
-					switch(ray->side){
-					case 0:
-						if(ray->vx < 0.0f && d.x < 0.0f){
-							red = 0.0f;
-							green = 0.0f;
-							blue = 0.0f;
-						}
-						if(ray->vx >= 0.0f && d.x >= 0.0f){
-							red = 0.0f;
-							green = 0.0f;
-							blue = 0.0f;
-						}
-						break;
-					case 1:
-						if(ray->vy < 0.0f && d.y < 0.0f){
-							red = 0.0f;
-							green = 0.0f;
-							blue = 0.0f;
-						}
-						if(ray->vy >= 0.0f && d.y >= 0.0f){
-							red = 0.0f;
-							green = 0.0f;
-							blue = 0.0f;
-						}
-						break;
-					case 2:
-						if(ray->vz < 0.0f && d.z < 0.0f){
-							red = 0.0f;
-							green = 0.0f;
-							blue = 0.0f;
-						}
-						if(ray->vz >= 0.0f && d.z >= 0.0f){
-							red = 0.0f;
-							green = 0.0f;
-							blue = 0.0f;
-						}
-						break;
-					}
-					*ray = rayCreate(p.x,p.y,p.z,d.x,d.y,d.z);
+			case 2:{	 
+				wall.x = fract(ray->x + (ray->sidez - ray->deltaz) * ray->vx);
+				wall.y = fract(ray->y + (ray->sidez - ray->deltaz) * ray->vy);
+				unsigned int offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz)	;
+				if(ray->vz>0.0f){
+					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].x += red;
+					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].y += green;
+					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].z += blue;
+					red   *= (float)map[block].r/265.0f;
+					green *= (float)map[block].g/265.0f;
+					blue  *= (float)map[block].b/265.0f;
+					VEC3 dir;
+					dir.x = rnd()*2.0f-3.0f;
+					dir.y = rnd()*2.0f-3.0f;
+					dir.z = rnd()-2.0f;
+					dir.z = -sqrtf(-dir.z);
+					*ray = rayCreate((VEC3){(float)ray->ix+wall.x,(float)ray->iy+wall.y,ray->iz},dir);
+				}
+				else{
+					lmapb[lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset].x += red;
+					lmapb[lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset].y += green;
+					lmapb[lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset].z += blue;
+					red   *= (float)map[block].r/265.0f;
+					green *= (float)map[block].g/265.0f;
+					blue  *= (float)map[block].b/265.0f;
+					VEC3 dir;
+					dir.x = rnd()*2.0f-3.0f;
+					dir.y = rnd()*2.0f-3.0f;
+					dir.z = rnd()-1.0f;
+					dir.z = sqrtf(dir.z);
+					*ray = rayCreate((VEC3){(float)ray->ix+wall.x,(float)ray->iy+wall.y,ray->iz+1},dir);
 				}
 				break;
 			}
-			case 20:
-				if((float)rand() / RAND_MAX > 1.0f){
-					goto dflt;
-				}
-				break;
-			case 21:
-				break;
-			case 60:
-				break;	
-			dflt:
-			default:{
-				VEC3 p = getSubCoords(ray);
-				VEC3 d;
-				float r1 = (float)(rand()^_rdtsc());
-				float r2 = (float)(rand()^_rdtsc());
-				float r3 = r1 + r2;
-				float r4 = (float)(rand()^_rdtsc());
-				d.x = cosf(r4) * cosf(r3);
-				d.y = sinf(r4) * cosf(r3);
-				d.z = sinf(r3);
-				red   *= (float)map[block+1]*0.002f;
-				green *= (float)map[block+2]*0.002f;
-				blue  *= (float)map[block+3]*0.002f;
-				switch(ray->side){
-				case 0:
-					if(ray->vx < 0.0f){
-						if(d.x < 0.0f){
-							d.x = -d.x;
-						}
-					}
-					if(ray->vx >= 0.0f){
-						if(d.x >= 0.0f){
-							d.x = -d.x;
-						}
-					}
-					break;
-				case 1:
-					if(ray->vy < 0.0f){
-						if(d.y < 0.0f){
-							d.y = -d.y;
-						}
-					}
-					if(ray->vy >= 0.0f){
-						if(d.y >= 0.0f){
-							d.y = -d.y;
-						}
-					}
-					break;
-				case 2:
-					if(ray->vz < 0.0f){
-						if(d.z < 0.0f){
-							d.z = -d.z;
-						}
-					}
-					if(ray->vz >= 0.0f){
-						if(d.z >= 0.0f){
-							d.z = -d.z;
-						}
-					}	
-					break;
-				}
-				*ray = rayCreate(p.x,p.y,p.z,d.x,d.y,d.z);
-				continue;
-				}
 			}
-			switch(map[block]){
-			case 6:{
-				VEC2 wall;
-				switch(ray->side){
-				case 0:
-					wall.x = ray->y + (ray->sidex - ray->deltax) * ray->vy;
-					wall.y = ray->z + (ray->sidex - ray->deltax) * ray->vz;
-					break;
-				case 1:
-					wall.x = ray->x + (ray->sidey - ray->deltay) * ray->vx;
-					wall.y = ray->z + (ray->sidey - ray->deltay) * ray->vz;
-					break;
-				case 2:
-					wall.x = ray->x + (ray->sidez - ray->deltaz) * ray->vx;
-					wall.y = ray->y + (ray->sidez - ray->deltaz) * ray->vy;
-					break;
-				}
-				FLOATINTVEC2 fiv2;
-				fiv2.x.f = floorf(wall.x);
-				fiv2.y.f = floorf(wall.y);
-				FLOATINT r;
-				r.f = floorf(random(fiv2)*3.0f) + (float)mapdata[block]/255.0;
-				red   *= randoms(r);
-				r.f+=0.01f;
-				green *= randoms(r);
-				r.f+=0.01f;
-				blue  *= randoms(r);
-				continue;
-			}
-			case 9:
-				if(lightmap[block+1] > 255 || lightmap[block+2] > 255 || lightmap[block+3] > 255){
-					continue;
-				}
-				lightmap[block+1] += red;
-				lightmap[block+2] += green;
-				lightmap[block+3] += blue;
-				red   *= 0.95f;
-				green *= 0.95f;
-				blue  *= 0.95f;
-				continue;
-			case 12:
-			case 4:
-				break;
-			case 20:
-				if(lightmap[block+1] > 255 || lightmap[block+2] > 255 || lightmap[block+3] > 255){
-					continue;
-				}
-				lightmap[block2+1] += red * 0.45f;
-				lightmap[block2+2] += green * 0.45f;
-				lightmap[block2+3] += blue * 0.45f;
-				continue;
-			case 21:{
-				VEC3 p = vec3fract(vec3div(getSubCoords(ray),properties->lmapSz2));
-				if(p.x > 0.45f && p.x < 0.55f){
-					float r = map[block+1];
-					float g = map[block+2];
-					float b = map[block+3];
-					float m = fmaxf(r,fmaxf(g,b));
-					r /= m;
-					g /= m;
-					b /= m;
-					red   *= r;
-					green *= g;
-					blue  *= b;
-				}
-				break;
-			}
-			case 29:
-				red   *= 0.5f;
-				green *= 0.05f;
-				blue  *= 0.05f;
-				break;
-			default:
-				red   *= 1.0f;
-				green *= 1.0f;
-				blue  *= 1.0f;
-				continue;
-			}
+			break;
 		}
-		if(lightmap[block2+0] > 255 || lightmap[block2+1] > 255 || lightmap[block2+2] > 255){
-			continue;
+		default:
+			break;
 		}
-		lightmap[block2+0] += red;
-		lightmap[block2+1] += green;
-		lightmap[block2+2] += blue;
+	continue;
+	end:
+		break;
 	}
 }
 
 void updateLight(int pos,float r,float g,float b){
 	RAY ray;
 	VEC3 bpos;
-	bpos.x = (float)(pos%(properties->lvlSz*4)/4)+0.5f;
-	bpos.y = (float)(pos / (properties->lvlSz*4) * (properties->lvlSz*4) % (properties->lvlSz*properties->lvlSz*4) / (properties->lvlSz*4*2)) + 0.5f;
-	bpos.z = (float)(pos / (properties->lvlSz*properties->lvlSz*4)) + 0.5f;
-	bpos.x *= properties->lmapSz2;
-	bpos.y *= properties->lmapSz2*2;
-	bpos.z *= properties->lmapSz2;
-	for(float i = -0.78f; i < 0.78f;i+= 0.003f/properties->lmapSz2){
-		for(float i2 = -0.78f; i2 < 0.78f;i2+= 0.003f/properties->lmapSz2){
-			float i3 = (float)rand() /RAND_MAX * 6.28f - 3.14f;
-			ray = rayCreate(bpos.x,bpos.y,bpos.z,sinf(i3) * cosf(i+i2),cosf(i3) * cosf(i+i2), sinf(i+i2));
+	bpos.x = (float)(pos % properties->lvlSz)+0.5f;
+	bpos.y = (float)(pos / properties->lvlSz % properties->lvlSz) + 0.5f;
+	bpos.z = (float)(pos / (properties->lvlSz*properties->lvlSz)) + 0.5f;
+	float mrk = -0.624f;
+	for(float i = -PI_025; i < PI_025;i+= 0.003f/(float)properties->lmapSz){
+		for(float i2 = -PI_025; i2 < PI_025;i2+= 0.003f/(float)properties->lmapSz){
+			float i3 = (rnd() - 1.0f) * PI_2 - PI;
+			ray = rayCreate(bpos,(VEC3){sinf(i3)*cosf(i+i2),cosf(i3)*cosf(i+i2),sinf(i+i2)});
 			updateLightRay(&ray,r,g,b);
+		}
+		if(i > mrk){
+			printf("%i\n",(int)((mrk+0.78f)*64.11f));
+			mrk+=0.156f;
 		}
 	}
 }
 
+void updateLightSingle(unsigned int *block){
+	printf("generating...\n");
+	if(!lmapC){
+		for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
+			if(map[i].id){
+				CVEC3 block = map2crds(i);
+				if(block.x > 0 && !map[i-1].id){
+					lpmap[i].p1 = lmapC;
+					lmapC++;
+				}
+				if(block.x < properties->lvlSz && !map[i+1].id){
+					lpmap[i].p2 = lmapC;
+					lmapC++;
+				}
+				if(block.y > 0 && !map[i-properties->lvlSz].id){
+					lpmap[i].p3 = lmapC;
+					lmapC++;
+				}
+				if(block.y < properties->lvlSz && !map[i+properties->lvlSz].id){
+					lpmap[i].p4 = lmapC;
+					lmapC++;
+				}
+				if(block.z > 0 && !map[i-properties->lvlSz*properties->lvlSz].id){
+					lpmap[i].p5 = lmapC;
+					lmapC++;
+				}
+				if(block.z < properties->lvlSz && !map[i+properties->lvlSz*properties->lvlSz].id){
+					lpmap[i].p6 = lmapC;
+					lmapC++;
+				}
+			}
+		}
+		lmap = HeapAlloc(GetProcessHeap(),8,sizeof(RGB)*properties->lmapSz*properties->lmapSz*lmapC);
+	}
+	lmapb = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC);
+	for(int i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
+		lmapb[i].x = lmap[i].r;
+		lmapb[i].y = lmap[i].g;
+		lmapb[i].z = lmap[i].b;
+	}
+	updateLight(*block,(float)(map[*block].r)/255.0f,(float)(map[*block].g)/255.0f,(float)(map[*block].b)/255.0f);
+	for(int i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
+		if(lmapb[i].x>255.0f){
+			lmapb[i].x = 255.0f;
+		}
+		if(lmapb[i].y>255.0f){
+			lmapb[i].y = 255.0f;
+		}
+		if(lmapb[i].z>255.0f){
+			lmapb[i].z = 255.0f;
+		}
+		lmap[i].r = lmapb[i].x;
+		lmap[i].g = lmapb[i].y;
+		lmap[i].b = lmapb[i].z;
+	}
+	HeapFree(GetProcessHeap(),0,lmapb);
+	printf("generated light\n");
+	glMes[glMesC].id = 6;
+	glMesC++;
+}
+
 void updateLight2(){
-	lightmap = HeapAlloc(GetProcessHeap(),8,sizeof(float) * properties->lvlSz*properties->lvlSz*properties->lvlSz*4*properties->lmapSz3);	
-	for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz*4;i+=4){
-		if(map[i] == 8){
-			map[i] = 0;
-			updateLight(i+1,(float)(map[i+1])/255.0,(float)(map[i+2])/255.0,(float)(map[i+3])/255.0);
-			map[i] = 8;	
+	printf("generating...\n");
+	lmapC = 0;
+	for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
+		if(map[i].id){
+			CVEC3 block = map2crds(i);
+			if(block.x > 0 && !map[i-1].id){
+				lpmap[i].p1 = lmapC;
+				lmapC++;
+			}
+			if(block.x < properties->lvlSz && !map[i+1].id){
+				lpmap[i].p2 = lmapC;
+				lmapC++;
+			}
+			if(block.y > 0 && !map[i-properties->lvlSz].id){
+				lpmap[i].p3 = lmapC;
+				lmapC++;
+			}
+			if(block.y < properties->lvlSz && !map[i+properties->lvlSz].id){
+				lpmap[i].p4 = lmapC;
+				lmapC++;
+			}
+			if(block.z > 0 && !map[i-properties->lvlSz*properties->lvlSz].id){
+				lpmap[i].p5 = lmapC;
+				lmapC++;
+			}
+			if(block.z < properties->lvlSz && !map[i+properties->lvlSz*properties->lvlSz].id){
+				lpmap[i].p6 = lmapC;
+				lmapC++;
+			}
 		}
 	}
-	for(unsigned int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz*4*properties->lmapSz3;i+=4){
-		mapdata[i]   = lightmap[i+0];
-		mapdata[i+1] = lightmap[i+1];
-		mapdata[i+2] = lightmap[i+2];
+	lmap  = HeapAlloc(GetProcessHeap(),8,sizeof(RGB)*properties->lmapSz*properties->lmapSz*lmapC);
+	lmapb = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC);
+	for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
+		if(map[i].id == 8){
+			updateLight(i,(float)(map[i].r)/255.0f,(float)(map[i].g)/255.0f,(float)(map[i].b)/255.0f);
+		}
 	}
-	HeapFree(GetProcessHeap(),0,lightmap);
+	for(int i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
+		if(lmapb[i].x>255.0f){
+			lmapb[i].x = 255.0f;
+		}
+		if(lmapb[i].y>255.0f){
+			lmapb[i].y = 255.0f;
+		}
+		if(lmapb[i].z>255.0f){
+			lmapb[i].z = 255.0f;
+		}
+		lmap[i].r = lmapb[i].x;
+		lmap[i].g = lmapb[i].y;
+		lmap[i].b = lmapb[i].z;
+	}
+	HeapFree(GetProcessHeap(),0,lmapb);
+	printf("generated light\n");
 	glMes[glMesC].id = 6;
 	glMesC++;
 }

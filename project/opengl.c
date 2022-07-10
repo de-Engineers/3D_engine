@@ -1,9 +1,54 @@
 ﻿#include <windows.h>
-#include <glew.h>
-#include <main.h>
+#include <GL/gl.h>
+#include "main.h"
 #include <stdio.h>
 #include <math.h>
 #include <intrin.h>
+
+#include "tmgl.h"
+
+#pragma comment(lib,"opengl32.lib")
+
+#define GL_RED_INTEGER 0x8D94
+#define GL_R32UI 0x8236
+#define GL_FRAGMENT_SHADER 0x8B30
+#define GL_VERTEX_SHADER 0x8B31
+#define GL_ARRAY_BUFFER 0x8892
+#define GL_DYNAMIC_DRAW 0x88E8
+#define GL_TEXTURE0 0x84C0
+#define GL_TEXTURE1 0x84C1
+#define GL_TEXTURE2 0x84C2
+#define GL_TEXTURE3 0x84C3
+#define GL_TEXTURE4 0x84C4
+#define GL_TEXTURE5 0x84C5
+#define GL_TEXTURE6 0x84C6
+#define GL_TEXTURE7 0x84C7
+#define GL_TEXTURE8 0x84C8
+#define GL_TEXTURE9 0x84C9
+#define GL_TEXTURE10 0x84CA
+#define GL_TEXTURE11 0x84CB
+#define GL_TEXTURE12 0x84CC
+#define GL_TEXTURE13 0x84CD
+#define GL_TEXTURE14 0x84CE
+#define GL_TEXTURE15 0x84CF
+#define GL_TEXTURE16 0x84D0
+#define GL_TEXTURE17 0x84D1
+#define GL_TEXTURE18 0x84D2
+#define GL_TEXTURE19 0x84D3
+#define GL_TEXTURE20 0x84D4
+#define GL_TEXTURE21 0x84D5
+#define GL_TEXTURE22 0x84D6
+#define GL_TEXTURE23 0x84D7
+#define GL_TEXTURE24 0x84D8
+#define GL_TEXTURE25 0x84D9
+#define GL_TEXTURE26 0x84DA
+#define GL_TEXTURE27 0x84DB
+#define GL_TEXTURE28 0x84DC
+#define GL_TEXTURE29 0x84DD
+#define GL_TEXTURE30 0x84DE
+#define GL_TEXTURE31 0x84DF
+#define GL_TEXTURE_3D 0x806F
+#define GL_RGBA32F 0x8814
 
 char *VERTsource;
 char *FRAGsource;
@@ -16,13 +61,6 @@ char *slope;
 char *spikes;
 char *chessPieces;
 char *models8;
-
-char *words[]  = {"air","rgb","water","mirror","sphere","tower","tegeltjes","white",
-	"light","mist","customslope","glass","bounce","mirror","spikes","normal",
-	"donut","shape1","greekpillar",
-	
-	};
-char *words2[] = {"normal","cube","lighting","entities","colorselect"};
 
 int glMesC;
 int tick;
@@ -41,18 +79,15 @@ unsigned int mapText;
 unsigned int mapTextFont;
 unsigned int *blockTextures[30];
 unsigned int entityTexture;
-unsigned int mapdataText;
 unsigned int chessText;
 unsigned int models8Text;
 unsigned int VAO;
-
-unsigned int totalCar;
-
-long long fps = 1;
-
-VEC2 mousePos;
+unsigned int lpmapText;
+unsigned int lmapText;
 
 unsigned char *inputStr;
+
+long long fps = 1;
 
 PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR), 1,
 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,PFD_TYPE_RGBA,
@@ -67,128 +102,8 @@ float quad[8192]  = {1.0,1.0 ,0.999,1.0,0.0,1.0,
 					-1.0,1.0 ,0.999,1.0,0.0,1.0,
 					1.0,-1.0 ,0.999,1.0,0.0,1.0};
 
-void drawChar(int c,float x,float y,float z,float id,float xsize,float ysize){
-	xsize /= 1.7777778;
-	quad[totalCar * 36 + 36]    = x + xsize;
-	quad[totalCar * 36 + 36+1]  = y;
-	quad[totalCar * 36 + 36+2]  = z;
-	quad[totalCar * 36 + 36+3]  = 0.1 + (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+4]  = 0.25 + (float)(c / 10) / 4;
-	quad[totalCar * 36 + 36+5]  = id;
-	quad[totalCar * 36 + 36+6]  = x;
-	quad[totalCar * 36 + 36+7]  = y;
-	quad[totalCar * 36 + 36+8]  = z;
-	quad[totalCar * 36 + 36+9] = (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+10] = 0.25 + (float)(c / 10) / 4;
-	quad[totalCar * 36 + 36+11] = id;
-	quad[totalCar * 36 + 36+12] = x + xsize;
-	quad[totalCar * 36 + 36+13] = y + ysize;
-	quad[totalCar * 36 + 36+14] = z;
-	quad[totalCar * 36 + 36+15] = 0.1 + (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+16] = 0.0 + (float)(c / 10) / 4;
-	quad[totalCar * 36 + 36+17] = id;
-	quad[totalCar * 36 + 36+18] = x;
-	quad[totalCar * 36 + 36+19] = y + ysize;
-	quad[totalCar * 36 + 36+20] = z;
-	quad[totalCar * 36 + 36+21] = (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+22] = 0.0 + (float)(c / 10) / 4;
-	quad[totalCar * 36 + 36+23] = id;
-	quad[totalCar * 36 + 36+24] = x;
-	quad[totalCar * 36 + 36+25] = y;
-	quad[totalCar * 36 + 36+26] = z;
-	quad[totalCar * 36 + 36+27] = (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+28] = 0.25 + (float)(c / 10) / 4;
-	quad[totalCar * 36 + 36+29] = id;
-	quad[totalCar * 36 + 36+30] = x + xsize;
-	quad[totalCar * 36 + 36+31] = y + ysize;
-	quad[totalCar * 36 + 36+32] = z;
-	quad[totalCar * 36 + 36+33] = 0.1 + (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+34] = 0.0 + (float)(c / 10) / 4;
-	quad[totalCar * 36 + 36+35] = id;
-	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(float),quad,GL_DYNAMIC_DRAW);
-	totalCar++;
-}
-
-void drawSprite(float x,float y,float z,float id,float xsize,float ysize){
-	quad[totalCar * 36 + 36]    = x + xsize;
-	quad[totalCar * 36 + 36+1]  = y;
-	quad[totalCar * 36 + 36+2]  = z;
-	quad[totalCar * 36 + 36+3]  = 1.0;
-	quad[totalCar * 36 + 36+4]  = 0.0;
-	quad[totalCar * 36 + 36+5]  = id;
-	quad[totalCar * 36 + 36+6]  = x;
-	quad[totalCar * 36 + 36+7]  = y;
-	quad[totalCar * 36 + 36+8]  = z;
-	quad[totalCar * 36 + 36+9]  = 0.0;
-	quad[totalCar * 36 + 36+10] = 0.0;
-	quad[totalCar * 36 + 36+11] = id;
-	quad[totalCar * 36 + 36+12] = x + xsize;
-	quad[totalCar * 36 + 36+13] = y + ysize;
-	quad[totalCar * 36 + 36+14] = z;
-	quad[totalCar * 36 + 36+15] = 1.0;
-	quad[totalCar * 36 + 36+16] = 1.0;
-	quad[totalCar * 36 + 36+17] = id;
-	quad[totalCar * 36 + 36+18] = x;
-	quad[totalCar * 36 + 36+19] = y + ysize;
-	quad[totalCar * 36 + 36+20] = z;
-	quad[totalCar * 36 + 36+21] = 0.0;
-	quad[totalCar * 36 + 36+22] = 1.0;
-	quad[totalCar * 36 + 36+23] = id;
-	quad[totalCar * 36 + 36+24] = x;
-	quad[totalCar * 36 + 36+25] = y;
-	quad[totalCar * 36 + 36+26] = z;
-	quad[totalCar * 36 + 36+27] = 0.0;
-	quad[totalCar * 36 + 36+28] = 0.0;
-	quad[totalCar * 36 + 36+29] = id;
-	quad[totalCar * 36 + 36+30] = x + xsize;
-	quad[totalCar * 36 + 36+31] = y + ysize;
-	quad[totalCar * 36 + 36+32] = z;
-	quad[totalCar * 36 + 36+33] = 1.0;
-	quad[totalCar * 36 + 36+34] = 1.0;
-	quad[totalCar * 36 + 36+35] = id;
-	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(float),quad,GL_DYNAMIC_DRAW);
-	totalCar++;
-}
-
-void drawVar(float x,float y,int val){
-	if(val == 0){
-		drawChar(0,x+0.03,y,-0.99,0,0.04,0.04);
-		return;
-	}
-	int size;
-	int tval = val;
-	while(tval > 0){
-		tval /= 10;
-		size++;
-	}
-	if(!size){
-		drawChar(26,x + 1.0 / 30,y,-0.99,0,0.04,0.04);
-	}
-	else{
-		for(int i = 0;i < size;i++){
-			drawChar(val % 10,x + (float)(size - i) / 30,y,-0.99,0,0.04,0.04);
-			val /= 10;
-		}
-	}
-}
-
-void drawWord(char *str,float x,float y,float id){
-	for(int i = 0;i < strlen(str);i++){
-		if(str[i] == ' '){
-			continue;
-		}
-		if(str[i] > 0x2f && str[i] < 0x3a){
-			drawChar(str[i] - 0x30,x+i*0.0235,y,-0.1,id,0.04,0.04);
-		}
-		else{
-			drawChar(str[i] - 87,x+i*0.0235,y,-0.1,id,0.04,0.04);
-		}
-
-	}
-}
-
 char *loadTexture(char *name){
-	HANDLE h = CreateFile(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	HANDLE h = CreateFileA(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
 	int fsize = GetFileSize(h,0);
 	char *text = HeapAlloc(GetProcessHeap(),8,fsize+1);
 	SetFilePointer(h,138,0,0);
@@ -198,7 +113,7 @@ char *loadTexture(char *name){
 }
 
 char *loadFile(char *name){
-	HANDLE h = CreateFile(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	HANDLE h = CreateFileA(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
 	int fsize = GetFileSize(h,0);
 	char *file = HeapAlloc(GetProcessHeap(),8,fsize+1);
 	ReadFile(h,file,fsize+1,0,0);
@@ -206,15 +121,9 @@ char *loadFile(char *name){
 	return file;
 }
 
-float distance(VEC2 p1,VEC2 p2){
-	float r1 = p1.x-p2.x;
-	float r2 = p1.y-p2.y;
-	return sqrtf(r1*r1+r2*r2);
-}
-
 void openGL(){
 	glMes = HeapAlloc(GetProcessHeap(),8,sizeof(OPENGLMESSAGE) * 1024);
-	
+
 	VERTsource     = loadFile("shaders/vertex.vert");
 	FRAGsource     = loadFile("shaders/fragment.frag");
 	VERTsourceFont = loadFile("shaders/fontvert.vert");
@@ -231,7 +140,33 @@ void openGL(){
 	SetPixelFormat(dc, ChoosePixelFormat(dc, &pfd), &pfd);
 	wglMakeCurrent(dc, wglCreateContext(dc));
 
-	glewInit();
+	glCreateProgram			  = wglGetProcAddress("glCreateProgram");
+	glCreateShader			  = wglGetProcAddress("glCreateShader");
+	glShaderSource			  = wglGetProcAddress("glShaderSource");
+	glCompileShader			  = wglGetProcAddress("glCompileShader");
+	glAttachShader			  = wglGetProcAddress("glAttachShader");
+	glLinkProgram			  = wglGetProcAddress("glLinkProgram");
+	glUseProgram			  = wglGetProcAddress("glUseProgram");
+	glEnableVertexAttribArray = wglGetProcAddress("glEnableVertexAttribArray");
+	glVertexAttribPointer     = wglGetProcAddress("glVertexAttribPointer");
+	glBufferData              = wglGetProcAddress("glBufferData");
+	glCreateBuffers           = wglGetProcAddress("glCreateBuffers");
+	glBindBuffer              = wglGetProcAddress("glBindBuffer");
+	glGetShaderInfoLog        = wglGetProcAddress("glGetShaderInfoLog");
+	glTexSubImage3D			  = wglGetProcAddress("glTexSubImage3D");
+	glUniform1i				  = wglGetProcAddress("glUniform1i");
+	glUniform4f				  = wglGetProcAddress("glUniform4f");
+	glActiveTexture			  = wglGetProcAddress("glActiveTexture");
+	glGenerateMipmap		  = wglGetProcAddress("glGenerateMipmap");
+	glUniform3f				  = wglGetProcAddress("glUniform3f");
+	glUniform2i				  = wglGetProcAddress("glUniform2i");
+	glTexImage3D			  = wglGetProcAddress("glTexImage3D");
+	glUniformMatrix3fv		  = wglGetProcAddress("glUniformMatrix3fv");
+	glGetUniformLocation      = wglGetProcAddress("glGetUniformLocation");
+	glUniform1f				  = wglGetProcAddress("glUniform1f");
+	glUniform2f               = wglGetProcAddress("glUniform2f");
+	wglSwapIntervalEXT        = wglGetProcAddress("wglSwapIntervalEXT");
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);  
@@ -264,10 +199,22 @@ void openGL(){
 
 	glGenTextures(1,&mapText);
 	glGenTextures(1,&mapTextFont);
+	glGenTextures(1,&lpmapText);
+	glGenTextures(1,&lmapText);
 	glGenTextures(30,(void*)blockTextures);
-	glGenTextures(1,&mapdataText);
 	glGenTextures(1,&chessText);
 	glGenTextures(1,&models8Text);
+
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_3D,lpmapText);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_R32UI,properties->lvlSz*6,properties->lvlSz,properties->lvlSz,0,GL_RED_INTEGER,GL_UNSIGNED_INT,lpmap);
+
+	glActiveTexture(GL_TEXTURE9);
+	glBindTexture(GL_TEXTURE_3D,lmapText);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGB8,lmapC,properties->lmapSz,properties->lmapSz,0,GL_RGB,GL_UNSIGNED_BYTE,lmap);
+	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,mapText);
@@ -285,7 +232,7 @@ void openGL(){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,320,144,0,GL_RGBA,GL_UNSIGNED_BYTE,fontImage);
 	glGenerateMipmap(GL_TEXTURE_2D);
-
+	
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,(unsigned int)blockTextures[1]);
 	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,32,32,0,GL_RGBA,GL_UNSIGNED_BYTE,spikes);
@@ -301,30 +248,25 @@ void openGL(){
 	glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA32F,256,0,GL_RGBA,GL_FLOAT,entity);
 	glGenerateMipmap(GL_TEXTURE_1D);
 
-	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_3D,mapdataText);
-	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz*properties->lmapSz2,properties->lvlSz*properties->lmapSz2,properties->lvlSz*properties->lmapSz2,0,GL_RGBA,GL_UNSIGNED_BYTE,mapdata);
-	glGenerateMipmap(GL_TEXTURE_3D);
-
 	glActiveTexture(GL_TEXTURE7);
 	glBindTexture(GL_TEXTURE_3D,chessText);
 	glTexImage3D(GL_TEXTURE_3D,0,GL_RED,16,16,96,0,GL_RED,GL_UNSIGNED_BYTE,chessPieces);
 	glGenerateMipmap(GL_TEXTURE_3D);
-
+	
 	glActiveTexture(GL_TEXTURE8);
 	glBindTexture(GL_TEXTURE_3D,models8Text);
 	glTexImage3D(GL_TEXTURE_3D,0,GL_RED,8,8,8,0,GL_RED,GL_UNSIGNED_BYTE,models8);
 	glGenerateMipmap(GL_TEXTURE_3D);
-
 
 	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
 	glUniform1i(glGetUniformLocation(shaderProgram,"epicTexture"),2);
 	glUniform1i(glGetUniformLocation(shaderProgram,"spikes"),3);
 	glUniform1i(glGetUniformLocation(shaderProgram,"slope"),4);
 	glUniform1i(glGetUniformLocation(shaderProgram,"entities"),5);
-	glUniform1i(glGetUniformLocation(shaderProgram,"mapdata"),6);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lpmap"),6);
 	glUniform1i(glGetUniformLocation(shaderProgram,"chessModels"),7);
 	glUniform1i(glGetUniformLocation(shaderProgram,"models8"),8);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lmap"),9);
 
 	glCreateBuffers(1,&VBO);
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
@@ -342,111 +284,24 @@ void openGL(){
 	glUniform2i(glGetUniformLocation(shaderProgram,"reso"),properties->xres,properties->yres);
 	glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->xfov,player->yfov);
 	glUniform1i(glGetUniformLocation(shaderProgram,"mapSz"),properties->lvlSz);
-	glUniform1f(glGetUniformLocation(shaderProgram,"lmapsz"),properties->lmapSz2);
+	glUniform1f(glGetUniformLocation(shaderProgram,"lmapsz"),properties->lmapSz);
 
 	glUseProgram(shaderProgramFont);
 	glUniform2i(glGetUniformLocation(shaderProgramFont,"reso"),properties->xres,properties->yres);
 	glUseProgram(shaderProgram);
-
 	for(;;){
+		long long timeB;
+		QueryPerformanceCounter(&timeB);
 		if(settings & 0x80){
 			SwapBuffers(dc);
 			Sleep(100);
 		}
 		else{
+			if(settings & 0x20){
+				drawUI();
+			}
 			glUseProgram(shaderProgram);
-			long long fpstime = _rdtsc();
-			drawChar(33,-0.9,0.9,-0.99,0,0.04,0.04);
-			drawVar(-0.9,0.9,player->xpos);
-			drawChar(34,-0.75,0.9,-0.99,0,0.04,0.04);
-			drawVar(-0.75,0.9,player->ypos);
-			drawChar(35,-0.6,0.9,-0.99,0,0.04,0.04);
-			drawVar(-0.6,0.9,player->zpos);
 
-			drawVar(-0.9,0.8,fabs(player->xvel * 100));
-			drawVar(-0.75,0.8,fabsf(player->yvel * 100));
-			drawVar(-0.6,0.8,fabsf(player->zvel * 100));
-
-			drawChar(15,-0.96,0.7,-0.99,0,0.04,0.04);
-			drawChar(25,-0.93,0.7,-0.99,0,0.04,0.04);
-			drawChar(28,-0.9,0.7,-0.99,0,0.04,0.04);
-
-			drawVar(-0.9,0.7,3400000000 / fps);
-
-			if(blockSel < 16){
-				drawWord(words[blockSel],-0.9,-0.9,0.0);
-			}
-			if(toolSel < 5){
-				drawWord(words2[toolSel],-0.9,-0.78,0.0);
-			}
-			drawVar(0.8,-0.90,colorSel.r);
-			drawVar(0.8,-0.85,colorSel.g);
-			drawVar(0.8,-0.80,colorSel.b);
-			drawVar(0.8,-0.75,colorSel.a);
-			for(int i = 0;i < buttonC;i++){
-				VEC2 buttonMiddle = {button[i].pos.x+0.015f,button[i].pos.y+0.025f};
-				if(distance(mousePos,buttonMiddle)<0.03f){
-					buttonId = button[i].id;
-					drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,4,0.03f,0.05f);
-					for(;i < buttonC;i++){
-						drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,3,0.03f,0.05f);
-					}
-					goto foundButton;
-				}
-				else{
-					drawSprite(button[i].pos.x,button[i].pos.y,-0.05f,3,0.03f,0.05f);
-				}
-			}
-			buttonId = -1;
-		foundButton:
-			drawSprite(0.8,-0.65,-0.2,7,0.1,0.1);
-			switch(menuSel){
-			case 0:
-				drawChar(36,-0.01,-0.02,-0.99,0,0.04,0.04);
-				break;
-			case 1:{
-				POINT p;
-				GetCursorPos(&p);
-				ScreenToClient(window,&p);
-				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
-				drawWord("settings",-0.11f,0.42f,0.0f);
-				drawWord("save world",-0.45f,-0.21f,0.0f);
-				drawWord("load world",-0.45f,-0.28f,0.0f);
-				drawWord("create world",-0.45f,-0.35f,0.0f);
-				drawWord("quit",-0.45f,-0.42f,0.0f);
-				drawSprite(-0.5f,-0.5f,0.0f,2,1.0f,1.0f);
-				break;
-				}
-			case 2:{
-				POINT p;
-				GetCursorPos(&p);
-				ScreenToClient(window,&p);
-				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
-				drawWord("worlds",-0.11f,0.42f,0.0f);
-				drawWord("load",0.02f,0.35f,0.0f);
-				drawWord("delete",0.19f,0.35f,0.0f);
-				for(int i = 0;i < fileNames.strC;i++){
-					drawWord(fileNames.str[i],-0.45f,0.28f-(float)i/15.0f,0.0f);
-				}
-				drawSprite(-0.5,-0.5,0.0,2,1.0,1.0);
-				break;
-				}
-			case 3:{
-				POINT p;
-				GetCursorPos(&p);
-				ScreenToClient(window,&p);
-				mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-				mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-				drawSprite(mousePos.x-0.0075f,mousePos.y-0.0125f,-0.2,6,0.015,0.025);
-				drawWord("save",-0.11f,0.42f,0.0f);
-				drawWord(inputStr,-0.45f,0.0f,0.0f);
-				drawSprite(-0.5,-0.5,0.0,2,1.0,1.0);
-				}
-			}
 			while(glMesC > 0){
 				glMesC--;
 				switch(glMes[glMesC].id){
@@ -459,7 +314,8 @@ void openGL(){
 					break;
 				case 1:
 					glActiveTexture(GL_TEXTURE1);
-					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,1,1,1,GL_RGBA,GL_UNSIGNED_BYTE,map+(glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz) * 4);
+					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,1,1,1,GL_RGBA,GL_UNSIGNED_BYTE,map+(glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz));
+					lmapC = 0;
 					break;
 				case 2:
 					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,glMes[glMesC].data4,glMes[glMesC].data5,glMes[glMesC].data6,GL_RED,GL_UNSIGNED_BYTE,map+glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz);
@@ -467,21 +323,25 @@ void openGL(){
 				case 3:
 					glActiveTexture(GL_TEXTURE1);
 					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,map);
+					lmapC = 0;
 					break;
 				case 4:
 					drawSprite(glMes[glMesC].fdata1,glMes[glMesC].fdata2,glMes[glMesC].fdata5,glMes[glMesC].fdata6,glMes[glMesC].fdata3,glMes[glMesC].fdata4);
 					break;
 				case 5:
 					glActiveTexture(GL_TEXTURE6);
-					glTexSubImage3D(GL_TEXTURE_3D,0,glMes[glMesC].data1,glMes[glMesC].data2,glMes[glMesC].data3,1,1,1,GL_RGBA,GL_UNSIGNED_BYTE,mapdata+(glMes[glMesC].data1 + glMes[glMesC].data2 * properties->lvlSz + glMes[glMesC].data3 * properties->lvlSz * properties->lvlSz) * 4);
 					break;
-				case 6:
+				case 6:{
 					glActiveTexture(GL_TEXTURE6);
-					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz*properties->lmapSz2,properties->lvlSz*properties->lmapSz2,properties->lvlSz*properties->lmapSz2,0,GL_RGBA,GL_UNSIGNED_BYTE,mapdata);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_R32UI,properties->lvlSz*6,properties->lvlSz,properties->lvlSz,0,GL_RED_INTEGER,GL_UNSIGNED_INT,lpmap);
+					glActiveTexture(GL_TEXTURE9);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGB,properties->lmapSz,properties->lmapSz,lmapC,0,GL_RGB,GL_UNSIGNED_BYTE,lmap);
+					glGenerateMipmap(GL_TEXTURE_3D);
+					glUniform1f(glGetUniformLocation(shaderProgram,"lmapsz"),properties->lmapSz);
 					break;
+					}
 				}
 			}
-
 			drawSprite(0.0,0.0,0.0,0.0,0.0,0.0);
 			sprite = 0;
 			glActiveTexture(GL_TEXTURE6);
@@ -503,13 +363,8 @@ void openGL(){
 			glDrawArrays(GL_TRIANGLES,6,totalCar*6+6);
 			SwapBuffers(dc);
 			totalCar = 0;
-			fps = _rdtsc() - fpstime;
-			if(3400000000 / fps < 50){
-				properties->renderDistance-=4;
-			}
-			else if(3400000000 / fps > 100 && properties->renderDistance < 255){
-				properties->renderDistance++;
-			}
 		}
+		QueryPerformanceCounter(&fps);
+		fps -= timeB;
 	}
 }

@@ -1,6 +1,6 @@
 ﻿#include <windows.h>
 #include <stdio.h>
-#include <main.h>
+#include "main.h"
 
 char buttonId;
 
@@ -24,20 +24,16 @@ void quitButton(){
 
 void genNewWorldButton(){
 	memset(map,0,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
-	memset(mapdata,0,properties->lvlSz*properties->lvlSz*properties->lvlSz*4*properties->lmapSz3);
 	for(int i = 0;i < properties->lvlSz*properties->lvlSz*4;i+=4){
-		map[i] = 28;
-		map[i+1] = 255;
-		map[i+2] = 255;
-		map[i+3] = 255;
-		mapdata[i] = 255;
-		mapdata[i+1] = 255;
-		mapdata[i+2] = 255;
+		map[i].id = 28;
+		map[i].r = 255;
+		map[i].g = 255;
+		map[i].b = 255;
 	}
 	for(int i = properties->lvlSz*properties->lvlSz*4;i < properties->lvlSz*properties->lvlSz*properties->lvlSz*4;i+=4){
-		map[i+1] = 128;
-		map[i+2] = 128;
-		map[i+3] = 128;
+		map[i].r = 128;
+		map[i].g = 128;
+		map[i].b = 128;
 	}
 	glMes[glMesC].id = 3;
 	glMesC++;
@@ -47,7 +43,7 @@ void EnumLevelsButton(){
 	menuSel = 2;
 	buttonC = 0;
 	WIN32_FIND_DATAA windt;
-	HANDLE h = FindFirstFile("levels/*.lvl",&windt);
+	HANDLE h = FindFirstFileA("levels/*.lvl",&windt);
 	if((int)h!=-1){
 		fileNames.str = HeapAlloc(GetProcessHeap(),8,sizeof(char*)*(fileNames.strC+1));
 		fileNames.str[fileNames.strC] = HeapAlloc(GetProcessHeap(),8,strlen(windt.cFileName)+1);
@@ -55,7 +51,7 @@ void EnumLevelsButton(){
 		fileNames.strC++;
 		buttonCreate((VEC2){0.05f,0.28f},100);
 		buttonCreate((VEC2){0.25f,0.28f},110);
-		while(FindNextFile(h,&windt)){
+		while(FindNextFileA(h,&windt)){
 			fileNames.str = HeapReAlloc(GetProcessHeap(),8,fileNames.str,sizeof(char*)*(fileNames.strC+1));
 			fileNames.str[fileNames.strC] = HeapAlloc(GetProcessHeap(),8,strlen(windt.cFileName)+1);
 			memcpy(fileNames.str[fileNames.strC],windt.cFileName,strlen(windt.cFileName)-4);
@@ -66,9 +62,17 @@ void EnumLevelsButton(){
 	}
 }
 
+void decLightMap(){
+	properties->lmapSz--;
+}
+
+void incLightMap(){
+	properties->lmapSz++;
+}
+
 void saveLevelButton(){
 	menuSel = 3;
 	buttonC = 0;
 }
 
-void (*buttons[4])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton};
+void (*buttons[6])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap};
