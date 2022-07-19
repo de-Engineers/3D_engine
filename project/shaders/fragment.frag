@@ -7,7 +7,9 @@ in vec4 gl_FragCoord;
 uniform mat3 cameraMatrix;
 
 uniform sampler3D map;
-uniform sampler3D mapdata;
+uniform usampler3D lpmap;
+uniform sampler3D lmap;
+uniform sampler3D metadt;
 uniform sampler3D chessModels;
 uniform sampler3D models8;
 
@@ -26,6 +28,8 @@ uniform ivec2 reso;
 
 uniform int tick;
 
+uniform float brightness;
+
 uniform int mapSz;
 
 uniform int renderDistance;
@@ -43,9 +47,14 @@ float stepX,stepY,stepZ;
 float vx,vy,vz;
 float deltaX,deltaY,deltaZ;
 int side;
-float wallXa,wallYa,wallX,wallY;
-vec4 fog;
+vec2 wall,awall;
 int effect;
+vec3 fog;
+
+#define PI_05  1.57079632679
+#define PI_2   6.28318530718
+#define PI     3.14159265358
+#define PI_025 0.78539816339
 
 uint hash( uint x ) {
     x += ( x << 10u );
@@ -96,24 +105,24 @@ vec3 getSubCoords(){
 	switch(side){
 	case 0:
 		if(ang.x > 0.0){
-			return vec3(0.0,wallX,wallY);
+			return vec3(0.0,wall);
 		}
 		else{
-			return vec3(1.0,wallX,wallY);
+			return vec3(1.0,wall);
 		}
 	case 1:
 		if(ang.y > 0.0){
-			return vec3(wallX,0.0,wallY);
+			return vec3(wall.x,0.0,wall.y);
 		}
 		else{
-			return vec3(wallX,1.0,wallY);
+			return vec3(wall.x,1.0,wall.y);
 		}
 	case 2:
 		if(ang.z > 0.0){
-			return vec3(wallX,wallY,0.0);
+			return vec3(wall,0.0);
 		}
 		else{
-			return vec3(wallX,wallY,1.0);
+			return vec3(wall,1.0);
 		}
 	}
 }
@@ -141,37 +150,38 @@ vec3 getSide(vec3 tr){
 	return si;
 }
 
-void reinitializeRay(){
-	deltaX = abs(1 / ang.x);
-	deltaY = abs(1 / ang.y);
-	deltaZ = abs(1 / ang.z);
+void reinitializeRay(vec3 apos){
+	deltaX = abs(1.0 / ang.x);
+	deltaY = abs(1.0 / ang.y);
+	deltaZ = abs(1.0 / ang.z);
+	x = floor(apos.x);
+	y = floor(apos.y);
+	z = floor(apos.z);
+	pos = apos;
 	if(ang.x < 0){
 		stepX = -1;
-		sideX = fract(x) * deltaX;
+		sideX = fract(apos.x) * deltaX;
 	}
 	else{
 		stepX = 1;
-		sideX = (int(x) + 1.0 - x) * deltaX;
+		sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
 	}
 	if(ang.y < 0){
 		stepY = -1;	
-		sideY = fract(y) * deltaY;
+		sideY = fract(apos.y) * deltaY;
 	}
 	else{
 		stepY = 1;
-		sideY = (int(y) + 1.0 - y) * deltaY;
+		sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
 	}
 	if(ang.z < 0){
 		stepZ = -1;
-		sideZ = fract(z) * deltaZ;
+		sideZ = fract(apos.z) * deltaZ;
 	}
 	else{
 		stepZ = 1;
-		sideZ = (int(z) + 1.0 - z) * deltaZ;
+		sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
 	}
-	x = int(x);
-	y = int(y);
-	z = int(z);
 }
 
 float iPlane(vec3 ro,vec3 rd,vec4 p){
@@ -255,113 +265,46 @@ float iTorus(vec3 ro,vec3 rd,vec2 tor){
     return t;
 }
 
-float revertnoise(vec2 rp){
-    float c1 = 0.5;
-    float c2 = 0.5;
-    float c3 = 0.5;
-    float c4 = 0.5;
-    c1 *= clamp(1.0-distance(vec2(1.0,1.0),rp),0.0,1.0);
-    c2 *= clamp(1.0-distance(vec2(1.0,0.0),rp),0.0,1.0);
-    c3 *= clamp(1.0-distance(vec2(0.0,1.0),rp),0.0,1.0);
-    c4 *= clamp(1.0-distance(vec2(0.0,0.0),rp),0.0,1.0);
-    return (c1+c2+c3+c4+1.0)/4.0;
-}
-
-vec3 blockLight(){
-	vec4 t,e1,e2,e3,e4,c1,c2,c3,c4;
-	if(side == 0){
-		if(ang.x<0.0){
-			t  = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz, 0, 0),0);
-		  	e1 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz, 1, 0),0);
-			e2 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz,-1, 0),0);
-			e3 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz, 0, 1),0);
-			e4 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz, 0,-1),0);
-			c1 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz, 1, 1),0);
-			c2 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz, 1,-1),0);
-			c3 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz,-1, 1),0);
-			c4 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3( lmapsz,-1,-1),0);
-		}
-		else{
-			t  = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1, 0, 0),0);
-		  	e1 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1, 1, 0),0);
-			e2 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1,-1, 0),0);
-			e3 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1, 0, 1),0);
-			e4 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1, 0,-1),0);
-			c1 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1, 1, 1),0);
-			c2 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1, 1,-1),0);
-			c3 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1,-1, 1),0);
-			c4 = texelFetch(mapdata,ivec3(vec3(x,wallXa,wallYa)*lmapsz)+ivec3(-1,-1,-1),0);
-		}
-	}
-	else if(side == 1){
-		if(ang.y<0.0){
-			t  = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 0, lmapsz, 0),0);
-		  	e1 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 1, lmapsz, 0),0);
-			e2 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3(-1, lmapsz, 0),0);
-			e3 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 0, lmapsz, 1),0);
-			e4 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 0, lmapsz,-1),0);
-			c1 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 1, lmapsz, 1),0);
-			c2 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 1, lmapsz,-1),0);
-			c3 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3(-1, lmapsz, 1),0);
-			c4 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3(-1, lmapsz,-1),0);
-		}
-		else{
-			t  = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 0,-1, 0),0);
-		  	e1 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 1,-1, 0),0);
-			e2 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3(-1,-1, 0),0);
-			e3 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 0,-1, 1),0);
-			e4 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 0,-1,-1),0);
-			c1 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 1,-1, 1),0);
-			c2 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3( 1,-1,-1),0);
-			c3 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3(-1,-1, 1),0);
-			c4 = texelFetch(mapdata,ivec3(vec3(wallXa,y,wallYa)*lmapsz)+ivec3(-1,-1,-1),0);
-		}
-	}
-	else{
-		if(ang.z<0.0){
-			t  = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 0, 0, lmapsz),0);
-		  	e1 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 1, 0, lmapsz),0);
-			e2 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3(-1, 0, lmapsz),0);
-			e3 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 0, 1, lmapsz),0);
-			e4 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 0,-1, lmapsz),0);
-			c1 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 1, 1, lmapsz),0);
-			c2 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 1,-1, lmapsz),0);
-			c3 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3(-1, 1, lmapsz),0);
-			c4 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3(-1,-1, lmapsz),0);
-		}
-		else{
-			t  = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 0, 0,-1),0);
-		  	e1 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 1, 0,-1),0);
-			e2 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3(-1, 0,-1),0);
-			e3 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 0, 1,-1),0);
-			e4 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 0,-1,-1),0);
-			c1 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 1, 1,-1),0);
-			c2 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3( 1,-1,-1),0);
-			c3 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3(-1, 1,-1),0);
-			c4 = texelFetch(mapdata,ivec3(vec3(wallXa,wallYa,z)*lmapsz)+ivec3(-1,-1,-1),0);
-		}
-	} 
-    e1 *= fract(wallX*lmapsz);
-    e2 *= 1.0-fract(wallX*lmapsz);
-    e3 *= fract(wallY*lmapsz);
-    e4 *= 1.0-fract(wallY*lmapsz);
-    c1 *= clamp(1.0-distance(vec2(1.0,1.0),vec2(fract(wallX*lmapsz),fract(wallY*lmapsz))),0.0,1.0);
-    c2 *= clamp(1.0-distance(vec2(1.0,0.0),vec2(fract(wallX*lmapsz),fract(wallY*lmapsz))),0.0,1.0);
-    c3 *= clamp(1.0-distance(vec2(0.0,1.0),vec2(fract(wallX*lmapsz),fract(wallY*lmapsz))),0.0,1.0);
-    c4 *= clamp(1.0-distance(vec2(0.0,0.0),vec2(fract(wallX*lmapsz),fract(wallY*lmapsz))),0.0,1.0);
-	return (c1.rgb+c2.rgb+c3.rgb+c4.rgb+e1.rgb+e2.rgb+e3.rgb+e4.rgb+t.rgb)/2.0 * (1.0-revertnoise(vec2(fract(wallX*lmapsz),fract(wallY*lmapsz))));
-}
-
-void lightEffect(){
-	if(fog.a!=0.0){
-		fog.rgb /= fog.a;
-	}
-	fog.rgb *= FragColor.rgb;
-	FragColor.rgb = mix(FragColor.rgb,fog.rgb,fog.a);
-}
+float sphDensity( vec3 ro, vec3 rd, float rad)
+{
+    float ndbuffer = 1000.0/rad;
+    vec3  rc = ro/rad;
 	
-void main(){
+    float b = dot(rd,rc);
+    float c = dot(rc,rc) - 1.0;
+    float h = b*b - c;
+    if( h<0.0 ) return 0.0;
+    h = sqrt( h );
+    float t1 = -b - h;
+    float t2 = -b + h;
 
+    if( t2<0.0 || t1>ndbuffer ) return 0.0;
+    t1 = max( t1, 0.0 );
+    t2 = min( t2, ndbuffer );
+
+    float i1 = -(c*t1 + b*t1*t1 + t1*t1*t1/3.0);
+    float i2 = -(c*t2 + b*t2*t2 + t2*t2*t2/3.0);
+    return (i2-i1)*(3.0/4.0);
+}
+
+float iBox(vec3 ro,vec3 rd,vec3 boxSize){
+    vec3 m = 1.0/rd;
+    vec3 n = m*ro;
+    vec3 k = abs(m)*boxSize;
+    vec3 t1 = -n - k;
+    vec3 t2 = -n + k;
+    float tN = max( max( t1.x, t1.y ), t1.z );
+    float tF = min( min( t2.x, t2.y ), t2.z );
+    if( tN>tF || tF<0.0) return -1.0;
+    if(tN<tF){
+        return tN;
+    }
+    else{
+        return tF;
+    }
+}
+
+void main(){
 	float pixelOffsetY = fov.y * ((gl_FragCoord.y * 2.0 / reso.y) - 1);
 	float pixelOffsetX = fov.x * ((gl_FragCoord.x * 2.0 / reso.x) - 1);
 
@@ -373,42 +316,39 @@ void main(){
 	FragColor.a = 1.0;
 	vec3 pos = Pos;
 	float reflectP = 1.0;
-
-    x = pos.x;
-    y = pos.y;
-    z = pos.z;
-
+	fog = vec3(1.0);
+	
 	deltaX = abs(1 / ang.x);
 	deltaY = abs(1 / ang.y);
 	deltaZ = abs(1 / ang.z);
 
 	if(ang.x < 0){
 		stepX = -1;
-		sideX = fract(x) * deltaX;
+		sideX = fract(pos.x) * deltaX;
 	}
 	else{
 		stepX = 1;
-		sideX = (int(x) + 1.0 - x) * deltaX;
+		sideX = (int(pos.x) + 1.0 - pos.x) * deltaX;
 	}
 	if(ang.y < 0){
 		stepY = -1;
-		sideY = fract(y) * deltaY;
+		sideY = fract(pos.y) * deltaY;
 	}
 	else{
 		stepY = 1;
-		sideY = (int(y) + 1.0 - y) * deltaY;
+		sideY = (int(pos.y) + 1.0 - pos.y) * deltaY;
 	}
 	if(ang.z < 0){
 		stepZ = -1;
-		sideZ = fract(z) * deltaZ;
+		sideZ = fract(pos.z) * deltaZ;
 	}
 	else{
 		stepZ = 1;
-		sideZ = (int(z) + 1.0 - z) * deltaZ;
+		sideZ = (int(pos.z) + 1.0 - pos.z) * deltaZ;
 	}
-	x = int(x);
-	y = int(y);
-	z = int(z);
+	x = int(pos.x);
+	y = int(pos.y);
+	z = int(pos.z);
 	if(sideX < sideY){
         if(sideX < sideZ){
 			x += stepX;
@@ -431,1504 +371,491 @@ void main(){
 		sideZ += deltaZ;
 		side = 2;
     }
+
     for(int i = 0;i < 64;i++){
         vec4 block = texelFetch(map,ivec3(x,y,z),0);
         if(block[0] > 0.0){
-			if(side == 0){
-				wallXa = pos.y + (sideX - deltaX) * ang.y;
-				wallYa = pos.z + (sideX - deltaX) * ang.z;
+			int bside;
+			switch(side){
+			case 0:
+				awall.x = pos.y + (sideX - deltaX) * ang.y;
+				awall.y = pos.z + (sideX - deltaX) * ang.z;
+				if(ang.x > 0.0){
+					bside = 0;
+				}
+				else{
+					bside = 1;
+				}
+				break;
+			case 1:
+				awall.x = pos.x + (sideY - deltaY) * ang.x;
+				awall.y = pos.z + (sideY - deltaY) * ang.z;
+				if(ang.y > 0.0){
+					bside = 2;
+				}
+				else{
+					bside = 3;
+				}
+				break;
+			case 2:
+				awall.x = pos.x + (sideZ - deltaZ) * ang.x;
+				awall.y = pos.y + (sideZ - deltaZ) * ang.y;
+				if(ang.z > 0.0){
+					bside = 4;
+				}
+				else{
+					bside = 5;
+				}
+				break;
 			}
-			else if(side == 1){
-				wallXa = pos.x + (sideY - deltaY) * ang.x;
-				wallYa = pos.z + (sideY - deltaY) * ang.z;
+			wall = fract(awall);
+			block[0] *= 255;
+			if(state / 4 % 2 == 1){
+				if(wall.x < 0.02 || wall.y < 0.02 || wall.x > 0.98 || wall.y > 0.98){
+					FragColor.rgb = vec3(random(block[0]),random(block[0]+0.1),random(block[0]+0.2));
+					return;
+				}
+				switch(int(block[0])){
+				case 9:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iSphere(spos-mtdt.xyz,ang,mtdt.a);
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x > 0.0 && spos.y > 0.0 && spos.z > 0.0 && spos.x < 1.0 && spos.y < 1.0 && spos.z < 1.0){
+							FragColor.rgb = block.gba;
+							return;
+						}
+					}
+					break;
+				}
+				case 10:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iSphere(spos-mtdt.xyz,ang,mtdt.a);
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x > 0.0 && spos.y > 0.0 && spos.z > 0.0 && spos.x < 1.0 && spos.y < 1.0 && spos.z < 1.0){
+							ang = refract(ang,normalize(spos-mtdt.xyz),0.6591349);
+							vec3 apos;
+							apos.x = x + spos.x;
+							apos.y = y + spos.y;
+							apos.z = z + spos.z;
+							deltaX = abs(1.0 / ang.x);
+							deltaY = abs(1.0 / ang.y);
+							deltaZ = abs(1.0 / ang.z);
+							x = floor(apos.x);
+							y = floor(apos.y);
+							z = floor(apos.z);
+							pos = apos;
+							if(ang.x < 0){
+								stepX = -1;
+								sideX = fract(apos.x) * deltaX;
+							}
+							else{
+								stepX = 1;
+								sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
+							}
+							if(ang.y < 0){
+								stepY = -1;	
+								sideY = fract(apos.y) * deltaY;
+							}
+							else{
+								stepY = 1;
+								sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
+							}
+							if(ang.z < 0){
+								stepZ = -1;
+								sideZ = fract(apos.z) * deltaZ;
+							}
+							else{
+								stepZ = 1;
+								sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
+							}
+							spos += ang * sphDensity(spos,ang,mtdt.a);
+							ang = refract(ang,normalize(spos-mtdt.xyz),0.6591349);
+							apos.x = x + spos.x;
+							apos.y = y + spos.y;
+							apos.z = z + spos.z;
+							deltaX = abs(1.0 / ang.x);
+							deltaY = abs(1.0 / ang.y);
+							deltaZ = abs(1.0 / ang.z);
+							x = floor(apos.x);
+							y = floor(apos.y);
+							z = floor(apos.z);
+							pos = apos;
+							if(ang.x < 0){
+								stepX = -1;
+								sideX = fract(apos.x) * deltaX;
+							}
+							else{
+								stepX = 1;
+								sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
+							}
+							if(ang.y < 0){
+								stepY = -1;	
+								sideY = fract(apos.y) * deltaY;
+							}
+							else{
+								stepY = 1;
+								sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
+							}
+							if(ang.z < 0){
+								stepZ = -1;
+								sideZ = fract(apos.z) * deltaZ;
+							}
+							else{
+								stepZ = 1;
+								sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
+							}
+							fog = block.gba;
+						}
+					}
+					break;
+				}
+				case 11:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iSphere(spos-mtdt.xyz,ang,mtdt.a);
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x > 0.0 && spos.y > 0.0 && spos.z > 0.0 && spos.x < 1.0 && spos.y < 1.0 && spos.z < 1.0){
+							ang = reflect(ang,normalize(spos-mtdt.xyz));
+							fog = block.gba;
+							vec3 apos;
+							apos.x = x + spos.x;
+							apos.y = y + spos.y;
+							apos.z = z + spos.z;
+							deltaX = abs(1.0 / ang.x);
+							deltaY = abs(1.0 / ang.y);
+							deltaZ = abs(1.0 / ang.z);
+							x = floor(apos.x);
+							y = floor(apos.y);
+							z = floor(apos.z);
+							pos = apos;
+							if(ang.x < 0){
+								stepX = -1;
+								sideX = fract(apos.x) * deltaX;
+							}
+							else{
+								stepX = 1;
+								sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
+							}
+							if(ang.y < 0){
+								stepY = -1;	
+								sideY = fract(apos.y) * deltaY;
+							}
+							else{
+								stepY = 1;
+								sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
+							}
+							if(ang.z < 0){
+								stepZ = -1;
+								sideZ = fract(apos.z) * deltaZ;
+							}
+							else{
+								stepZ = 1;
+								sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
+							}
+						}
+					}
+					break;
+				}
+				case 12:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iBox(spos-mtdt.xyz,ang,vec3(mtdt.a));
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x>mtdt.x-mtdt.a-0.0001&&spos.x<mtdt.x-mtdt.a+0.0001){
+							if(fract(floor(spos.y/mtdt.a*4.0)/2.0+floor(spos.z/mtdt.a*4.0)/2.0) < 0.5){
+								FragColor.rgb = block.gba * 0.8;
+							}
+							else{
+								FragColor.rgb = block.gba * 1.2;
+							}
+						}
+						if(spos.y>mtdt.y-mtdt.a-0.0001&&spos.y<mtdt.y-mtdt.a+0.0001){
+							if(fract(floor(spos.x/mtdt.a*4.0)/2.0+floor(spos.z/mtdt.a*4.0)/2.0) < 0.5){
+								FragColor.rgb = block.gba * 0.8;
+							}
+							else{
+								FragColor.rgb = block.gba * 1.2;
+							}
+						}
+						if(spos.z>mtdt.z-mtdt.a-0.0001&&spos.z<mtdt.z-mtdt.a+0.0001){
+							if(fract(floor(spos.x/mtdt.a*4.0)/2.0+floor(spos.y/mtdt.a*4.0)/2.0) < 0.5){
+								FragColor.rgb = block.gba * 0.8;
+							}
+							else{
+								FragColor.rgb = block.gba * 1.2;
+							}
+						}
+						if(spos.x>mtdt.x+mtdt.a-0.0001&&spos.x<mtdt.x+mtdt.a+0.0001){
+							if(fract(floor(spos.y/mtdt.a*4.0)/2.0+floor(spos.z/mtdt.a*4.0)/2.0) < 0.5){
+								FragColor.rgb = block.gba * 0.8;
+							}
+							else{
+								FragColor.rgb = block.gba * 1.2;
+							}
+						}
+						if(spos.y>mtdt.y+mtdt.a-0.0001&&spos.y<mtdt.y+mtdt.a+0.0001){
+							if(fract(floor(spos.x/mtdt.a*4.0)/2.0+floor(spos.z/mtdt.a*4.0)/2.0) < 0.5){
+								FragColor.rgb = block.gba * 0.8;
+							}
+							else{
+								FragColor.rgb = block.gba * 1.2;
+							}
+						}
+						if(spos.z>mtdt.z+mtdt.a-0.0001&&spos.z<mtdt.z+mtdt.a+0.0001){
+							if(fract(floor(spos.x/mtdt.a*4.0)/2.0+floor(spos.y/mtdt.a*4.0)/2.0) < 0.5){
+								FragColor.rgb = block.gba * 0.8;
+							}
+							else{
+								FragColor.rgb = block.gba * 1.2;
+							}
+						}
+						return;
+					}
+					break;
+				}
+				default:
+					FragColor.rgb = block.gba;
+					FragColor.rgb /= fog;
+					return;
+				}
 			}
 			else{
-				wallXa = pos.x + (sideZ - deltaZ) * ang.x;
-				wallYa = pos.y + (sideZ - deltaZ) * ang.y;
-			} 
-			wallX = fract(wallXa);
-			wallY = fract(wallYa);
-			block[0] *= 255;
-			float pattern;
-			if(state / 4 % 2 == 1&&(wallX < 0.02 || wallY < 0.02 || wallX > 0.98 || wallY > 0.98)){
-				FragColor.rgb = vec3(random(block[0]),random(block[0]+0.1),random(block[0]+0.2));
-				return;
-			}
-			switch(int(block[0])){
-			case 1:	
-				for(int i2 = 0;i2 < 15.0;i2++){
-					if(sideX < sideY){
-			            if(sideX < sideZ){
-							x += stepX;
-							sideX += deltaX;
-							side = 0;
-			            }
-			            else{
-							z += stepZ;
-							sideZ += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(sideY < sideZ){
-						y += stepY;
-						sideY += deltaY;
-						side = 1;
-			        }
-			        else{
-						z += stepZ;	
-						sideZ += deltaZ;
-						side = 2;
-			        }
+				switch(int(block[0])){
+				case 1:{
+					uint pointer = texelFetch(lpmap,ivec3(x*6+bside,y,z),0).x;
+					FragColor.rgb = normalize(block.gba);
+					return;
 				}
-				i+=15;
-				break;
-			case 2:{
-				vec3 tp = vec3(x,y,z);
-				vec3 ts = vec3(sideX,sideY,sideZ);
-				for(int i2 = 0;i2 < 5;i2++){
-			        if(ts.x < ts.y){
-			            if(ts.x < ts.z){
-							tp.x += stepX;
-							ts.x += deltaX;
-			            }
-			            else{
-							tp.z += stepZ;
-							ts.z += deltaZ;
-			            }
-			        }
-			        else if(ts.y < ts.z){
-						tp.y += stepY;
-						ts.y += deltaY;
-			        }
-			        else{
-						tp.z += stepZ;
-						ts.z += deltaZ;
-			        }
-					if(texelFetch(map,ivec3(tp),0).x*255!= 2.0){	
-						//FragColor.r += float(i2)/5.0;
-						break;
-					}
-				}
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = tr.z - sin((tr.x+x+float(tick)*0.01)*5.0)/45.0 - 0.5;
-					if(dst < 0.0001){
-						float f1 = cos((tr.x+x+float(tick)*0.01)*5.0)/45.0;
-						ang.xz = reflect(ang.xz,normalize(vec2(f1,-1)));
-						for(;;){
-							dst = min(min(min(tr.x,1.0-tr.x),min(tr.y,1.0-tr.y)),min(tr.z,1.0-tr.z));
-							if(dst < 0.001){
-								break;
+				case 9:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iSphere(spos-mtdt.xyz,ang,mtdt.a);
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x > 0.0 && spos.y > 0.0 && spos.z > 0.0 && spos.x < 1.0 && spos.y < 1.0 && spos.z < 1.0){
+							float xcpos = (atan(spos.x-mtdt.x,spos.y-mtdt.y)+PI)/PI;
+							float minz,maxz;
+							maxz = mtdt.z+mtdt.a;
+							minz = mtdt.z-mtdt.a;
+							if(maxz > 1.0){
+								maxz = 1.0;
 							}
-							tr += ang * dst;
-						}
-						x = x+tr.x;
-					    y = y+tr.y;
-					    z = z+tr.z;
-						pos.x = x;
-						pos.y = y;	
-						pos.z = z;
-						reinitializeRay();
-						break;
-					}
-					tr += ang * dst;
-				}
-				break;
-				}
-			case 3:{
-				vec2 rpos;
-				rpos.x = cos(0.25*3.14159) * wallXa - sin(0.25*3.14159) * wallYa;
-    			rpos.y = sin(0.25*3.14159) * wallXa + cos(0.25*3.14159) * wallYa;
-				rpos = floor(rpos*5.0);
-				vec3 bldt;
-				if(mod(rpos.x+rpos.y,2.0)==1.0){
-					bldt = vec3(0.5,0.7,0.8);
-				}
-				else{
-					bldt = vec3(0.2,0.4,0.7);
-				}
-				FragColor.rgb += blockLight() * bldt;
-				lightEffect();
-				return;
-				}
-			case 4:{
-				vec3 tr = getSubCoords();
-				float r = iSphere(tr-0.5,ang,0.4);
-				if(r > 0.0){
-					tr += ang * r;
-					FragColor.rgb = texelFetch(mapdata,ivec3(vec3(x+tr.x,y+tr.y,z+tr.z)*lmapsz),0).rgb;
-					lightEffect();
-					return;
-				}	
-				break;
-			}
-			case 5:{
-				vec3 tr = getSubCoords();
-				float d = iTorus(tr,ang,vec2(0.1,0.3));
-				if(d > 0.0){
-					FragColor.r = 1.0;
-					return;
-				}
-				break;
-			}
-			case 6:{
-				vec4 exdt = texelFetch(mapdata,ivec3(x,y,z),0);
-				float s = exdt.a*255.0;
-				vec2 rpos = vec2(wallXa,wallYa)*(exdt.a*255.0);
-				vec2 m = floor(rpos)+0.5;
-				float d = 1.0-max(abs(rpos.x-m.x),abs(rpos.y-m.y));
-				vec2 s3 = fract(rpos);
-                vec2 s2 = floor(rpos);
-				float r = floor(random(s2)*3.0) + exdt.r;
-	            FragColor.rgb += vec3(random(r),random(r+0.01),random(r+0.02)) * blockLight();
-				if(s3.x < 0.025 || s3.x > 0.975 || s3.y < 0.025 || s3.y > 0.975){
-					FragColor.rgb /= 2.0;
-				}
-				lightEffect();
-				return;
-			}
-			case 7:
-				float X,Y;
-				switch(side){
-				case 0:
-					X = (y + wallX) / 1024 + 0.2;
-					Y = (z + wallY) / 1024 + 0.4;
-					break;
-				case 1:
-					X = (x + wallX) / 1024 + 0.2;
-					Y = (z + wallY) / 1024 + 0.4;
-					break;
-				case 2:
-					X = (x + wallX) / 1024 + 0.2;
-					Y = (y + wallY) / 1024 + 0.4;
-					break;
-				}
-				float VX = 0;
-				float VY = 0;
-				int itt = 0;
-				while(VX + VY < 512 && itt < 256){
-					float xtemp = VX*VX-VY*VY+X;
-					VY = 2*VX*VY+Y;
-					VX = xtemp;
-					itt++;
-				}
-				FragColor.rgb = (float(itt) / 256) * blockLight();
-				return;
-			case 8:{
-				vec3 tr = getSubCoords();
-				float s = iSphere(tr-0.5,ang,0.4);
-				if(s != -1.0){
-					tr += ang * s;
-					FragColor.rgb += block.gba*10.0 * pow(-dot(tr-0.5,ang),8.0) * 1000.0;
-				}
-				break;
-				}
-			case 9:{
-				vec3 tr = getSubCoords()+vec3(x,y,z); 
-				if(sideX < sideY){
-		            if(sideX < sideZ){
-						x += stepX;
-						sideX += deltaX;
-						side = 0;
-		            }
-		            else{
-						z += stepZ;
-						sideZ += deltaZ;
-						side = 2;
-		            }
-		        }
-		        else if(sideY < sideZ){
-					y += stepY;
-					sideY += deltaY;
-					side = 1;
-		        }
-		        else{
-					z += stepZ;
-					sideZ += deltaZ;
-					side = 2;
-		        }
-				if(side == 0){
-					wallX = fract(pos.y + (sideX - deltaX) * ang.y);
-					wallY = fract(pos.z + (sideX - deltaX) * ang.z);
-				}
-				else if(side == 1){
-					wallX = fract(pos.x + (sideY - deltaY) * ang.x);
-					wallY = fract(pos.z + (sideY - deltaY) * ang.z);
-				}
-				else{
-					wallX = fract(pos.x + (sideZ - deltaZ) * ang.x);
-					wallY = fract(pos.y + (sideZ - deltaZ) * ang.y);
-				} 
-				vec3 tr2 = getSubCoords()+vec3(x,y,z);
-				float d = distance(tr,tr2);
-				fog.a += 0.05 * d;
-				fog.rgb += block.gba * d * clamp(1.0-fog.a,0.0,1.0) * 0.1;
-				continue;
-				}
-			case 10:{
-				vec3 tr = getSubCoords();
-				vec4 angle = texelFetch(mapdata,ivec3(x,y,z),0);
-				if(tr.x < angle.w-angle.x||tr.y < angle.w-angle.y||tr.z < angle.w-angle.z){
-					FragColor.rgb += blockLight();
-					return;
-				}
-				float p = iPlane(tr,ang,vec4(normalize(angle.xyz),-angle.w));
-				if(p>0.0){
-					tr += ang * p;
-					side = 2;
-					wallX = tr.x;
-					wallY = tr.y;
-					FragColor.rgb += blockLight();
-					return;
-				}
-				break;
-				}
-			case 11:{
-				vec3 btr = getSubCoords()*30.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-         		while(tr.x >= 0.0 && tr.x <= 30.0-stepX && tr.y >=0.0 && tr.y <= 30.0-stepY && tr.z >= 0.0 && tr.z <= 30.0-stepZ){   
-					if(tr.y == 20.0){
-						FragColor.rgb = vec3(1.0);	
-						return;
-					}
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-          		}
-				break;
-				}
-			case 12:{
-				vec3 btr = getSubCoords()*8.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-                while(tr.x >= 0.0 && tr.x <= 8.0-stepX && tr.y >=0.0 && tr.y <= 8.0-stepY && tr.z >= 0.0 && tr.z <= 8.0-stepZ){   
-					if(tr.x > 2.0 && tr.x < 5.0 && tr.y > 2.0 && tr.y < 5.0){
-						vec4 bldt = texelFetch(map,ivec3(x,y,z),0);
-						FragColor.rgb += blockLight() * bldt.gba;
-						lightEffect();
-						return;
-					} 
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-                }
-                break;
-			}
-			case 13:
-				switch(side){
-				case 0:{
-					if(ang.x < 0){
-						x++;
-					}
-					ang.x = -ang.x;
-					y = pos.y + (sideX - deltaX) * ang.y;
-					z = pos.z + (sideX - deltaX) * ang.z;
-					break;
-					}
-				case 1:
-					if(ang.y < 0){
-						y++;
-					}
-					ang.y = -ang.y;
-					x = pos.x + (sideY - deltaY) * ang.x;
-					z = pos.z + (sideY - deltaY) * ang.z;
-					break;
-				case 2:
-					if(ang.z < 0){
-						z++;
-					}
-					ang.z = -ang.z;
-					x = pos.x + (sideZ - deltaZ) * ang.x;
-					y = pos.y + (sideZ - deltaZ) * ang.y;
-					break;
-				}
-				if(ang.x < 0){
-					stepX = -1;
-					sideX = fract(x) * deltaX;
-				}
-				else{
-					stepX = 1;
-					sideX = (int(x) + 1.0 - x) * deltaX;
-				}
-				if(ang.y < 0){
-					stepY = -1;
-					sideY = fract(y) * deltaY;
-				}
-				else{
-					stepY = 1;
-					sideY = (int(y) + 1.0 - y) * deltaY;
-				}
-				if(ang.z < 0){
-					stepZ = -1;
-					sideZ = fract(z) * deltaZ;
-				}
-				else{
-					stepZ = 1;
-					sideZ = (int(z) + 1.0 - z) * deltaZ;
-				}
-				pos.x = x;
-				pos.y = y;
-				pos.z = z;
-				break;
-			case 14:
-				vec4 Block = texelFetch(epicTexture,ivec2(wallX*1024,wallY*1024),0);
-				FragColor.rgb += Block.rgb * blockLight();
-				lightEffect();
-				return;
-			case 15:{
-				vec4 Block = texelFetch(epicTexture,ivec2(wallX*1024+1024,wallY*1024),0);
-				FragColor.rgb += Block.rgb * blockLight();
-				lightEffect();
-				return;
-				}
-			case 16:
-				break;
-			case 17:{
-				vec3 tr = getSubCoords();
-				float dst = iTorus(tr-vec3(0.5,0.5,0.1),ang,vec2(0.3,0.1));
-				if(dst > 0.0){
-					tr += ang * dst;
-					if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-						FragColor.rgb = normalize(tr);
-						lightEffect();
-						return;
-					}
-				}
-				break;
-			}
-			case 18:{
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = distance(tr.xy,vec2(0.5)) - 0.45 + cos(atan(tr.x-0.5,tr.y-0.5)*20.0) / 40.0;
-					if(dst < 0.001){
-						FragColor.rgb = (0.7 - vec3(cos(atan(tr.x-0.5,tr.y-0.5)*20.0)) / 5.0);
-						vec3 e1 = texelFetch(map,ivec3(x+1.0,y,z),0).gba * tr.x;
-						vec3 e2 = texelFetch(map,ivec3(x+1.0,y,z+1.0),0).gba * tr.x;
-						vec3 e3 = texelFetch(map,ivec3(x+1.0,y,z-1.0),0).gba * tr.x;
-						vec3 e4 = texelFetch(map,ivec3(x-1.0,y,z),0).gba * (1.0-tr.x);
-						vec3 e5 = texelFetch(map,ivec3(x-1.0,y,z+1.0),0).gba * (1.0-tr.x);
-						vec3 e6 = texelFetch(map,ivec3(x-1.0,y,z-1.0),0).gba * (1.0-tr.x);
-						vec3 e7 = texelFetch(map,ivec3(x,y+1.0,z),0).gba * tr.y;
-						vec3 e8 = texelFetch(map,ivec3(x,y+1.0,z+1.0),0).gba * tr.y;
-						vec3 e9 = texelFetch(map,ivec3(x,y+1.0,z-1.0),0).gba * tr.y;
-						vec3 e10 = texelFetch(map,ivec3(x,y-1.0,z),0).gba * (1.0-tr.y);
-						vec3 e11 = texelFetch(map,ivec3(x,y-1.0,z+1.0),0).gba * (1.0-tr.y);
-						vec3 e12 = texelFetch(map,ivec3(x,y-1.0,z-1.0),0).gba * (1.0-tr.y);
-						e2 *= tr.z;
-						e3 *= 1.0-tr.z;
-						e5 *= tr.z;
-						e6 *= 1.0-tr.z;
-						e8 *= tr.z;
-						e9 *= 1.0-tr.z;
-						e11 *= tr.z;
-						e12 *= 1.0-tr.z;
-						FragColor.rgb *= (e1+e2+e3+e4+e5+e6+e7+e8+e9+e10+e11+e12)/3.0;
-						lightEffect();
-						return;
-					}
-					tr += ang * dst;
-				}
-				break;
-			}
-			case 19:{
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = distance(tr.xz,vec2(0.5)) - 0.5;
-					if(dst < 0.001){
-						FragColor.rgb = vec3(tnoise(vec2(atan(tr.x-0.5,tr.z-0.5),tr.y+y),100.0));
-						lightEffect();
-						return;
-					}
-					tr += ang * dst;
-				}
-				break;
-			}
-			case 20:
-				vec3 btr = getSubCoords()*16.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-				vec4 bdt = texelFetch(mapdata,ivec3(x,y,z),0);
-				while(tr.x >= 0.0 && tr.x <= 16.0-stepX && tr.y >=0.0 && tr.y <= 16.0-stepY && tr.z >= 0.0 && tr.z < 16.0-stepZ){ 
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-					float h = texelFetch(chessModels,ivec3(tr.xy,tr.z+bdt.a*4096),0).x;
-					if(h > 0.0){
-						switch(side){
-						case 0:
-							wallX = tr.y/16.0;
-							wallY = tr.z/16.0;
-							break;
-						case 1:
-							wallX = tr.x/16.0;
-							wallY = tr.z/16.0;
-							break;
-						case 2:
-							wallX = tr.x/16.0;
-							wallY = tr.y/16.0;
-							break;
-						}
-						switch(int(h*255.0)){
-						case 1:
-							FragColor.rgb = blockLight() * bdt.rgb;
-							return;
-						case 2:
-							FragColor.rgb = blockLight() * (1.0-bdt.rgb);
+							if(minz < 0.0){
+								minz = 0.0;
+							}
+							float rspos = spos.z - minz;
+							rspos /= maxz;
+							rspos *= 2.0;
+							uint pointer = texelFetch(lpmap,ivec3(x*6+int(xcpos)+int(rspos)*2,y,z),0).x;
+							FragColor.rgb = block.gba * texelFetch(lmap,ivec3(fract(xcpos)*lmapsz,fract(rspos)*lmapsz,pointer),0).rgb * 65535.0 / float(brightness+1);
 							return;
 						}
 					}
-				}
-				break;
-			case 21:{
-				vec3 tr = getSubCoords();
-				vec2 glscrd;
-				float d;
-				d = iPlane(tr,ang,vec4(1.0,0.0,0.0,-0.5));
-				tr += ang * d;
-				glscrd = tr.yz+vec2(x,z);
-				if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					vec2 fp = glscrd;
-					fog.a += 0.1;
-					fog.rgb += block.gba;
-				}
-				break;
-			}
-			case 22:{
-				vec3 btr = getSubCoords()*8.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-				vec4 bdt = texelFetch(mapdata,ivec3(x,y,z),0);
-				while(tr.x >= 0.0 && tr.x <= 8.0-stepX && tr.y >=0.0 && tr.y <= 8.0-stepY && tr.z >= 0.0 && tr.z <= 8.0){ 
-					float h = texelFetch(models8,ivec3(tr.xy,tr.z+bdt.a*512),0).x;
-					if(h > 0.0){
-						switch(side){
-						case 0:
-							wallX = tr.y/8.0;
-							wallY = tr.z/8.0;
-							break;
-						case 1:
-							wallX = tr.x/8.0;
-							wallY = tr.z/8.0;
-							break;
-						case 2:
-							wallX = tr.x/8.0;
-							wallY = tr.y/8.0;
-							break;
-						}
-						switch(int(h*255.0)){
-						case 1:
-							FragColor.rgb = blockLight() * bdt.rgb;
-							return;
-						case 2:
-							FragColor.rgb = blockLight() * (1.0-bdt.rgb);
-							return;
-						}
-					}
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-				}
-				break;
-			}
-			case 23:{
-				vec2 tr = floor(vec2(wallXa*16.0,wallYa*16.0));
-				vec3 col = vec3(random(tr),random(tr+0.1),random(tr+0.2)) * vec3(0.5,0.75,0.0);
-				col += 0.25;
-				col = pow(col,vec3(2.0));
-				FragColor.rgb += blockLight() * col;
-				lightEffect();
-				return;
-			}
-			case 24:
-				break;
-			case 25:
-				break;
-			case 26:{
-				vec3 tr = getSubCoords();	
-				vec4 bldt = texelFetch(mapdata,ivec3(x,y,z),0);
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					vec3 tp = fract(tr*4.0);
-					vec2 ct = vec2(random(floor(tr.xy*4.0)),random(floor(tr.xy*4.0)))*0.5+0.25;
-					float dst = distance(tp.xy,ct)-0.2;
-					if(dst<0.001){
-						wallX = tr.x;
-						wallY = tr.y;
-						ang.xy = tp.xy-ct;
-						side = 0;
-						vec3 b1 = blockLight();
-						side = 1;
-						vec3 b2 = blockLight();
-						vec2 v1 = abs(ct-tp.xy);
-						float v2 = v1.x+v1.y;
-						v1 /= v2;
-						b1 *= v1.x;
-						b2 *= v1.y;
-						FragColor.rgb += (b1+b2) * bldt.rgb;
-						return;
-					}
-					tr += ang * dst * 0.25;
-				}
-				break;
-			}
-			case 27:{
-				vec4 bldt = texelFetch(mapdata,ivec3(x,y,z),0);
-				FragColor.rgb += clamp(1.0-pow(abs(wallY-0.5),2.0)*3.0,0.0,1.0) * bldt.rgb;
-				FragColor.rgb += blockLight() * 0.5;
-				return;
-			}
-			case 28:{
-				vec4 bldt = texelFetch(map,ivec3(x,y,z),0);
-				FragColor.rgb += blockLight() * bldt.gba;
-				lightEffect();
-				return;
-			}
-			case 29:
-				pattern = clamp(tnoise(vec2(wallXa,wallYa)*0.2,200) / 80.0 + 0.9,0.0,1.0);
-				FragColor.rgb += vec3(1.0,0.1,0.1) * blockLight() * pattern;
-				return;
-			case 30:{
-				vec3 tr = getSubCoords();
-				if(tr.x < tr.y){
-					pattern = clamp(tnoise(vec2(wallXa,wallYa)*0.2,200) / 80.0 + 0.9,0.0,1.0);
-					FragColor.rgb += blockLight();
-					lightEffect();
-					return;
-				}
-				float p = iPlane(tr,ang,vec4(1.0,-1.0,0.0,0.0));
-				if(p>0.0){
-					tr += ang * p;
-					if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-						vec3 t,t2,e1,e2,e3,e4,c1,c2,c3,c4;
-						t  = texelFetch(map,ivec3(x+1,y,z),0).gba;
-						t2 = texelFetch(map,ivec3(x,y-1,z),0).gba;	
-					    e1 = texelFetch(map,ivec3(x+1,y,z+1),0).gba;
-						e2 = texelFetch(map,ivec3(x+1,y,z-1),0).gba;
-						e3 = texelFetch(map,ivec3(x,y-1,z+1),0).gba;
-						e4 = texelFetch(map,ivec3(x,y-1,z-1),0).gba;
-						t  *= tr.x;
-						t2 *= 1.0-tr.y;
-					    e1 *= clamp(1.0-distance(vec2(1.0,1.0),tr.xz),0.0,1.0);
-					    e2 *= clamp(1.0-distance(vec2(1.0,0.0),tr.xz),0.0,1.0);
-					    e3 *= clamp(1.0-distance(vec2(0.0,1.0),tr.yz),0.0,1.0);
-					    e4 *= clamp(1.0-distance(vec2(0.0,0.0),tr.yz),0.0,1.0);
-						switch(int(texelFetch(map,ivec3(x+1,y+1,z),0).x*255.0)){
-						case 0:
-						case 30:
-							break;
-						default:
-							t /= 2.0;
-							e1/= 2.0;
-							e2/= 2.0;
-							break;
-						}
-						switch(int(texelFetch(map,ivec3(x-1,y-1,z),0).x*255.0)){
-						case 0:
-						case 30:
-							break;
-						default:
-							t2 /= 2.0;
-							e3/= 2.0;
-							e4/= 2.0;
-							break;
-						}
-						FragColor.rgb += (t+t2+e1+e2+e3+e4) * 1.425 * (1.0-revertnoise(tr.xz)*1.5);
-						lightEffect();
-						return;
-					}
-				}
-				break;
-			}
-			case 31:{
-				vec3 tr = getSubCoords();
-				if(tr.y < tr.x){
-					pattern = clamp(tnoise(vec2(wallXa,wallYa)*0.2,200) / 80.0 + 0.9,0.0,1.0);
-					FragColor.rgb += blockLight();
-					lightEffect();
-					return;
-				}
-				float p = iPlane(tr,ang,vec4(-1.0,1.0,0.0,0.0));
-				if(p>0.0){
-					tr += ang * p;
-					if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-						vec3 t,t2,e1,e2,e3,e4,c1,c2,c3,c4;
-						t  = texelFetch(map,ivec3(x,y+1,z),0).gba;
-						t2 = texelFetch(map,ivec3(x-1,y,z),0).gba;	
-					    e1 = texelFetch(map,ivec3(x,y+1,z+1),0).gba;
-						e2 = texelFetch(map,ivec3(x,y+1,z-1),0).gba;
-						e3 = texelFetch(map,ivec3(x-1,y,z+1),0).gba;
-						e4 = texelFetch(map,ivec3(x-1,y,z-1),0).gba;
-						t  *= tr.y;
-						t2 *= 1.0-tr.x;
-					    e1 *= clamp(1.0-distance(vec2(1.0,1.0),tr.yz),0.0,1.0);
-					    e2 *= clamp(1.0-distance(vec2(1.0,0.0),tr.yz),0.0,1.0);
-					    e3 *= clamp(1.0-distance(vec2(0.0,1.0),tr.xz),0.0,1.0);
-					    e4 *= clamp(1.0-distance(vec2(0.0,0.0),tr.xz),0.0,1.0);
-						switch(int(texelFetch(map,ivec3(x+1,y+1,z),0).x*255.0)){
-						case 0:
-						case 31:
-							break;
-						default:
-							t /= 2.0;
-							e1/= 2.0;
-							e2/= 2.0;
-							break;
-						}
-						switch(int(texelFetch(map,ivec3(x-1,y-1,z),0).x*255.0)){
-						case 0:
-						case 31:
-							break;
-						default:
-							t2 /= 2.0;
-							e3/= 2.0;
-							e4/= 2.0;
-							break;
-						}
-						FragColor.rgb += (t+t2+e1+e2+e3+e4) * 1.425 * (1.0-revertnoise(tr.xz)*1.5);
-						lightEffect();
-						return;
-					}
-				}
-				break;
-			}
-			case 32:{
-				vec3 tr = getSubCoords();
-				if(tr.x < tr.z){
-					pattern = clamp(tnoise(vec2(wallXa,wallYa)*0.2,200) / 80.0 + 0.9,0.0,1.0);
-					FragColor.rgb += blockLight();
-					lightEffect();
-					return;
-				}
-				float p = iPlane(tr,ang,vec4(1.0,-1.0,0.0,0.0));
-				if(p>0.0){
-					tr += ang * p;
-					if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-						vec3 t,t2,e1,e2,e3,e4,c1,c2,c3,c4;
-						t  = texelFetch(map,ivec3(x+1,y,z),0).gba;
-						t2 = texelFetch(map,ivec3(x,y,z-1),0).gba;	
-					    e1 = texelFetch(map,ivec3(x+1,y+1,z),0).gba;
-						e2 = texelFetch(map,ivec3(x+1,y-1,z),0).gba;
-						e3 = texelFetch(map,ivec3(x,y+1,z-1),0).gba;
-						e4 = texelFetch(map,ivec3(x,y-1,z-1),0).gba;
-						t  *= tr.x;
-						t2 *= 1.0-tr.z;
-					    e1 *= clamp(1.0-distance(vec2(1.0,1.0),tr.xy),0.0,1.0);
-					    e2 *= clamp(1.0-distance(vec2(1.0,0.0),tr.xy),0.0,1.0);
-					    e3 *= clamp(1.0-distance(vec2(0.0,1.0),tr.yz),0.0,1.0);
-					    e4 *= clamp(1.0-distance(vec2(0.0,0.0),tr.yz),0.0,1.0);
-						switch(int(texelFetch(map,ivec3(x+1,y,z+1),0).x*255.0)){
-						case 0:
-						case 32:
-							break;
-						default:
-							t /= 2.0;
-							e1/= 2.0;
-							e2/= 2.0;
-							break;
-						}
-						switch(int(texelFetch(map,ivec3(x-1,y,z-1),0).x*255.0)){
-						case 0:
-						case 32:
-							break;
-						default:
-							t2 /= 2.0;
-							e3/= 2.0;
-							e4/= 2.0;
-							break;
-						}
-						FragColor.rgb += (t+t2+e1+e2+e3+e4) * 1.425 * (1.0-revertnoise(tr.xz)*1.5);
-						lightEffect();
-						return;
-					}
-				}
-				break;
-			}
-			case 33:{
-				vec3 tr = getSubCoords();
-				if(tr.x > tr.z){
-					pattern = clamp(tnoise(vec2(wallXa,wallYa)*0.2,200) / 80.0 + 0.9,0.0,1.0);
-					FragColor.rgb += blockLight();
-					lightEffect();
-					return;
-				}
-				float p = iPlane(tr,ang,vec4(1.0,0.0,-1.0,0.0));
-				if(p>0.0){
-					tr += ang * p;
-					if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-						vec3 t,t2,e1,e2,e3,e4,c1,c2,c3,c4;
-						t  = texelFetch(map,ivec3(x,y,z+1),0).gba;
-						t2 = texelFetch(map,ivec3(x-1,y,z),0).gba;	
-					    e1 = texelFetch(map,ivec3(x,y+1,z+1),0).gba;
-						e2 = texelFetch(map,ivec3(x,y-1,z+1),0).gba;
-						e3 = texelFetch(map,ivec3(x-1,y+1,z),0).gba;
-						e4 = texelFetch(map,ivec3(x-1,y-1,z),0).gba;
-						t  *= tr.x;
-						t2 *= 1.0-tr.z;
-					    e1 *= clamp(1.0-distance(vec2(1.0,1.0),tr.xz),0.0,1.0);
-					    e2 *= clamp(1.0-distance(vec2(1.0,0.0),tr.xz),0.0,1.0);
-					    e3 *= clamp(1.0-distance(vec2(0.0,1.0),tr.xy),0.0,1.0);
-					    e4 *= clamp(1.0-distance(vec2(0.0,0.0),tr.xy),0.0,1.0);
-						switch(int(texelFetch(map,ivec3(x+1,y,z+1),0).x*255.0)){
-						case 0:
-						case 33:
-							break;
-						default:
-							t /= 2.0;
-							e1/= 2.0;
-							e2/= 2.0;
-							break;
-						}
-						switch(int(texelFetch(map,ivec3(x-1,y,z-1),0).x*255.0)){
-						case 0:
-						case 33:
-							break;
-						default:
-							t2 /= 2.0;
-							e3/= 2.0;
-							e4/= 2.0;
-							break;
-						}
-						FragColor.rgb += (t+t2+e1+e2+e3+e4) * 1.425 * (1.0-revertnoise(tr.xz)*1.5);
-						lightEffect();
-						return;
-					}
-				}
-				break;
-			}
-			case 34:{
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = tr.y - tr.z;
-					dst /= 2.0;
-					if(dst < 0.0001){
-						if(tr.x == 0.0 || tr.x == 1.0){
-							FragColor = texelFetch(spikes,ivec2(vec2(1.0-tr.z,tr.y) * 1024.0),0);
-						}
-						else if(tr.z == 1.0){
-							FragColor = texelFetch(epicTexture,ivec2(vec2(tr.x,tr.y) * 1024.0+ivec2(1024,0)),0);
-						}
-						else if(tr.y == 0.0){
-							FragColor = texelFetch(epicTexture,ivec2(vec2(tr.x,tr.z) * 1024.0+ivec2(1024,0)),0);
-						}	
-						else{
-							FragColor = texelFetch(epicTexture,ivec2(vec2((tr.z+tr.y)/2.0,tr.x) * 1024.0+ivec2(1024,0)),0);
-						}
-						return;
-					}
-					tr += ang * dst;
-				}
-				break;
-			}
-			case 35:{
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = tr.x - tr.z;
-					dst /= 2.0;
-					if(dst < 0.0001){
-						if(tr.y == 0.0 || tr.y == 1.0){
-							FragColor = texelFetch(spikes,ivec2(vec2(1.0-tr.z,tr.x) * 1024.0),0);
-						}
-						else if(tr.z == 1.0){
-							FragColor = texelFetch(epicTexture,ivec2(vec2(tr.x,tr.y) * 1024.0+ivec2(1024,0)),0);
-						}
-						else if(tr.x == 0.0){
-							FragColor = texelFetch(epicTexture,ivec2(vec2(tr.y,tr.z) * 1024.0+ivec2(1024,0)),0);
-						}	
-						else{
-							FragColor = texelFetch(epicTexture,ivec2(vec2((tr.z+tr.x)/2.0,tr.y) * 1024.0+ivec2(1024,0)),0);
-						}
-						return;
-					}
-					tr += ang * dst;
-				}
-				break;
-			}
-			case 45:
-				vec2 p = vec2(wallXa,wallYa) * 10.0;
-				vec2 fp = fract(p);
-				if(random(floor(p)) < 0.5){
-			        if(fp.x > 0.33 && fp.x < 0.67 && fp.y > 0.33 && fp.y < 0.67){       
-						FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x+1.0,p.y))) < 0.5 && fp.x > 0.67 && fp.y > 0.33 && fp.y < 0.67 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x-1.0,p.y))) < 0.5 && fp.x < 0.33 && fp.y > 0.33 && fp.y < 0.67 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x,p.y+1.0))) < 0.5 && fp.x > 0.33 && fp.x < 0.67 && fp.y > 0.67 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x,p.y-1.0))) < 0.5 && fp.x > 0.33 && fp.x < 0.67 && fp.y < 0.33 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x+1.0,p.y+1.0))) < 0.5 && fp.x > 0.67 && fp.y > 0.67 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x+1.0,p.y-1.0))) < 0.5 && fp.x > 0.67 && fp.y < 0.33 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x-1.0,p.y+1.0))) < 0.5 && fp.x < 0.33 && fp.y > 0.67 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-			        if(random(floor(vec2(p.x-1.0,p.y-1.0))) < 0.5 && fp.x < 0.33 && fp.y < 0.33 ){
-			            FragColor.r = 1.0;
-						return;
-			        }
-				}
-				return;
-			case 46:{
-				break;
-				}
-			case 47:{
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = distance(tr,vec3(0.5))-0.3;
-					if(dst < 0.001){
-						FragColor = texelFetch(spikes,ivec2((atan(tr.x-0.5,tr.y-0.5)+3.14)*32.0/6.28,tr.z*32.0),0);
-						return;
-					}
-					tr += ang * dst;
-				}
-				break;
-			}
-			case 48:{
-				vec3 tr = getSubCoords();
-				while(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >=  0.0 && tr.z <= 1.0){
-					float dst = distance(tr.xy,vec2(0.5))-0.3;
-					if(dst < 0.001){
-						FragColor.rgb = normalize(tr);
-						return;
-					}
-					tr += ang * dst;
-				}
-				break;
-			}
-			case 49:{
-                vec3 btr = getSubCoords()*4.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-                while(tr.x >= 0.0 && tr.x <= 4.0-stepX && tr.y >=0.0 && tr.y <= 4.0-stepY && tr.z >= 0.0 && tr.z <= 4.0-stepZ){   
-					if(tr.z - tr.y < 1.0){	
-						vec4 t,t2,e1,e2,e3,e4;
-						vec2 uWall;
-						if(tr.z == tr.y){
-							switch(side){
-							case 0:
-								FragColor.rgb = blockLight();
-								break;
-							case 1:
-								uWall.x = (btr.x + (si.y - deltaY) * ang.x)*0.25;
-								uWall.y = (btr.z + (si.y - deltaY) * ang.z)*0.25;
-								if(tr.y==0.0&&texelFetch(map,ivec3(x,y-1,z-1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x,y-1,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x+1,y-1,z),0);
-								e2 = texelFetch(map,ivec3(x-1,y-1,z),0);
-								e3 = texelFetch(map,ivec3(x+1,y,z+1),0);
-								e4 = texelFetch(map,ivec3(x-1,y,z+1),0);
-								t  *= 1.0-uWall.y;
-								t2 *= uWall.y;
-								e1 *= uWall.x*(1.0-uWall.y);
-								e2 *= (1.0-uWall.x)*(1.0-uWall.y);
-								e3 *= uWall.x*uWall.y;
-								e4 *= (1.0-uWall.x)*uWall.y;
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= fract((btr.z + (si.y - deltaY) * ang.z))*0.25+0.75;
-								break;
-							case 2:
-								uWall.x = (btr.x + (si.z - deltaZ) * ang.x)*0.25;
-								uWall.y = (btr.y + (si.z - deltaZ) * ang.y)*0.25;
-								if(tr.z==3.0&&texelFetch(map,ivec3(x,y+1,z+1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x,y-1,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x+1,y-1,z),0);
-								e2 = texelFetch(map,ivec3(x-1,y-1,z),0);
-								e3 = texelFetch(map,ivec3(x+1,y,z+1),0);
-								e4 = texelFetch(map,ivec3(x-1,y,z+1),0);
-								t  *= 1.0-uWall.y;
-								t2 *= uWall.y;
-								e1 *= uWall.x*(1.0-uWall.y);
-								e2 *= (1.0-uWall.x)*(1.0-uWall.y);
-								e3 *= uWall.x*uWall.y;
-								e4 *= (1.0-uWall.x)*uWall.y;
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= 1.0-fract((btr.y + (si.z - deltaZ) * ang.y))*0.25;
-								break;
-							}
-						}
-						else{
-							FragColor.rgb = blockLight();
-						}
-						lightEffect();
-						return;
-					}  
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-                }
-                break;
-            }
-			case 50:{
-                vec3 btr = getSubCoords()*4.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-                while(tr.x >= 0.0 && tr.x <= 4.0-stepX && tr.y >=0.0 && tr.y <= 4.0-stepY && tr.z >= 0.0 && tr.z <= 4.0-stepZ){   
-					if(tr.z - (3.0-tr.y) < 1.0){	
-						vec4 t,t2,e1,e2,e3,e4;
-						vec2 uWall;
-						if(tr.z == 3.0-tr.y){
-							switch(side){
-							case 0:
-								FragColor.rgb = blockLight();
-								break;
-							case 1:
-								uWall.x = (btr.x + (si.y - deltaY) * ang.x)*0.25;
-								uWall.y = (btr.z + (si.y - deltaY) * ang.z)*0.25;
-								if(tr.y==0.0&&texelFetch(map,ivec3(x,y+1,z-1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x,y+1,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x+1,y+1,z),0);
-								e2 = texelFetch(map,ivec3(x-1,y+1,z),0);
-								e3 = texelFetch(map,ivec3(x+1,y,z+1),0);
-								e4 = texelFetch(map,ivec3(x-1,y,z+1),0);
-								t  *= 1.0-uWall.y;
-								t2 *= uWall.y;
-								e1 *= uWall.x*(1.0-uWall.y);	
-								e2 *= (1.0-uWall.x)*(1.0-uWall.y);
-								e3 *= uWall.x*uWall.y;
-								e4 *= (1.0-uWall.x)*uWall.y;
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= fract((btr.z + (si.y - deltaY) * ang.z))*0.25+0.75;	
-								break;
-							case 2:
-								uWall.x = (btr.x + (si.z - deltaZ) * ang.x)*0.25;
-								uWall.y = (btr.y + (si.z - deltaZ) * ang.y)*0.25;
-								if(tr.z==3.0&&texelFetch(map,ivec3(x,y-1,z+1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x,y+1,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x+1,y+1,z),0);
-								e2 = texelFetch(map,ivec3(x-1,y+1,z),0);
-								e3 = texelFetch(map,ivec3(x+1,y,z+1),0);
-								e4 = texelFetch(map,ivec3(x-1,y,z+1),0);
-								t  *= uWall.y;
-								t2 *= 1.0-uWall.y;
-								e1 *= uWall.x*(uWall.y);
-								e2 *= (1.0-uWall.x)*(uWall.y);
-								e3 *= uWall.x*(1.0-uWall.y);
-								e4 *= (1.0-uWall.x)*(1.0-uWall.y);
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= fract((btr.y + (si.z - deltaZ) * ang.y))*0.25+0.75;
-								break;
-							}
-						}
-						else{
-							FragColor.rgb = blockLight();
-						}
-						lightEffect();
-						return;
-					}  
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-                }
-                break;
-			}
-			case 51:{
-                vec3 btr = getSubCoords()*4.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-                while(tr.x >= 0.0 && tr.x <= 4.0-stepX && tr.y >=0.0 && tr.y <= 4.0-stepY && tr.z >= 0.0 && tr.z <= 4.0-stepZ){   
-					if(tr.z - tr.x < 1.0){	
-						vec4 t,t2,e1,e2,e3,e4;
-						vec2 uWall;
-						if(tr.z == tr.x){
-							switch(side){
-							case 0:
-								uWall.x = (btr.y + (si.x - deltaX) * ang.y)*0.25;
-								uWall.y = (btr.z + (si.x - deltaX) * ang.z)*0.25;
-								if(tr.y==0.0&&texelFetch(map,ivec3(x-1,y,z-1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x-1,y,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x-1,y+1,z),0);
-								e2 = texelFetch(map,ivec3(x-1,y-1,z),0);
-								e3 = texelFetch(map,ivec3(x,y+1,z+1),0);
-								e4 = texelFetch(map,ivec3(x,y-1,z+1),0);
-								t  *= 1.0-uWall.y;
-								t2 *= uWall.y;
-								e1 *= uWall.x*(1.0-uWall.y);
-								e2 *= (1.0-uWall.x)*(1.0-uWall.y);
-								e3 *= uWall.x*uWall.y;
-								e4 *= (1.0-uWall.x)*uWall.y;
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= fract((btr.z + (si.x - deltaX) * ang.z))*0.25+0.75;
-								break;
-							case 1:
-								FragColor.rgb = blockLight();
-								break;
-							case 2:
-								uWall.x = (btr.y + (si.z - deltaZ) * ang.y)*0.25;
-								uWall.y = (btr.x + (si.z - deltaZ) * ang.x)*0.25;
-								if(tr.z==3.0&&texelFetch(map,ivec3(x+1,y,z+1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x-1,y,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x-1,y+1,z),0);
-								e2 = texelFetch(map,ivec3(x-1,y-1,z),0);
-								e3 = texelFetch(map,ivec3(x,y+1,z+1),0);
-								e4 = texelFetch(map,ivec3(x,y-1,z+1),0);
-								t  *= 1.0-uWall.y;
-								t2 *= uWall.y;
-								e1 *= uWall.x*(1.0-uWall.y);
-								e2 *= (1.0-uWall.x)*(1.0-uWall.y);
-								e3 *= uWall.x*uWall.y;
-								e4 *= (1.0-uWall.x)*uWall.y;
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= 1.0-fract((btr.x + (si.z - deltaZ) * ang.x))*0.25;
-								break;
-							}
-						}
-						else{
-							FragColor.rgb = blockLight();
-						}
-						lightEffect();
-						return;
-					}  
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-                }
-                break;
-			}
-			case 52:{
-                vec3 btr = getSubCoords()*4.0;
-				vec3 si = getSide(btr);
-				vec3 tr = floor(btr);
-                while(tr.x >= 0.0 && tr.x <= 4.0-stepX && tr.y >=0.0 && tr.y <= 4.0-stepY && tr.z >= 0.0 && tr.z <= 4.0-stepZ){   
-					if(tr.z - (3.0-tr.x) < 1.0){	
-						vec4 t,t2,e1,e2,e3,e4;
-						vec2 uWall;
-						if(tr.z == 3.0-tr.x){
-							switch(side){
-							case 0:
-								uWall.x = (btr.y + (si.x - deltaX) * ang.y)*0.25;
-								uWall.y = (btr.z + (si.x - deltaX) * ang.z)*0.25;
-								if(tr.x==0.0&&texelFetch(map,ivec3(x+1,y,z-1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x+1,y,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x+1,y+1,z),0);
-								e2 = texelFetch(map,ivec3(x+1,y-1,z),0);
-								e3 = texelFetch(map,ivec3(x,y+1,z+1),0);
-								e4 = texelFetch(map,ivec3(x,y-1,z+1),0);
-								t  *= 1.0-uWall.y;
-								t2 *= uWall.y;
-								e1 *= uWall.x*(1.0-uWall.y);	
-								e2 *= (1.0-uWall.x)*(1.0-uWall.y);
-								e3 *= uWall.x*uWall.y;
-								e4 *= (1.0-uWall.x)*uWall.y;
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= fract((btr.z + (si.x - deltaX) * ang.z))*0.25+0.75;	
-								break;
-							case 1:
-								FragColor.rgb = blockLight();
-								break;
-							case 2:
-								uWall.x = (btr.x + (si.z - deltaZ) * ang.x)*0.25;
-								uWall.y = (btr.y + (si.z - deltaZ) * ang.y)*0.25;
-								if(tr.z==3.0&&texelFetch(map,ivec3(x-1,y,z+1),0).r==0.0){
-									FragColor.rgb = blockLight();
-									break;
-								}
-								t  = texelFetch(map,ivec3(x+1,y,z),0);
-								t2 = texelFetch(map,ivec3(x,y,z+1),0);
-								e1 = texelFetch(map,ivec3(x+1,y+1,z),0);
-								e2 = texelFetch(map,ivec3(x+1,y-1,z),0);
-								e3 = texelFetch(map,ivec3(x,y+1,z+1),0);
-								e4 = texelFetch(map,ivec3(x,y-1,z+1),0);
-								t  *= uWall.y;
-								t2 *= 1.0-uWall.y;
-								e1 *= uWall.x*(uWall.y);
-								e2 *= (1.0-uWall.x)*(uWall.y);
-								e3 *= uWall.x*(1.0-uWall.y);
-								e4 *= (1.0-uWall.x)*(1.0-uWall.y);
-								FragColor.rgb = (t.gba+t2.gba+e1.gba+e2.gba+e3.gba+e4.gba)/2.0;
-								FragColor.rgb *= fract((btr.x + (si.z - deltaZ) * ang.x))*0.25+0.75;
-								break;
-							}
-						}
-						else{
-							FragColor.rgb = blockLight();
-						}
-						lightEffect();
-						return;
-					} 
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							side = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							side = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						side = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						side = 2;
-			        }
-                }
-                break;
-            }
-			case 60:{
-				vec3 tra = getSubCoords()*120.0;
-				tra += ang * deltaZ * clamp((115.0-tra.z),0.0,120.0) + 0.00001;
-				vec3 si = getSide(tra);
-				vec3 tr = floor(tra);
-				int sid = side;
-				side = 2;
-              	while(tr.x >= 0.0 && tr.x <= 120.0 && tr.y >=0.0 && tr.y <= 120.0 && tr.z >= 115.0 && tr.z <= 120.0){
-			  		if(mod(tr.x,6.0) < 1.0 || mod(tr.y,6.0) < 1.0){	
-						wallX = tr.x/120.0;
-						wallY = tr.y/120.0;
-						vec4 t,e1,e2,e3,e4,c1,c2,c3,c4;
-						t  = texelFetch(map,ivec3(x,y,z+1),0);
-					    e1 = texelFetch(map,ivec3(x+1,y,z+1),0);
-						e2 = texelFetch(map,ivec3(x-1,y,z+1),0);
-						e3 = texelFetch(map,ivec3(x,y+1,z+1),0);
-						e4 = texelFetch(map,ivec3(x,y-1,z+1),0);
-						c1 = texelFetch(map,ivec3(x+1,y+1,z+1),0);
-						c2 = texelFetch(map,ivec3(x+1,y-1,z+1),0);
-						c3 = texelFetch(map,ivec3(x-1,y+1,z+1),0);
-						c4 = texelFetch(map,ivec3(x-1,y-1,z+1),0);
-					    e1 *= wallX;
-					    e2 *= 1.0-wallX;
-					    e3 *= wallY;
-					    e4 *= 1.0-wallY;
-					    c1 *= clamp(1.0-distance(vec2(1.0,1.0),vec2(wallX,wallY)),0.0,1.0);
-					    c2 *= clamp(1.0-distance(vec2(1.0,0.0),vec2(wallX,wallY)),0.0,1.0);
-					    c3 *= clamp(1.0-distance(vec2(0.0,1.0),vec2(wallX,wallY)),0.0,1.0);
-					    c4 *= clamp(1.0-distance(vec2(0.0,0.0),vec2(wallX,wallY)),0.0,1.0);
-						vec3 l = (c1.gba+c2.gba+c3.gba+c4.gba+e1.gba+e2.gba+e3.gba+e4.gba+t.gba)/2.0* (1.0-revertnoise(tr.xy/120.0));
-						FragColor.rgb = l * (tr.z-110.0) * 0.1;
-						lightEffect();
-						return;
-					}
-					if(si.x < si.y){
-			            if(si.x < si.z){
-							tr.x += stepX;
-							si.x += deltaX;
-							sid = 0;
-			            }
-			            else{
-							tr.z += stepZ;
-							si.z += deltaZ;
-							sid = 2;
-			            }
-			        }
-			        else if(si.y < si.z){
-						tr.y += stepY;
-						si.y += deltaY;
-						sid = 1;
-			        }
-			        else{
-						tr.z += stepZ;
-						si.z += deltaZ;
-						sid = 2;
-			        }
-                }
-                break;
-            }
-			case 61:{
-				vec2 tr;
-				switch(side){
-				case 0:
-					tr = vec2(wallX+y,wallY+z)*50.0;
-					break;
-				case 1:
-					tr = vec2(wallX+x,wallY+z)*50.0;
-					break;
-				case 2:
-					tr = vec2(wallX+x,wallY+y)*50.0;
 					break;
 				}
-			    vec2 fpos = floor(tr);
-			    vec3 col = vec3(0.0,0.0,0.0);
-			    float r = 0.0;
-			    for(int i = 0;i < 1600;i++){
-			        fpos.y-=1.0;
-			        col.g += 0.01;
-			        float r2 = random(fpos)*16.0;
-			        if(int(r2) == 0){
-			            FragColor.rgb += col;
-			            FragColor.rgb += vec3(0.1,0.43,1.0) * ((tnoise(fpos,5.0)+5.0)/5.0 - (col.r + col.g)/2.0);
-			            tr.y = floor(tr.y)+float(i);
-			            tr.x = floor(tr.x/3.0)+float(i);
-			            FragColor.rgb *= tnoise(tr/30.0,5.0)/30.0+1.0;
-						lightEffect();
-			            return;
-			        }
-			        else if(r2 < 3.0){
-			            fpos.y-=1.0;
-			            fpos.x-=1.0;
-			            col.r += 0.01;
-			        }
-			        else if(r2 < 5.0){
-			            fpos.y-=1.0;
-			            fpos.x+=1.0;
-			            col.r += 0.01;
-			        }
-				}
-				break;
-			}
-			case 62:{
-				vec3 tr = getSubCoords();
-				vec3 rp = texelFetch(mapdata,ivec3(x,y,z),0).xyz;
-				float s = iSphere(tr-rp,ang,0.5);
-				if(s != -1.0){
-					tr += s * ang;
-					if(tr.x >= 0.0 && tr.x <= 1.0 && tr.y >=0.0 && tr.y <= 1.0 && tr.z >= 1.0 && tr.z <= 1.0){
-						ang = reflect(ang,normalize(tr-rp));
-						deltaX = abs(1 / ang.x);
-						deltaY = abs(1 / ang.y);
-						deltaZ = abs(1 / ang.z);
-						x = x+tr.x;
-						y = y+tr.y;
-						z = z+tr.z;
-						if(ang.x < 0){
-							stepX = -1;
-							sideX = fract(x) * deltaX;
+				case 10:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iSphere(spos-mtdt.xyz,ang,mtdt.a);
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x > 0.0 && spos.y > 0.0 && spos.z > 0.0 && spos.x < 1.0 && spos.y < 1.0 && spos.z < 1.0){
+							ang = refract(ang,normalize(spos-mtdt.xyz),0.6591349);
+							vec3 apos;
+							apos.x = x + spos.x;
+							apos.y = y + spos.y;
+							apos.z = z + spos.z;
+							deltaX = abs(1.0 / ang.x);
+							deltaY = abs(1.0 / ang.y);
+							deltaZ = abs(1.0 / ang.z);
+							x = floor(apos.x);
+							y = floor(apos.y);
+							z = floor(apos.z);
+							pos = apos;
+							if(ang.x < 0){
+								stepX = -1;
+								sideX = fract(apos.x) * deltaX;
+							}
+							else{
+								stepX = 1;
+								sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
+							}
+							if(ang.y < 0){
+								stepY = -1;	
+								sideY = fract(apos.y) * deltaY;
+							}
+							else{
+								stepY = 1;
+								sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
+							}
+							if(ang.z < 0){
+								stepZ = -1;
+								sideZ = fract(apos.z) * deltaZ;
+							}
+							else{
+								stepZ = 1;
+								sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
+							}
+							spos += ang * sphDensity(spos,ang,mtdt.a);
+							ang = refract(ang,normalize(spos-mtdt.xyz),0.6591349);
+							apos;
+							apos.x = x + spos.x;
+							apos.y = y + spos.y;
+							apos.z = z + spos.z;
+							deltaX = abs(1.0 / ang.x);
+							deltaY = abs(1.0 / ang.y);
+							deltaZ = abs(1.0 / ang.z);
+							x = floor(apos.x);
+							y = floor(apos.y);
+							z = floor(apos.z);
+							pos = apos;
+							if(ang.x < 0){
+								stepX = -1;
+								sideX = fract(apos.x) * deltaX;
+							}
+							else{
+								stepX = 1;
+								sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
+							}
+							if(ang.y < 0){
+								stepY = -1;	
+								sideY = fract(apos.y) * deltaY;
+							}
+							else{
+								stepY = 1;
+								sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
+							}
+							if(ang.z < 0){
+								stepZ = -1;
+								sideZ = fract(apos.z) * deltaZ;
+							}
+							else{
+								stepZ = 1;
+								sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
+							}
+							fog = block.gba;
 						}
-						else{
-							stepX = 1;
-							sideX = (int(x) + 1.0 - x) * deltaX;
-						}
-						if(ang.y < 0){
-							stepY = -1;
-							sideY = fract(y) * deltaY;
-						}
-						else{
-							stepY = 1;
-							sideY = (int(y) + 1.0 - y) * deltaY;
-						}
-						if(ang.z < 0){
-							stepZ = -1;
-							sideZ = fract(z) * deltaZ;
-						}
-						else{
-							stepZ = 1;
-							sideZ = (int(z) + 1.0 - z) * deltaZ;
-						}
-						pos.x = x;
-						pos.y = y;
-						pos.z = z;
-						break;
 					}
-				}
-				break;
-			}
-			case 63:{
-				break;
-				}
-			case 64:{
-				break;
-				}
-			case 65:{	
-				break;
-				}
-			case 66:{
-				break;
-				}
-			case 67:{
-				vec4 nc = vec4(ivec4(texelFetch(mapdata,ivec3(x,y,z),0)*255.0));
-				vec3 tr;
-				switch(int(nc.w)){
-				case 1:
-					x = nc.x;
-					y = nc.y;
-					z = nc.z;
-					float tang = cos(0.5*3.14159) * ang.x - sin(0.5*3.14159) * ang.y;
-					ang.y = sin(0.5*3.14159) * ang.x + cos(0.5*3.14159) * ang.y;
-					ang.x = tang;
-					reinitializeRay();
 					break;
+				}
+				case 11:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iSphere(spos-mtdt.xyz,ang,mtdt.a);
+					if(d > 0.0){
+						spos += ang * d;
+						if(spos.x > 0.0 && spos.y > 0.0 && spos.z > 0.0 && spos.x < 1.0 && spos.y < 1.0 && spos.z < 1.0){
+							ang = reflect(ang,normalize(spos-mtdt.xyz));
+							fog = block.gba;
+							vec3 apos;
+							apos.x = x + spos.x;
+							apos.y = y + spos.y;
+							apos.z = z + spos.z;
+							deltaX = abs(1.0 / ang.x);
+							deltaY = abs(1.0 / ang.y);
+							deltaZ = abs(1.0 / ang.z);
+							x = floor(apos.x);
+							y = floor(apos.y);
+							z = floor(apos.z);
+							pos = apos;
+							if(ang.x < 0){
+								stepX = -1;
+								sideX = fract(apos.x) * deltaX;
+							}
+							else{
+								stepX = 1;
+								sideX = (int(apos.x) + 1.0 - apos.x) * deltaX;
+							}
+							if(ang.y < 0){
+								stepY = -1;	
+								sideY = fract(apos.y) * deltaY;
+							}
+							else{
+								stepY = 1;
+								sideY = (int(apos.y) + 1.0 - apos.y) * deltaY;
+							}
+							if(ang.z < 0){
+								stepZ = -1;
+								sideZ = fract(apos.z) * deltaZ;
+							}
+							else{
+								stepZ = 1;
+								sideZ = (int(apos.z) + 1.0 - apos.z) * deltaZ;
+							}
+						}
+					}
+					break;
+				}
+				case 12:{
+					vec3 spos = getSubCoords();
+					vec4 mtdt = texelFetch(metadt,ivec3(x,y,z),0);
+					float d = iBox(spos-mtdt.xyz,ang,vec3(mtdt.a));
+					if(d > 0.0){
+						uint pointer = texelFetch(lpmap,ivec3(x*6,y,z),0).x;
+						spos += ang * d;
+						if(spos.x>mtdt.x-mtdt.a-0.0001&&spos.x<mtdt.x-mtdt.a+0.0001){
+							ivec2 tcrd = ivec2(((spos.yz-mtdt.yz)/mtdt.a+1.0)*0.5*lmapsz);
+							FragColor.rgb += block.gba * texelFetch(lmap,ivec3(tcrd,pointer),0).rgb * 32767.0 / (brightness+1.0);
+						}
+						if(spos.y>mtdt.y-mtdt.a-0.0001&&spos.y<mtdt.y-mtdt.a+0.0001){
+							ivec2 tcrd = ivec2(((spos.xz-mtdt.xz)/mtdt.a+1.0)*0.5*lmapsz);
+							FragColor.rgb += block.gba * texelFetch(lmap,ivec3(tcrd,pointer+1),0).rgb * 32767.0 / (brightness+1.0);
+						}
+						if(spos.z>mtdt.z-mtdt.a-0.0001&&spos.z<mtdt.z-mtdt.a+0.0001){
+							ivec2 tcrd = ivec2(((spos.xy-mtdt.xy)/mtdt.a+1.0)*0.5*lmapsz);
+							FragColor.rgb += block.gba * texelFetch(lmap,ivec3(tcrd,pointer+2),0).rgb * 32767.0 / (brightness+1.0);
+						}
+						if(spos.x>mtdt.x+mtdt.a-0.0001&&spos.x<mtdt.x+mtdt.a+0.0001){
+							ivec2 tcrd = ivec2(((spos.yz-mtdt.yz)/mtdt.a+1.0)*0.5*lmapsz);
+							FragColor.rgb += block.gba * texelFetch(lmap,ivec3(tcrd,pointer+3),0).rgb * 32767.0 / (brightness+1.0);
+						}
+						if(spos.y>mtdt.y+mtdt.a-0.0001&&spos.y<mtdt.y+mtdt.a+0.0001){
+							ivec2 tcrd = ivec2(((spos.xz-mtdt.xz)/mtdt.a+1.0)*0.5*lmapsz);
+							FragColor.rgb += block.gba * texelFetch(lmap,ivec3(tcrd,pointer+4),0).rgb * 32767.0 / (brightness+1.0);
+						}
+						if(spos.z>mtdt.z+mtdt.a-0.0001&&spos.z<mtdt.z+mtdt.a+0.0001){
+							ivec2 tcrd = ivec2(((spos.xy-mtdt.xy)/mtdt.a+1.0)*0.5*lmapsz);
+							FragColor.rgb += block.gba * texelFetch(lmap,ivec3(tcrd,pointer+5),0).rgb * 32767.0 / (brightness+1.0);
+						}
+						return;
+					}
+					break;
+				}
+				case 28:{
+					uint pointer = texelFetch(lpmap,ivec3(x*6+bside,y,z),0).x;
+					float cnt = 1.0;
+					vec3 col;
+					ivec3 tpos = ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer);
+					FragColor.rgb = block.gba * texelFetch(lmap,tpos,0).rgb * 65535.0 / float(brightness+1);
+					if(tpos.x > 0){
+						FragColor.rgb += block.gba * texelFetch(lmap,tpos+ivec3(-1,0,0),0).rgb * 32767.0 / (brightness+1.0);
+						cnt += 0.5;
+					}
+					if(tpos.y > 0){
+						FragColor.rgb += block.gba * texelFetch(lmap,tpos+ivec3(0,-1,0),0).rgb * 32767.0 / (brightness+1.0);
+						cnt += 0.5;
+					}
+					if(tpos.x < lmapsz-1.0){
+						FragColor.rgb += block.gba * texelFetch(lmap,tpos+ivec3(1,0,0),0).rgb * 32767.0 / (brightness+1.0);
+						cnt += 0.5;
+					}
+					if(tpos.y < lmapsz-1.0){
+						FragColor.rgb += block.gba * texelFetch(lmap,tpos+ivec3(0,1,0),0).rgb * 32767.0 / (brightness+1.0);
+						cnt += 0.5;
+					}
+					FragColor.rgb /= cnt;
+					FragColor.rgb *= fog;
+					return;
+				}
 				default:
-					x = nc.x;
-					y = nc.y;
-					z = nc.z;
+					break;
 				}
-				break;
-			}
-			default:
-				break;
 			}
 		}
 		if(sideX < sideY){
@@ -1954,8 +881,8 @@ void main(){
 			side = 2;
         }
     }
-	lightEffect();
 }
+
 
 
 
