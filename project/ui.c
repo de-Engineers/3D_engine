@@ -9,12 +9,11 @@
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_DYNAMIC_DRAW 0x88E8
 
-const char *words[]  = {"air","rgb","water","mirror","sphere","tower","tegeltjes","white",
-	"light","mist","customslope","glass","bounce","mirror","spikes","normal",
-	"donut","shape1","greekpillar",
-	
+const char *words[]  = {"air","rgb","water","light1","light2","light3","light4","light5",
+	"light6","sphere","customslope","glass","bounce","mirror","spikes","normal",
+	"donut","shape1","greekpillar","","","","","","","","","","block"
 	};
-const char *words2[] = {"normal","cube","generatelight","entities","colorselect","lighting"};
+const char *words2[] = {"normal","cube","generatelight","changelight","changeproperties",""};
 
 unsigned int totalCar;
 VEC2 mousePos;
@@ -109,13 +108,13 @@ void drawSprite(float x,float y,float z,float id,float xsize,float ysize){
 	totalCar++;
 }
 
-void drawVar(float x,float y,int val){
+void drawVar(f32 x,f32 y,u32 val){
 	if(val == 0){
 		drawChar(0,x+0.03,y,-0.99,0,0.04,0.04);
 		return;
 	}
-	int size = 0;
-	int tval = val;
+	u32 size = 0;
+	u32 tval = val;
 	while(tval > 0){
 		tval /= 10;
 		size++;
@@ -124,14 +123,14 @@ void drawVar(float x,float y,int val){
 		drawChar(26,x + 1.0 / 30,y,-0.99,0,0.04,0.04);
 	}
 	else{
-		for(int i = 0;i < size;i++){
-			drawChar(val % 10,x + (float)(size - i) / 30,y,-0.99,0,0.04,0.04);
+		for(u32 i = 0;i < size;i++){
+			drawChar(val % 10,x + (f32)(size - i) / 30,y,-0.99,0,0.04,0.04);
 			val /= 10;
 		}
 	}
 }
 
-void drawWord(char *str,float x,float y,float id){
+void drawWord(u8 *str,f32 x,f32 y,f32 id){
 	for(int i = 0;i < strlen(str);i++){
 		if(str[i] == ' '){
 			continue;
@@ -167,11 +166,26 @@ void drawUI(){
 	if(toolSel < 5){
 		drawWord(words2[toolSel],-0.9,-0.78,0.0);
 	}
-	drawVar(0.8,-0.90,colorSel.r);
-	drawVar(0.8,-0.85,colorSel.g);
-	drawVar(0.8,-0.80,colorSel.b);
-	drawVar(0.8,-0.75,colorSel.a);
-	for(int i = 0;i < buttonC;i++){
+	drawVar(0.8f,-0.90f,colorSel.r);
+	drawVar(0.8f,-0.85f,colorSel.g);
+	drawVar(0.8f,-0.80f,colorSel.b);
+	drawVar(0.8f,-0.75f,colorSel.a);
+
+	drawVar(0.8f,-0.50f,metadtSel.r);
+	drawVar(0.8f,-0.45f,metadtSel.g);
+	drawVar(0.8f,-0.40f,metadtSel.b);
+	drawVar(0.8f,-0.35f,metadtSel.a);
+
+	drawVar(0.8f,-0.20f,metadt2Sel.r);
+	drawVar(0.8f,-0.15f,metadt2Sel.g);
+	drawVar(0.8f,-0.10f,metadt2Sel.b);
+	drawVar(0.8f,-0.05f,metadt2Sel.a);
+
+	drawVar(0.8f,0.10f,metadt3Sel.r);
+	drawVar(0.8f,0.15f,metadt3Sel.g);
+	drawVar(0.8f,0.20f,metadt3Sel.b);
+	drawVar(0.8f,0.25f,metadt3Sel.a);
+	for(u32 i = 0;i < buttonC;i++){
 		VEC2 buttonMiddle = {button[i].pos.x+0.015f,button[i].pos.y+0.025f};
 		if(distance(mousePos,buttonMiddle)<0.03f){
 			buttonId = button[i].id;
@@ -205,7 +219,7 @@ foundButton:
 		drawWord("create world",-0.45f,-0.35f,0.0f);
 		drawWord("quit",-0.45f,-0.42f,0.0f);
 		drawWord("lightmapsize",-0.45f,-0.07f,-0.0f);
-		drawVar(-0.15f,-0.07f,properties->lmapSz);
+		drawVar(-0.15f,-0.07f,properties->lmapSzb);
 		drawSprite(-0.5f,-0.5f,0.0f,2,1.0f,1.0f);
 		break;
 		}

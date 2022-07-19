@@ -50,40 +50,43 @@
 #define GL_TEXTURE_3D 0x806F
 #define GL_RGBA32F 0x8814
 
-char *VERTsource;
-char *FRAGsource;
-char *VERTsourceFont;
-char *FRAGsourceFont;
-char *fontImage;
-char *epicTexture;
-char *epicTexture2;
-char *slope;
-char *spikes;
-char *chessPieces;
-char *models8;
+i8 *VERTsource;
+i8 *FRAGsource;
+i8 *VERTsourceFont;
+i8 *FRAGsourceFont;
+i8 *fontImage;
+i8 *epicTexture;
+i8 *epicTexture2;
+i8 *slope;
+i8 *spikes;
+i8 *chessPieces;
+i8 *models8;
 
 int glMesC;
 int tick;
 
 OPENGLMESSAGE *glMes;
 
-unsigned int shaderProgram;
-unsigned int shaderProgramFont;
-unsigned int VBO;
+u32 shaderProgram;
+u32 shaderProgramFont;
+u32 VBO;
 
-unsigned int vertexShader;
-unsigned int fragmentShader;
-unsigned int vertexShaderFont;
-unsigned int fragmentShaderFont;
-unsigned int mapText;
-unsigned int mapTextFont;
-unsigned int *blockTextures[30];
-unsigned int entityTexture;
-unsigned int chessText;
-unsigned int models8Text;
-unsigned int VAO;
-unsigned int lpmapText;
-unsigned int lmapText;
+u32 vertexShader;
+u32 fragmentShader;
+u32 vertexShaderFont;
+u32 fragmentShaderFont;
+u32 mapText;
+u32 mapTextFont;
+u32 *blockTextures[30];
+u32 entityTexture;
+u32 chessText;
+u32 models8Text;
+u32 VAO;
+u32 lpmapText;
+u32 lmapText;
+u32 metadtText;
+u32 metadt2Text;
+u32 metadt3Text;
 
 unsigned char *inputStr;
 
@@ -204,6 +207,7 @@ void openGL(){
 	glGenTextures(30,(void*)blockTextures);
 	glGenTextures(1,&chessText);
 	glGenTextures(1,&models8Text);
+	glGenTextures(1,&metadtText);
 
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,lpmapText);
@@ -213,12 +217,27 @@ void openGL(){
 
 	glActiveTexture(GL_TEXTURE9);
 	glBindTexture(GL_TEXTURE_3D,lmapText);
-	glTexImage3D(GL_TEXTURE_3D,0,GL_RGB8,lmapC,properties->lmapSz,properties->lmapSz,0,GL_RGB,GL_UNSIGNED_BYTE,lmap);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGB16,lmapC,properties->lmapSz,properties->lmapSz,0,GL_RGB,GL_UNSIGNED_SHORT,lmap);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,mapText);
 	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,map);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	glActiveTexture(GL_TEXTURE10);
+	glBindTexture(GL_TEXTURE_3D,metadtText);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,metadt);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	glActiveTexture(GL_TEXTURE11);
+	glBindTexture(GL_TEXTURE_3D,metadt2Text);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,metadt2);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	glActiveTexture(GL_TEXTURE12);
+	glBindTexture(GL_TEXTURE_3D,metadt3Text);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,metadt3);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glActiveTexture(GL_TEXTURE2);
@@ -267,6 +286,7 @@ void openGL(){
 	glUniform1i(glGetUniformLocation(shaderProgram,"chessModels"),7);
 	glUniform1i(glGetUniformLocation(shaderProgram,"models8"),8);
 	glUniform1i(glGetUniformLocation(shaderProgram,"lmap"),9);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt"),10);
 
 	glCreateBuffers(1,&VBO);
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
@@ -323,6 +343,12 @@ void openGL(){
 				case 3:
 					glActiveTexture(GL_TEXTURE1);
 					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,map);
+					glActiveTexture(GL_TEXTURE10);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,metadt);
+					glActiveTexture(GL_TEXTURE11);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,metadt2);
+					glActiveTexture(GL_TEXTURE12);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,properties->lvlSz,properties->lvlSz,properties->lvlSz,0,GL_RGBA,GL_UNSIGNED_BYTE,metadt3);
 					lmapC = 0;
 					break;
 				case 4:
@@ -335,7 +361,7 @@ void openGL(){
 					glActiveTexture(GL_TEXTURE6);
 					glTexImage3D(GL_TEXTURE_3D,0,GL_R32UI,properties->lvlSz*6,properties->lvlSz,properties->lvlSz,0,GL_RED_INTEGER,GL_UNSIGNED_INT,lpmap);
 					glActiveTexture(GL_TEXTURE9);
-					glTexImage3D(GL_TEXTURE_3D,0,GL_RGB,properties->lmapSz,properties->lmapSz,lmapC,0,GL_RGB,GL_UNSIGNED_BYTE,lmap);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGB16,properties->lmapSz,properties->lmapSz,lmapC,0,GL_RGB,GL_UNSIGNED_SHORT,lmap);
 					glGenerateMipmap(GL_TEXTURE_3D);
 					glUniform1f(glGetUniformLocation(shaderProgram,"lmapsz"),properties->lmapSz);
 					break;
@@ -353,6 +379,7 @@ void openGL(){
 			glUniform1i(glGetUniformLocation(shaderProgram,"state"),settings);
 			glUniform1i(glGetUniformLocation(shaderProgram,"entityC"),entityC);
 			glUniform1i(glGetUniformLocation(shaderProgram,"renderDistance"),properties->renderDistance);
+			glUniform1f(glGetUniformLocation(shaderProgram,"brightness"),brightness);
 			glUniformMatrix3fv(glGetUniformLocation(shaderProgram, "cameraMatrix"), 1, GL_FALSE, (void*)&cameraMatrix);
 			glUseProgram(shaderProgramFont);
 			glUniform3f(glGetUniformLocation(shaderProgramFont,"color"),(float)colorSel.r/255.0f,(float)colorSel.g/255.0f,(float)colorSel.b/255.0f);

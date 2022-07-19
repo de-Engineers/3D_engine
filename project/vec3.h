@@ -59,6 +59,34 @@ inline VEC3 VEC3divR(VEC3 p,float d){
 	return p;
 }
 
+inline VEC3 VEC3addFR(VEC3 p,float d){
+	p.x = d + p.x;
+	p.y = d + p.y;
+	p.z = d + p.z;
+	return p;
+}
+
+inline VEC3 VEC3subFR(VEC3 p,float d){
+	p.x = d - p.x;
+	p.y = d - p.y;
+	p.z = d - p.z;
+	return p;
+}
+
+inline VEC3 VEC3mulFR(VEC3 p,float d){
+	p.x = d * p.x;
+	p.y = d * p.y;
+	p.z = d * p.z;
+	return p;
+}
+
+inline VEC3 VEC3divFR(VEC3 p,float d){
+	p.x = d / p.x;
+	p.y = d / p.y;
+	p.z = d / p.z;
+	return p;
+}
+
 inline void VEC3addVEC3(VEC3 *p,VEC3 p2){
 	p->x += p2.x;
 	p->y += p2.y;
@@ -147,6 +175,19 @@ inline VEC3 VEC3normalize(VEC3 p){
 
 inline VEC3 VEC3fractR(VEC3 p){
 	return (VEC3){(int)p.x,(int)p.y,(int)p.z};
+}
+
+inline VEC3 VEC3absR(VEC3 p){
+	if(p.x < 0.0f){
+		p.x = -p.x;
+	}
+	if(p.y < 0.0f){
+		p.y = -p.y;
+	}
+	if(p.z < 0.0f){
+		p.z = -p.z;
+	}
+	return p;
 }
 
 

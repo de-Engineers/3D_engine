@@ -1,5 +1,6 @@
 ﻿#include <windows.h>
 #include <stdio.h>
+#include <intrin.h>
 #include "main.h"
 
 char buttonId;
@@ -63,11 +64,11 @@ void EnumLevelsButton(){
 }
 
 void decLightMap(){
-	properties->lmapSz--;
+	properties->lmapSzb = _rotl8(properties->lmapSzb,1);
 }
 
 void incLightMap(){
-	properties->lmapSz++;
+	properties->lmapSzb = _rotr8(properties->lmapSzb,1);
 }
 
 void saveLevelButton(){

@@ -1,5 +1,20 @@
 ﻿#pragma once
 
+#define resx 512
+#define resy 512
+
+#define RENDERDISTANCE 32
+
+#define MAPSZ 64
+
+#define MAPRAM MAPSZ*MAPSZ*MAPSZ*8
+#define BLOCKCOUNT MAPSZ*MAPSZ*MAPSZ
+
+#define VRAM resx*resy*4
+
+#define LMAPSZ 4
+#define LMAPSZT LMAPSZ*LMAPSZ*LMAPSZ
+
 #define PI_05  1.57079632679f
 #define PI_2   6.28318530718f
 #define PI     3.14159265358f
@@ -8,27 +23,41 @@
 
 #include <windows.h>
 #include "vec3.h"
+#include "vec2.h"
+
+typedef char               i8;
+typedef short              i16;
+typedef int                i32;
+typedef long long          i64;
+
+typedef unsigned char      u8;
+typedef unsigned short     u16;
+typedef unsigned int       u32;
+typedef unsigned long long u64;
+
+typedef float              f32;
+typedef double             f64;
 
 typedef struct{
-	unsigned char id;
-	unsigned char r;
-	unsigned char g;
-	unsigned char b;
+	u8 id;
+	u8 r;
+	u8 g;
+	u8 b;
 }MAP;
 
 typedef struct{
-	unsigned int p1;
-	unsigned int p2;
-	unsigned int p3;
-	unsigned int p4;
-	unsigned int p5;
-	unsigned int p6;
+	u32 p1;
+	u32 p2;
+	u32 p3;
+	u32 p4;
+	u32 p5;
+	u32 p6;
 }LPMAP;
 
 typedef struct{ 
-	unsigned char x;
-	unsigned char y;
-	unsigned char z;
+	u8 x;
+	u8 y;
+	u8 z;
 }CVEC3;
 
 typedef struct {
@@ -36,11 +65,6 @@ typedef struct {
 	VEC3 Up;
 	VEC3 Front;
 } Mat3;
-
-typedef struct{
-	float x;
-	float y;
-}VEC2;
 
 typedef struct{
 	float xangle;
@@ -72,10 +96,11 @@ typedef struct{
 	int yres;
 	int lvlSz;
 	int renderDistance;
-	float fog;
-	int lmapSz;
-	int lmapSz2;
-	int lmapSz3;
+	f32 fog;
+	u32 lmapSzb;
+	u32 lmapSz;
+	u32 lmapSz2;
+	u32 lmapSz3;
 }PROPERTIES;
 
 typedef struct{
@@ -96,17 +121,23 @@ typedef struct{
 }ENTITY;
 
 typedef struct{
-	unsigned char r;
-	unsigned char g;
-	unsigned char b;
-	unsigned char a;
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
 }RGBA;
 
 typedef struct{
-	unsigned char r;
-	unsigned char g;
-	unsigned char b;
+	u8 r;
+	u8 g;
+	u8 b;
 }RGB;
+
+typedef struct{
+	u16 r;
+	u16 g;
+	u16 b;
+}EXRGB;
 
 typedef struct{
 	short id;
@@ -125,22 +156,14 @@ typedef struct{
 }OPENGLMESSAGE;
 
 typedef struct{
-	float x;
-	float y;
-	float z;
-	float vx;
-	float vy;
-	float vz;
-	float deltax;
-	float deltay;
-	float deltaz;
-	float sidex;
-	float sidey;
-	float sidez;
+	VEC3 pos;
+	VEC3 dir;
+	VEC3 delta;
+	VEC3 side;
 	int stepx;
 	int stepy;
 	int stepz;
-	int side;
+	int sid;
 	int ix;
 	int iy;
 	int iz;
@@ -169,12 +192,14 @@ extern PROPERTIES     *properties;
 extern ENTITY         *entity;
 extern OPENGLMESSAGE  *glMes;
 extern MAP            *map;
+extern MAP            *metadt;
+extern MAP            *metadt2;
+extern MAP            *metadt3;
 extern LPMAP          *lpmap;
-extern RGB            *lmap;
+extern EXRGB          *lmap;
 
 extern HDC dc;
 extern HWND window;
-extern float brightness;
 extern int entityC;
 extern char sprite;
 extern char buttonId;
@@ -182,6 +207,9 @@ extern int tick;
 extern int staticentityC;
 extern int settings;
 extern RGBA colorSel;
+extern RGBA metadtSel;
+extern RGBA metadt2Sel;
+extern RGBA metadt3Sel;
 extern CVEC3 selarea;
 extern Mat3 cameraMatrix;
 extern void (*buttons[6])();
@@ -190,8 +218,10 @@ extern STRINGS fileNames;
 extern unsigned char tempVar[2];
 extern float quad[8192];
 extern unsigned int totalCar;
+extern unsigned int totalCar;
 extern unsigned int lmapC;
 extern long long fps;
+extern f32 brightness;
 
 extern unsigned char *inputStr;
 
@@ -215,18 +245,23 @@ void levelSave();
 void levelLoad();
 void drawUI();
 void drawSprite(float x,float y,float z,float id,float xsize,float ysize);
-void updateLight(int pos,float r,float g,float b);
-void updateLightSingle(unsigned int block);
+void initOpenCL();
+void HDR();
+void updateBlock(int pos,int val);
 
 RAY rayCreate(VEC3 pos,VEC3 dir);
 
 unsigned int crds2map(int x,int y,int z);
 unsigned int crds2lmap(int x,int y,int z);
-CVEC3 map2crds(int 	map);
+inline i32 irnd();
+inline f32 rnd();
+CVEC3 map2crds(u32 	map);
 
 char *loadFile(char *name);
 
 inline int max3(int val1,int val2,int val3);
+inline float fract(float p);
+
 
 
 

@@ -1,18 +1,30 @@
 ﻿#include <windows.h>
-#include "main.h"
 #include <math.h>
 #include <stdio.h> 
 #include <intrin.h>
+#include "cl.h"
 
+#include "main.h"
 #include "vec3.h"
 
-#define PI 3.141592653f
+#pragma comment(lib,"OpenCL.lib")
+
+unsigned char *openclKernel;
 
 unsigned int lmapC;
-RGB *lmap;
+EXRGB *lmap;
 VEC3 *lmapb;
 
-inline unsigned int hash(unsigned int x) {
+cl_platform_id   clPlatformIds[20];
+cl_context       clContext;
+cl_device_id     clDeviceId;
+cl_command_queue clCommandQueue;
+cl_program       clProgram;
+cl_kernel        clKernel;
+
+int clPlatformC;
+
+inline i32 hash(i32 x) {
 	x += (x << 10);
 	x ^= (x >> 6);
 	x += (x << 3);
@@ -21,10 +33,10 @@ inline unsigned int hash(unsigned int x) {
 	return x;
 }
 
-inline float rnd() {
+inline f32 rnd() {
 	union p {
 		float f;
-		unsigned int u;
+		i32 u;
 	}r;
 	r.u = hash(__rdtsc());
 	r.u &= 0x007fffff;
@@ -32,7 +44,7 @@ inline float rnd() {
 	return r.f;
 }
 
-inline int irnd() {
+inline i32 irnd(){
 	return hash(__rdtsc());
 }
 
@@ -40,44 +52,264 @@ inline float fract(float p){
 	return p - (int)p;
 }
 
-VEC3 getSubCoords(RAY *ray){
-	VEC3 p;
-	switch(ray->side){
-	case 0:
-		if(ray->vx < 0.0f){
-			p.x = ray->ix+1.0f;
-		}
-		else{
-			p.x = ray->ix;
-		}
-		p.y = ray->y + (ray->sidex - ray->deltax) * ray->vy;
-		p.z = ray->z + (ray->sidex - ray->deltax) * ray->vz;
-		break;
-	case 1:
-		if(ray->vy < 0.0f){
-			p.y = ray->iy+1.0f;
-		}
-		else{
-			p.y = ray->iy;
-		}
-		p.x = ray->x + (ray->sidey - ray->deltay) * ray->vx;
-		p.z = ray->z + (ray->sidey - ray->deltay) * ray->vz;
-		break;
-	case 2:
-		if(ray->vz < 0.0f){
-			p.z = ray->iz+1.0f;
-		}
-		else{
-			p.z = ray->iz;
-		}
-		p.x = ray->x + (ray->sidez - ray->deltaz) * ray->vx;
-		p.y = ray->y + (ray->sidez - ray->deltaz) * ray->vy;
-		break;
-	}
-	return p;
+void initOpenCL(){
+	openclKernel = loadFile("OpenCL/light.cl");
+	clGetPlatformIDs(20,clPlatformIds,&clPlatformC);
+	clGetDeviceIDs(clPlatformIds[0],CL_DEVICE_TYPE_DEFAULT,1,&clDeviceId,0);
+	clContext = clCreateContext(0,1,&clDeviceId,0,0,0);
+	clCommandQueue = clCreateCommandQueueWithProperties(clContext,clDeviceId,0,0);
+	clProgram      = clCreateProgramWithSource(clContext,1,(const char**)&openclKernel,0,0);
+	clBuildProgram(clProgram,0,0,0,0,0);
+	clKernel = clCreateKernel(clProgram,"lighting",0);
 }
 
-inline void updateLightRay(RAY *ray,float red,float green,float blue){
+cl_mem clMap;
+cl_mem clLightmap;
+cl_mem clLpmap;
+cl_mem clMetadt;
+cl_mem clMetadt2;
+cl_mem clMetadt3;
+
+void GPUgenLight(u64 totalRays,u32 block){
+	RAY ray;
+	VEC3 bpos;
+	bpos.x = (f32)(block % properties->lvlSz)+0.5f;
+	bpos.y = (f32)(block / properties->lvlSz % properties->lvlSz) + 0.5f;
+	bpos.z = (f32)(block / (properties->lvlSz*properties->lvlSz)) + 0.5f;
+	VEC3 color = {(f32)(map[block].r)/25.0f,(f32)(map[block].g)/25.0f,(f32)(map[block].b)/25.0f};
+	u64 one = properties->lmapSz*properties->lmapSz;
+	f32 lightrd = (f32)metadt[block].b/255.0f;
+	VEC2 rot = {(f32)metadt[block].r/255.0f,(f32)metadt[block].g/255.0f};
+
+	totalRays = (f64)totalRays * (f64)lightrd;
+	totalRays /= properties->lmapSz*properties->lmapSz;
+	totalRays *= properties->lmapSz*properties->lmapSz;
+
+	printf("%f\n",lightrd);
+
+	if(one > 512){
+		one = 512;
+	}
+	
+	clSetKernelArg(clKernel,6,sizeof(f32),&bpos.x);
+	clSetKernelArg(clKernel,7,sizeof(f32),&bpos.y);
+	clSetKernelArg(clKernel,8,sizeof(f32),&bpos.z);
+	clSetKernelArg(clKernel,9,sizeof(f32),&color.x);
+	clSetKernelArg(clKernel,10,sizeof(f32),&color.y);
+	clSetKernelArg(clKernel,11,sizeof(f32),&color.z);
+	clSetKernelArg(clKernel,12,sizeof(u32),&properties->lvlSz);
+	clSetKernelArg(clKernel,13,sizeof(u32),&properties->lmapSz);
+	clSetKernelArg(clKernel,14,sizeof(f32),&lightrd);
+	clSetKernelArg(clKernel,15,sizeof(f32),&rot.x);
+	clSetKernelArg(clKernel,16,sizeof(f32),&rot.y);
+
+	clEnqueueWriteBuffer(clCommandQueue,clMap,1,0,BLOCKCOUNT*sizeof(MAP),map,0,0,0);
+	clEnqueueWriteBuffer(clCommandQueue,clMetadt,1,0,sizeof(MAP)*BLOCKCOUNT,metadt,0,0,0);
+	clEnqueueWriteBuffer(clCommandQueue,clMetadt2,1,0,sizeof(MAP)*BLOCKCOUNT,metadt2,0,0,0);
+	clEnqueueWriteBuffer(clCommandQueue,clMetadt3,1,0,sizeof(MAP)*BLOCKCOUNT,metadt3,0,0,0);
+	clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+	clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,BLOCKCOUNT*sizeof(LPMAP),lpmap,0,0,0); 
+
+	printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clKernel,1,0,&totalRays,&one,0,0,0));
+
+	clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+}
+
+void updateLight2(){
+	printf("generating...\n");
+	HeapFree(GetProcessHeap(),0,lmap);
+	lmapC = 0;
+	for(u32 i = 0;i < BLOCKCOUNT;i++){
+		switch(map[i].id){
+		case 9:
+			lpmap[i].p1 = lmapC;
+			lpmap[i].p2 = lmapC+1;
+			lpmap[i].p3 = lmapC+2;
+			lpmap[i].p4 = lmapC+3;
+			lmapC+=4;
+			break;
+		case 12:
+			lpmap[i].p1 = lmapC;
+			lpmap[i].p2 = lmapC+1;
+			lpmap[i].p3 = lmapC+2;
+			lpmap[i].p4 = lmapC+3;
+			lpmap[i].p5 = lmapC+4;
+			lpmap[i].p6 = lmapC+5;
+			lmapC+=6;
+			break;
+		case 28:{
+			CVEC3 block = map2crds(i);
+			if(block.x > 0){
+				switch(map[i-1].id){
+				case 0:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+					lpmap[i].p1 = lmapC;
+					lmapC++;
+					break;
+				}
+			}
+			if(block.x < properties->lvlSz){
+				switch(map[i+1].id){
+				case 0:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+					lpmap[i].p2 = lmapC;
+					lmapC++;
+					break;
+				}
+			}
+			if(block.y > 0){
+				switch(map[i-properties->lvlSz].id){
+				case 0:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+					lpmap[i].p3 = lmapC;
+					lmapC++;
+					break;
+				}
+			}
+			if(block.y < properties->lvlSz){
+				switch(map[i+properties->lvlSz].id){
+				case 0:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+					lpmap[i].p4 = lmapC;
+					lmapC++;
+					break;
+				}
+			}
+			if(block.z > 0){
+				switch(map[i-properties->lvlSz*properties->lvlSz].id){
+				case 0:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+					lpmap[i].p5 = lmapC;
+					lmapC++;
+					break;
+				}
+			}
+			if(block.z < properties->lvlSz){
+				switch(map[i+properties->lvlSz*properties->lvlSz].id){
+				case 0:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+				case 9:
+				case 10:
+				case 11: 
+				case 12:
+					lpmap[i].p6 = lmapC;
+					lmapC++;
+					break;
+				}
+			}
+		}
+		}
+	}
+
+	lmap  = HeapAlloc(GetProcessHeap(),8,sizeof(EXRGB)*properties->lmapSzb*properties->lmapSzb*lmapC);
+	lmapb = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->lmapSzb*properties->lmapSzb*lmapC);
+
+	properties->lmapSz = properties->lmapSzb;
+
+	clMap      = clCreateBuffer(clContext,CL_MEM_READ_WRITE,MAPRAM,0,0);
+	clMetadt   = clCreateBuffer(clContext,CL_MEM_READ_WRITE,BLOCKCOUNT*sizeof(MAP),0,0);
+	clMetadt2  = clCreateBuffer(clContext,CL_MEM_READ_WRITE,BLOCKCOUNT*sizeof(MAP),0,0);
+	clMetadt3  = clCreateBuffer(clContext,CL_MEM_READ_WRITE,BLOCKCOUNT*sizeof(MAP),0,0);
+	clLightmap = clCreateBuffer(clContext,CL_MEM_READ_WRITE,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,0,0);
+	clLpmap    = clCreateBuffer(clContext,CL_MEM_READ_WRITE,BLOCKCOUNT*sizeof(LPMAP),0,0);
+
+	clSetKernelArg(clKernel,0,sizeof(cl_mem),(void*)&clMap);
+	clSetKernelArg(clKernel,1,sizeof(cl_mem),(void*)&clMetadt);
+	clSetKernelArg(clKernel,2,sizeof(cl_mem),(void*)&clMetadt2);
+	clSetKernelArg(clKernel,3,sizeof(cl_mem),(void*)&clMetadt3);
+	clSetKernelArg(clKernel,4,sizeof(cl_mem),(void*)&clLightmap);
+	clSetKernelArg(clKernel,5,sizeof(cl_mem),(void*)&clLpmap);
+
+	for(u32 i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
+		switch(map[i].id){
+		case 3:
+			GPUgenLight(properties->lmapSz*properties->lmapSz*properties->lmapSz*0x000800,i);
+			break;
+		case 4:
+			GPUgenLight(properties->lmapSz*properties->lmapSz*properties->lmapSz*0x002000,i);
+			break;
+		case 5:
+			GPUgenLight(properties->lmapSz*properties->lmapSz*properties->lmapSz*0x008000,i);
+			break;
+		case 6:
+			GPUgenLight(properties->lmapSz*properties->lmapSz*properties->lmapSz*0x020000,i);
+			break;
+		case 7:
+			GPUgenLight(properties->lmapSz*properties->lmapSz*properties->lmapSz*0x080000,i);
+			break;
+		case 8:{
+			GPUgenLight(properties->lmapSz*properties->lmapSz*properties->lmapSz*0x200000,i);
+			break;	
+			}
+		}
+	}
+
+	for(u32 i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
+		if(lmapb[i].x>65535.0f){
+			lmapb[i].x = 65535.0f;
+		}
+		if(lmapb[i].y>65535.0f){
+			lmapb[i].y = 65535.0f;
+		}
+		if(lmapb[i].z>65535.0f){
+			lmapb[i].z = 65535.0f;
+		}
+		lmap[i].r = lmapb[i].x;
+		lmap[i].g = lmapb[i].y;
+		lmap[i].b = lmapb[i].z;
+	}
+	HeapFree(GetProcessHeap(),0,lmapb);
+	printf("generated light\n");
+	glMes[glMesC].id = 6;
+	glMesC++;
+}
+
+/*
+inline void lightRayShoot(RAY *ray,float red,float green,float blue){
 	while(green > 0.003f || red > 0.003f || blue > 0.003f){
 		rayItterate(ray);
 		if(ray->ix < 0 || ray->iy < 0 || ray->iz < 0 || ray->ix >= properties->lvlSz || ray->iy >= properties->lvlSz || ray->iz >= properties->lvlSz){
@@ -94,7 +326,7 @@ inline void updateLightRay(RAY *ray,float red,float green,float blue){
 			case 0:{
 				wall.x = fract(ray->y + (ray->sidex - ray->deltax) * ray->vy);
 				wall.y = fract(ray->z + (ray->sidex - ray->deltax) * ray->vz);
-				unsigned int offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
+				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
 				if(ray->vx>0.0f){
 					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].x += red;
 					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].y += green;
@@ -128,7 +360,7 @@ inline void updateLightRay(RAY *ray,float red,float green,float blue){
 			case 1:{
 				wall.x = fract(ray->x + (ray->sidey - ray->deltay) * ray->vx);
 				wall.y = fract(ray->z + (ray->sidey - ray->deltay) * ray->vz);
-				unsigned int offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
+				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
 				if(ray->vy>0.0f){
 					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].x += red;
 					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].y += green;
@@ -162,7 +394,7 @@ inline void updateLightRay(RAY *ray,float red,float green,float blue){
 			case 2:{	 
 				wall.x = fract(ray->x + (ray->sidez - ray->deltaz) * ray->vx);
 				wall.y = fract(ray->y + (ray->sidez - ray->deltaz) * ray->vy);
-				unsigned int offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz)	;
+				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
 				if(ray->vz>0.0f){
 					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].x += red;
 					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].y += green;
@@ -204,143 +436,4 @@ inline void updateLightRay(RAY *ray,float red,float green,float blue){
 		break;
 	}
 }
-
-void updateLight(int pos,float r,float g,float b){
-	RAY ray;
-	VEC3 bpos;
-	bpos.x = (float)(pos % properties->lvlSz)+0.5f;
-	bpos.y = (float)(pos / properties->lvlSz % properties->lvlSz) + 0.5f;
-	bpos.z = (float)(pos / (properties->lvlSz*properties->lvlSz)) + 0.5f;
-	float mrk = -0.624f;
-	for(float i = -PI_025; i < PI_025;i+= 0.003f/(float)properties->lmapSz){
-		for(float i2 = -PI_025; i2 < PI_025;i2+= 0.003f/(float)properties->lmapSz){
-			float i3 = (rnd() - 1.0f) * PI_2 - PI;
-			ray = rayCreate(bpos,(VEC3){sinf(i3)*cosf(i+i2),cosf(i3)*cosf(i+i2),sinf(i+i2)});
-			updateLightRay(&ray,r,g,b);
-		}
-		if(i > mrk){
-			printf("%i\n",(int)((mrk+0.78f)*64.11f));
-			mrk+=0.156f;
-		}
-	}
-}
-
-void updateLightSingle(unsigned int *block){
-	printf("generating...\n");
-	if(!lmapC){
-		for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
-			if(map[i].id){
-				CVEC3 block = map2crds(i);
-				if(block.x > 0 && !map[i-1].id){
-					lpmap[i].p1 = lmapC;
-					lmapC++;
-				}
-				if(block.x < properties->lvlSz && !map[i+1].id){
-					lpmap[i].p2 = lmapC;
-					lmapC++;
-				}
-				if(block.y > 0 && !map[i-properties->lvlSz].id){
-					lpmap[i].p3 = lmapC;
-					lmapC++;
-				}
-				if(block.y < properties->lvlSz && !map[i+properties->lvlSz].id){
-					lpmap[i].p4 = lmapC;
-					lmapC++;
-				}
-				if(block.z > 0 && !map[i-properties->lvlSz*properties->lvlSz].id){
-					lpmap[i].p5 = lmapC;
-					lmapC++;
-				}
-				if(block.z < properties->lvlSz && !map[i+properties->lvlSz*properties->lvlSz].id){
-					lpmap[i].p6 = lmapC;
-					lmapC++;
-				}
-			}
-		}
-		lmap = HeapAlloc(GetProcessHeap(),8,sizeof(RGB)*properties->lmapSz*properties->lmapSz*lmapC);
-	}
-	lmapb = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC);
-	for(int i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
-		lmapb[i].x = lmap[i].r;
-		lmapb[i].y = lmap[i].g;
-		lmapb[i].z = lmap[i].b;
-	}
-	updateLight(*block,(float)(map[*block].r)/255.0f,(float)(map[*block].g)/255.0f,(float)(map[*block].b)/255.0f);
-	for(int i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
-		if(lmapb[i].x>255.0f){
-			lmapb[i].x = 255.0f;
-		}
-		if(lmapb[i].y>255.0f){
-			lmapb[i].y = 255.0f;
-		}
-		if(lmapb[i].z>255.0f){
-			lmapb[i].z = 255.0f;
-		}
-		lmap[i].r = lmapb[i].x;
-		lmap[i].g = lmapb[i].y;
-		lmap[i].b = lmapb[i].z;
-	}
-	HeapFree(GetProcessHeap(),0,lmapb);
-	printf("generated light\n");
-	glMes[glMesC].id = 6;
-	glMesC++;
-}
-
-void updateLight2(){
-	printf("generating...\n");
-	lmapC = 0;
-	for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
-		if(map[i].id){
-			CVEC3 block = map2crds(i);
-			if(block.x > 0 && !map[i-1].id){
-				lpmap[i].p1 = lmapC;
-				lmapC++;
-			}
-			if(block.x < properties->lvlSz && !map[i+1].id){
-				lpmap[i].p2 = lmapC;
-				lmapC++;
-			}
-			if(block.y > 0 && !map[i-properties->lvlSz].id){
-				lpmap[i].p3 = lmapC;
-				lmapC++;
-			}
-			if(block.y < properties->lvlSz && !map[i+properties->lvlSz].id){
-				lpmap[i].p4 = lmapC;
-				lmapC++;
-			}
-			if(block.z > 0 && !map[i-properties->lvlSz*properties->lvlSz].id){
-				lpmap[i].p5 = lmapC;
-				lmapC++;
-			}
-			if(block.z < properties->lvlSz && !map[i+properties->lvlSz*properties->lvlSz].id){
-				lpmap[i].p6 = lmapC;
-				lmapC++;
-			}
-		}
-	}
-	lmap  = HeapAlloc(GetProcessHeap(),8,sizeof(RGB)*properties->lmapSz*properties->lmapSz*lmapC);
-	lmapb = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC);
-	for(int i = 0;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
-		if(map[i].id == 8){
-			updateLight(i,(float)(map[i].r)/255.0f,(float)(map[i].g)/255.0f,(float)(map[i].b)/255.0f);
-		}
-	}
-	for(int i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
-		if(lmapb[i].x>255.0f){
-			lmapb[i].x = 255.0f;
-		}
-		if(lmapb[i].y>255.0f){
-			lmapb[i].y = 255.0f;
-		}
-		if(lmapb[i].z>255.0f){
-			lmapb[i].z = 255.0f;
-		}
-		lmap[i].r = lmapb[i].x;
-		lmap[i].g = lmapb[i].y;
-		lmap[i].b = lmapb[i].z;
-	}
-	HeapFree(GetProcessHeap(),0,lmapb);
-	printf("generated light\n");
-	glMes[glMesC].id = 6;
-	glMesC++;
-}
+*/

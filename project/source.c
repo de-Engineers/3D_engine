@@ -4,24 +4,14 @@
 #include <intrin.h>
 #include <stdio.h>
 
-#pragma comment(lib,"winmm.lib");
-
-#define resx 512
-#define resy 512
-
-#define RENDERDISTANCE 32
-
-#define MAPSZ 64
-
-#define MAPRAM MAPSZ*MAPSZ*MAPSZ*4
-
-#define VRAM resx*resy*4
-
-#define LMAPSZ 4
-#define LMAPSZT LMAPSZ*LMAPSZ*LMAPSZ
+#pragma comment(lib,"winmm.lib")
 
 MAP   *map;
 LPMAP *lpmap;
+
+MAP   *metadt;
+MAP   *metadt2;
+MAP   *metadt3;
 
 unsigned char menuSel;
 
@@ -49,6 +39,9 @@ PROPERTIES *properties;
 PLAYERDATA *player;
 
 RGBA colorSel;
+RGBA metadtSel;
+RGBA metadt2Sel;
+RGBA metadt3Sel;
 
 unsigned char blockSel = 1;
 unsigned char toolSel;	
@@ -59,9 +52,6 @@ float specialBlockcrd[3];
 float mousex;
 float mousey;
 float stamina = 1.0f;
-float brightness;
-float averageBrightness;
-float maxBrightness;
 
 BITMAPINFO bmi = { sizeof(BITMAPINFOHEADER),resx,resy,1,32,BI_RGB };	
 
@@ -95,16 +85,34 @@ inline void buttonCreate(VEC2 pos,unsigned char id){
 	buttonC++;
 }
 
+inline i32 hash(i32 x) {
+	x += (x << 10);
+	x ^= (x >> 6);
+	x += (x << 3);
+	x ^= (x >> 11);
+	x += (x << 15);
+	return x;
+}
+
+inline f32 rnd() {
+	union p {
+		float f;
+		i32 u;
+	}r;
+	r.u = hash(__rdtsc());
+	r.u &= 0x007fffff;
+	r.u |= 0x3f800000;
+	return r.f;
+}
+
+inline i32 irnd(){
+	return hash(__rdtsc());
+}
+
 void blockDetection(float x,float y,float z,int axis){
 	int block = crds2map(x,y,z);
 	switch(map[block].id){
 	case 3:
-		break;
-	case 9:
-		break;
-	case 12:
-		specialBlock[0] = map[block].id;
-		specialBlock[1] |= axis;
 		break;
 	case 14:
 		playerDeath();
@@ -137,8 +145,6 @@ void specialBlockDetection(float x,float y,float z,int axis){
 	int block = crds2map(x,y,z);
 	switch(map[block].id){
 	case 3:
-		break;
-	case 9:
 		break;
 	case 49:
 		if(touchStatus){
@@ -260,27 +266,27 @@ void hitboxYup(float x,float y,float z){
 }
 
 void rayItterate(RAY *ray){
-    if(ray->sidex < ray->sidey){
-        if(ray->sidex < ray->sidez){
+    if(ray->side.x < ray->side.y){
+        if(ray->side.x < ray->side.z){
 			ray->ix += ray->stepx;
-			ray->sidex += ray->deltax;
-			ray->side = 0;
+			ray->side.x += ray->delta.x;
+			ray->sid = 0;
         }
         else{
 			ray->iz += ray->stepz;
-			ray->sidez += ray->deltaz;
-			ray->side = 2;
+			ray->side.z += ray->delta.z;
+			ray->sid = 2;
         }
     }
-    else if(ray->sidey < ray->sidez){
+    else if(ray->side.y < ray->side.z){
 		ray->iy += ray->stepy;
-		ray->sidey += ray->deltay;
-		ray->side = 1;
+		ray->side.y += ray->delta.y;
+		ray->sid = 1;
     }
     else{
 		ray->iz += ray->stepz;
-		ray->sidez += ray->deltaz;
-		ray->side = 2;
+		ray->side.z += ray->delta.z;
+		ray->sid = 2;
     }
 }
 
@@ -306,6 +312,22 @@ void updateBlock(int pos,int val){
 	map[pos].r = colorSel.r;
 	map[pos].g = colorSel.g;
 	map[pos].b = colorSel.b;
+
+	metadt[pos].id = metadtSel.a;
+	metadt[pos].r  = metadtSel.r;
+	metadt[pos].g  = metadtSel.g;
+	metadt[pos].b  = metadtSel.b;
+
+	metadt[pos].id = metadt2Sel.a;
+	metadt[pos].r  = metadt2Sel.r;
+	metadt[pos].g  = metadt2Sel.g;
+	metadt[pos].b  = metadt2Sel.b;
+
+	metadt[pos].id = metadt3Sel.a;
+	metadt[pos].r  = metadt3Sel.r;
+	metadt[pos].g  = metadt3Sel.g;
+	metadt[pos].b  = metadt3Sel.b;
+
 	glMes[glMesC].id = 3;
 	glMesC++;
 }
@@ -344,6 +366,7 @@ void levelSave(char *lname){
 	WriteFile(h,&properties->lvlSz,1,0,0);
 	WriteFile(h,&properties->lmapSz,1,0,0);
 	WriteFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
+	WriteFile(h,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	HeapFree(GetProcessHeap(),0,name);
 	CloseHandle(h);
 }
@@ -359,6 +382,7 @@ void levelLoad(char *lname){
 	properties->lmapSz2  = properties->lmapSz*properties->lvlSz;
 	map        = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
 	ReadFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
+	ReadFile(h,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	HeapFree(GetProcessHeap(),0,name);
 	CloseHandle(h);
 	glMes[glMesC].id = 3;
@@ -405,6 +429,23 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 		switch(wParam){
+		case 0x52:
+			if(GetKeyState(VK_LCONTROL)&0x80){
+				do{
+					metadtSel.r = irnd();
+				}
+				while(metadtSel.r - metadtSel.b < 0 || metadtSel.r + metadtSel.b > 255);
+				do{
+					metadtSel.a = irnd();
+				}
+				while(metadtSel.a - metadtSel.b < 0 || metadtSel.a + metadtSel.b > 255);
+			}
+			else{
+				colorSel.r = irnd();
+				colorSel.g = irnd();
+				colorSel.b = irnd();
+			}
+			break;
 		case VK_NUMPAD0:
 			colorSel.r = 255;
 			colorSel.g = 0;
@@ -660,7 +701,8 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			selarea.x = 0;
 			selarea.y = 0;
 			selarea.z = 0;
-			if(toolSel == 2 || toolSel == 5){
+			switch(toolSel){
+			case 3:
 				if(GetKeyState(VK_RSHIFT) & 0x80){
 					if(GetKeyState(VK_RCONTROL) & 0x80){
 						colorSel.a++;
@@ -677,36 +719,36 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						colorSel.r++;
 					}
 				}
-			}
-			else{
-				if(GetKeyState(VK_LCONTROL) & 0x80){
-					if(GetKeyState(VK_RSHIFT) & 0x80){
-						if(GetKeyState(VK_RCONTROL) & 0x80){
-							colorSel.a++;
-						}
-						else{
-							colorSel.b++;
-						}
+				break;
+			case 4:
+				if(GetKeyState(VK_RSHIFT) & 0x80){
+					if(GetKeyState(VK_RCONTROL) & 0x80){
+						metadtSel.a++;
 					}
 					else{
-						if(GetKeyState(VK_RCONTROL) & 0x80){
-							colorSel.g++;
-						}
-						else{
-							colorSel.r++;
-						}
+						metadtSel.b++;
 					}
 				}
 				else{
-					blockSel++;
+					if(GetKeyState(VK_RCONTROL) & 0x80){
+						metadtSel.g++;
+					}
+					else{
+						metadtSel.r++;
+					}
 				}
+				break;
+			default:
+				blockSel++;
+				break;
 			}
 		}
 		if(GetKeyState(VK_SUBTRACT) & 0x80){
 			selarea.x = 0;
 			selarea.y = 0;
 			selarea.z = 0;
-			if(toolSel == 2 || toolSel == 5){
+			switch(toolSel){
+			case 3:
 				if(GetKeyState(VK_RSHIFT) & 0x80){
 					if(GetKeyState(VK_RCONTROL) & 0x80){
 						colorSel.a--;
@@ -723,32 +765,28 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						colorSel.r--;
 					}
 				}
-			}
-			else{
-				if(GetKeyState(VK_LCONTROL) & 0x80){
-					if(GetKeyState(VK_RSHIFT) & 0x80){
-						if(GetKeyState(VK_RCONTROL) & 0x80){
-							colorSel.a--;
-						}
-						else{
-							colorSel.b--;
-						}
+				break;
+			case 4:
+				if(GetKeyState(VK_RSHIFT) & 0x80){
+					if(GetKeyState(VK_RCONTROL) & 0x80){
+						metadtSel.a--;
 					}
 					else{
-						if(GetKeyState(VK_RCONTROL) & 0x80){
-							colorSel.g--;
-						}
-						else{
-							colorSel.r--;
-						}
+						metadtSel.b--;
 					}
 				}
 				else{
-					if(blockSel != 0){
-						blockSel--;
+					if(GetKeyState(VK_RCONTROL) & 0x80){
+						metadtSel.g--;
+					}
+					else{
+						metadtSel.r--;
 					}
 				}
-
+				break;
+			default:
+				blockSel--;
+				break;
 			}
 		}
 		if(GetKeyState(0x4b) & 0x80){
@@ -820,9 +858,9 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					switch(toolSel){
 					case 4:{
 						CVEC3 scrd = map2crds(block);
-						switch(ray.side){
+						switch(ray.sid){
 						case 0:
-							if(ray.vx < 0.0){
+							if(ray.dir.x < 0.0){
 								scrd.x--;
 							}
 							else{
@@ -830,7 +868,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 							}
 							break;
 						case 1:
-							if(ray.vy < 0.0){
+							if(ray.dir.y < 0.0){
 								scrd.y--;
 							}
 							else{
@@ -838,7 +876,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 							}
 							break;
 						case 2:
-							if(ray.vz < 0.0){
+							if(ray.dir.z < 0.0){
 								scrd.z--;
 							}
 							else{
@@ -861,6 +899,18 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						colorSel.r = map[block].r;
 						colorSel.g = map[block].g;
 						colorSel.b = map[block].b;
+						metadtSel.r = metadt[block].r;
+						metadtSel.g = metadt[block].g;
+						metadtSel.b = metadt[block].b;
+						metadtSel.a = metadt[block].id;
+						metadt2Sel.r = metadt[block].r;
+						metadt2Sel.g = metadt[block].g;
+						metadt2Sel.b = metadt[block].b;
+						metadt2Sel.a = metadt[block].id;
+						metadt3Sel.r = metadt[block].r;
+						metadt3Sel.g = metadt[block].g;
+						metadt3Sel.b = metadt[block].b;
+						metadt3Sel.a = metadt[block].id;
 						break;
 					}
 					break;
@@ -870,28 +920,28 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 	case WM_LBUTTONDOWN:{
-			if(!menuSel){
-				tools();
-			}
-			else{
-				if(buttonId!=-1){
-					if(buttonId<100){
-						buttons[buttonId]();
-					}
-					else if (buttonId < 110){
-						levelLoad(fileNames.str[buttonId-100]);
-					}
-					else{
-						levelDelete(fileNames.str[buttonId-110]);
-						menuSel = 1;
-						buttonC = 0;
-						buttonCreate((VEC2){0.05f,-0.35f},1);
-						buttonCreate((VEC2){0.05f,-0.42f},0);
-						buttonCreate((VEC2){0.05f,-0.28f},2);
-						buttonCreate((VEC2){0.05f,-0.21f},3);
-					}
+		if(!menuSel){
+			tools();
+		}
+		else{
+			if(buttonId!=-1){
+				if(buttonId<100){
+					buttons[buttonId]();
+				}
+				else if (buttonId < 110){
+					levelLoad(fileNames.str[buttonId-100]);
+				}
+				else{
+					levelDelete(fileNames.str[buttonId-110]);
+					menuSel = 1;
+					buttonC = 0;
+					buttonCreate((VEC2){0.05f,-0.35f},1);
+					buttonCreate((VEC2){0.05f,-0.42f},0);
+					buttonCreate((VEC2){0.05f,-0.28f},2);
+					buttonCreate((VEC2){0.05f,-0.21f},3);
 				}
 			}
+		}
 		break;
 		}
 	case WM_RBUTTONDOWN:
@@ -983,21 +1033,20 @@ void physics()
 				amp = 0.3;
 			}
 			if (GetKeyState(0x57) & 0x80){
-				player->xvel += player->xdir / 50 * amp;
-				player->yvel += player->ydir / 50 * amp;
-
+				player->xvel += player->xdir / 250 * amp;
+				player->yvel += player->ydir / 250 * amp;
 			}
 			if (GetKeyState(0x53) & 0x80){
-				player->xvel -= player->xdir / 50 * amp;
-				player->yvel -= player->ydir / 50 * amp;
+				player->xvel -= player->xdir / 250 * amp;
+				player->yvel -= player->ydir / 250 * amp;
 			}
 			if (GetKeyState(0x44) & 0x80){
-				player->xvel += cosf(player->xangle + PI_05) / 50 * amp;
-				player->yvel += sinf(player->xangle + PI_05) / 50 * amp;
+				player->xvel += cosf(player->xangle + PI_05) / 250 * amp;
+				player->yvel += sinf(player->xangle + PI_05) / 250 * amp;
 			}
 			if (GetKeyState(0x41) & 0x80){
-				player->xvel -= cosf(player->xangle + PI_05) / 50 * amp;
-				player->yvel -= sinf(player->xangle + PI_05) / 50 * amp;
+				player->xvel -= cosf(player->xangle + PI_05) / 250 * amp;
+				player->yvel -= sinf(player->xangle + PI_05) / 250 * amp;
 			}
 			player->zvel -= 0.015;
 
@@ -1199,6 +1248,10 @@ void physics()
 		player->zvel /= 1.003;	
 		tick++;
 		
+		if(properties->lmapSz){
+			HDR();
+		}
+
 		Sleep(15);
 		while(settings & 0x10){
 			Sleep(1);
@@ -1210,8 +1263,11 @@ void physics()
 void main(){
 	timeBeginPeriod(1);
 
-	lpmap      = HeapAlloc(GetProcessHeap(),8,sizeof(LPMAP)*MAPRAM);
-	map        = HeapAlloc(GetProcessHeap(),8,MAPRAM);
+	lpmap      = HeapAlloc(GetProcessHeap(),8,sizeof(LPMAP)*BLOCKCOUNT);
+	map        = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
+	metadt     = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
+	metadt2    = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
+	metadt3    = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
 	player     = HeapAlloc(GetProcessHeap(),8,sizeof(PLAYERDATA));
 	properties = HeapAlloc(GetProcessHeap(),8,sizeof(PROPERTIES));
 	entity     = HeapAlloc(GetProcessHeap(),8,sizeof(ENTITY) * 512);
@@ -1243,13 +1299,14 @@ void main(){
 	properties->xres           = resx;
 	properties->yres           = resy;
 	properties->fog            = 0.5;
-	properties->lmapSz         = LMAPSZ;
 	properties->lmapSz2        = MAPSZ*LMAPSZ;
 	properties->lmapSz3        = LMAPSZT;
+	properties->lmapSzb        = LMAPSZ;
 
 	ShowCursor(0);
 
 	initSound();
+	initOpenCL();
 
 	renderingThread      = CreateThread(0,0,openGL,0,0,0);
 	physicsThread        = CreateThread(0,0,physics,0,0,0);
