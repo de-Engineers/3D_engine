@@ -74,7 +74,7 @@ void tools(){
 	switch(toolSel){
 	case 0:{
 		if(GetKeyState(VK_LCONTROL)&0x80){
-			RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 				u32 block = crds2map(ray.ix,ray.iy,ray.iz);
 				if(map[block].id!=BLOCK_AIR){
@@ -108,25 +108,25 @@ void tools(){
 					metadt6Sel.g = metadt6[block].g;
 					metadt6Sel.b = metadt6[block].b;
 					metadt6Sel.a = metadt6[block].id;
-					sliderCreate((VEC2){0.54f,-0.875f},0);
-					sliderCreate((VEC2){0.54f,-0.825f},1);
-					sliderCreate((VEC2){0.54f,-0.775f},2);
-					sliderCreate((VEC2){0.54f,-0.475f},3);
-					sliderCreate((VEC2){0.54f,-0.425f},4);
-					sliderCreate((VEC2){0.54f,-0.375f},5);
-					sliderCreate((VEC2){0.54f,-0.175f},6);
-					sliderCreate((VEC2){0.54f,-0.125f},7);
-					sliderCreate((VEC2){0.54f,-0.075f},8);
-					sliderCreate((VEC2){0.54f, 0.125f},9);
-					sliderCreate((VEC2){0.54f, 0.175f},10);
-					sliderCreate((VEC2){0.54f, 0.225f},11);
+					sliderCreate((VEC2){0.59f,-0.875f},0);
+					sliderCreate((VEC2){0.59f,-0.825f},1);
+					sliderCreate((VEC2){0.59f,-0.775f},2);
+					sliderCreate((VEC2){0.59f,-0.475f},3);
+					sliderCreate((VEC2){0.59f,-0.425f},4);
+					sliderCreate((VEC2){0.59f,-0.375f},5);
+					sliderCreate((VEC2){0.59f,-0.175f},6);
+					sliderCreate((VEC2){0.59f,-0.125f},7);
+					sliderCreate((VEC2){0.59f,-0.075f},8);
+					sliderCreate((VEC2){0.59f, 0.125f},9);
+					sliderCreate((VEC2){0.59f, 0.175f},10);
+					sliderCreate((VEC2){0.59f, 0.225f},11);
 					break;
 				}
 				rayItterate(&ray);
 			}
 		}
 		else{
-			RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 				int block = crds2map(ray.ix,ray.iy,ray.iz);
 				if(map[block].id!=BLOCK_AIR){
@@ -179,7 +179,7 @@ void tools(){
 		}
 		break;
 	case 1:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
@@ -265,7 +265,7 @@ void tools(){
 		break;
 	}
 	case 2:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
@@ -365,7 +365,7 @@ void tools(){
 		break;
 	}
 	case 3:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
@@ -381,7 +381,7 @@ void tools(){
 		break;	
 	}
 	case 4:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
@@ -406,7 +406,7 @@ void tools(){
 		break;
 	}
 	case 5:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
@@ -431,7 +431,7 @@ void tools(){
 		break;
 		}
 	case 6:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			rayItterate(&ray);
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
@@ -458,23 +458,130 @@ void tools(){
 	case 7:
 		break;
 	case 8:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
 		if(l!=-1){
-			RGBA *clipTexture = HeapAlloc(GetProcessHeap(),8,properties->lmapSz*properties->lmapSz*sizeof(RGBA));
 			OpenClipboard(window);
 			HANDLE h = GetClipboardData(CF_DIB);
 			u8 *data = GlobalLock(h);
-			memcpy(clipTexture,data+sizeof(BITMAPINFO),properties->lmapSz*properties->lmapSz*sizeof(RGBA));
+			BITMAPINFO bmp;
+			memcpy(&bmp,data,sizeof(BITMAPINFO));
+			RGBA *clipTexture = HeapAlloc(GetProcessHeap(),8,bmp.bmiHeader.biWidth*bmp.bmiHeader.biHeight*sizeof(RGBA));
+			memcpy(clipTexture,data+sizeof(BITMAPINFO),bmp.bmiHeader.biWidth*bmp.bmiHeader.biHeight*sizeof(RGBA));
 			GlobalUnlock(h);
 			CloseHandle(h);
 			CloseClipboard();
 			l /= properties->lmapSz*properties->lmapSz;
 			l *= properties->lmapSz*properties->lmapSz;
-			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz;i++){
-				lmap[l+i].r = (f32)lmap[l+i].r * (f32)clipTexture[i].r / 127.0f;
-				lmap[l+i].g = (f32)lmap[l+i].g * (f32)clipTexture[i].g / 127.0f;
-				lmap[l+i].b = (f32)lmap[l+i].b * (f32)clipTexture[i].b / 127.0f;
+			for(u32 i = 0;i < bmp.bmiHeader.biHeight/properties->lmapSz;i++){
+				for(u32 i2 = 0;i2 < bmp.bmiHeader.biWidth/properties->lmapSz;i2++){
+				switch(ray.sid){
+				case 0:{
+					u32 block = crds2map(ray.ix,ray.iy+i,ray.iz+i2);
+					if(ray.dir.x>0.0f){
+						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
+							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
+								switch(map[block].id){
+								case BLOCK_SOLID:
+								case BLOCK_REFLECTIVE:
+									lmap[lpmap[block].p1*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r = (f32)bmap[lpmap[block].p1*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].b / 255.0f;
+									lmap[lpmap[block].p1*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g = (f32)bmap[lpmap[block].p1*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].g / 255.0f;
+									lmap[lpmap[block].p1*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b = (f32)bmap[lpmap[block].p1*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].r / 255.0f;
+									break;
+								}
+							}
+						}
+						glMes[glMesC].data1 = lpmap[block].p1*properties->lmapSz*properties->lmapSz;
+					}
+					else{
+						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
+							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
+								switch(map[block].id){
+								case BLOCK_SOLID:
+								case BLOCK_REFLECTIVE:
+									lmap[lpmap[block].p2*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r = (f32)bmap[lpmap[block].p2*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].b / 255.0f;
+									lmap[lpmap[block].p2*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g = (f32)bmap[lpmap[block].p2*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].g / 255.0f;
+									lmap[lpmap[block].p2*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b = (f32)bmap[lpmap[block].p2*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].r / 255.0f;
+									break;
+								}
+							}
+						}
+						glMes[glMesC].data1 = lpmap[block].p2*properties->lmapSz*properties->lmapSz;
+					}
+					break;
+				}
+				case 1:{
+					u32 block = crds2map(ray.ix+i,ray.iy,ray.iz+i2);
+					if(ray.dir.y>0.0f){
+						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
+							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
+								switch(map[block].id){
+								case BLOCK_SOLID:
+								case BLOCK_REFLECTIVE:
+									lmap[lpmap[block].p3*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r = (f32)bmap[lpmap[block].p3*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].b / 255.0f;
+									lmap[lpmap[block].p3*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g = (f32)bmap[lpmap[block].p3*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].g / 255.0f;
+									lmap[lpmap[block].p3*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b = (f32)bmap[lpmap[block].p3*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].r / 255.0f;
+									break;
+								}
+							}
+						}
+						glMes[glMesC].data1 = lpmap[block].p3*properties->lmapSz*properties->lmapSz;
+					}
+					else{
+						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
+							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
+								switch(map[block].id){
+								case BLOCK_SOLID:
+								case BLOCK_REFLECTIVE:
+									lmap[lpmap[block].p4*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r = (f32)bmap[lpmap[block].p4*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].b / 255.0f;
+									lmap[lpmap[block].p4*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g = (f32)bmap[lpmap[block].p4*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].g / 255.0f;
+									lmap[lpmap[block].p4*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b = (f32)bmap[lpmap[block].p4*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].r / 255.0f;
+									break;
+								}
+							}
+						}
+						glMes[glMesC].data1 = lpmap[block].p4*properties->lmapSz*properties->lmapSz;
+					}
+					break;
+				}
+				case 2:{
+					u32 block = crds2map(ray.ix+i,ray.iy+i2,ray.iz);
+					if(ray.dir.z>0.0f){
+						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
+							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
+								switch(map[block].id){
+								case BLOCK_SOLID:
+								case BLOCK_REFLECTIVE:
+									lmap[lpmap[block].p5*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r = (f32)bmap[lpmap[block].p5*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].b / 255.0f;
+									lmap[lpmap[block].p5*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g = (f32)bmap[lpmap[block].p5*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].g / 255.0f;
+									lmap[lpmap[block].p5*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b = (f32)bmap[lpmap[block].p5*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].r / 255.0f;
+									break;
+								}
+							}
+						}
+						glMes[glMesC].data1 = lpmap[block].p5*properties->lmapSz*properties->lmapSz;
+					}
+					else{
+						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
+							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
+								switch(map[block].id){
+								case BLOCK_SOLID:
+								case BLOCK_REFLECTIVE:
+									lmap[lpmap[block].p6*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r = (f32)bmap[lpmap[block].p6*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].r * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].b / 255.0f;
+									lmap[lpmap[block].p6*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g = (f32)bmap[lpmap[block].p6*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].g * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].g / 255.0f;
+									lmap[lpmap[block].p6*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b = (f32)bmap[lpmap[block].p6*properties->lmapSz*properties->lmapSz+i3*properties->lmapSz+i4].b * clipTexture[i3*bmp.bmiHeader.biHeight+i4+i*properties->lmapSz+i2*properties->lmapSz*bmp.bmiHeader.biWidth].r / 255.0f;
+									break;
+								}
+							}
+						}
+						glMes[glMesC].data1 = lpmap[block].p6*properties->lmapSz*properties->lmapSz;
+					}
+					break;
+				}
+				}
+				glMes[glMesC].id = 7;
+				glMesC++;
+				}
 			}
 			HeapFree(GetProcessHeap(),0,clipTexture);
 			glMes[glMesC].data1 = l;
@@ -485,7 +592,7 @@ void tools(){
 		break;
 	}
 	case 9:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
 		rayItterate(&ray);
 		if(l!=-1){
@@ -562,9 +669,9 @@ void tools(){
 			l /= properties->lmapSz*properties->lmapSz;
 			l *= properties->lmapSz*properties->lmapSz;
 			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz;i++){
-				lmap[l+i].r = (f32)lmap[l+i].r * (f32)clipTexture[i].r / 127.0f;
-				lmap[l+i].g = (f32)lmap[l+i].g * (f32)clipTexture[i].g / 127.0f;
-				lmap[l+i].b = (f32)lmap[l+i].b * (f32)clipTexture[i].b / 127.0f;
+				lmap[l+i].r = (f32)bmap[l+i].r * (f32)clipTexture[i].r / 127.0f;
+				lmap[l+i].g = (f32)bmap[l+i].g * (f32)clipTexture[i].g / 127.0f;
+				lmap[l+i].b = (f32)bmap[l+i].b * (f32)clipTexture[i].b / 127.0f;
 			}
 			HeapFree(GetProcessHeap(),0,clipTexture);
 			glMes[glMesC].data1 = l;
@@ -575,7 +682,7 @@ void tools(){
 		break;
 		}
 	case 10:{
-		RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
 		if(l!=-1){
 			if(!selarea.x && !selarea.y && !selarea.z){

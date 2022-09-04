@@ -23,12 +23,12 @@ void ittmap(){
 						turret[i].cooldown--;
 					}
 					else{
-						RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},VEC3subVEC3R(turret[i].pos,(VEC3){player->xpos,player->ypos,player->zpos}));
+						RAY ray = rayCreate(player->pos,VEC3subVEC3R(turret[i].pos,player->pos));
 						rayItterate(&ray);
 						while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 							u32 block = crds2map(ray.ix,ray.iy,ray.iz);
 							if((u32)turret[i].pos.x == ray.ix && (u32)turret[i].pos.y == ray.iy && (u32)turret[i].pos.z == ray.iz){
-								spawnEntity(turret[i].pos,VEC3divR(VEC3normalize(VEC3subVEC3R((VEC3){player->xpos,player->ypos,player->zpos},turret[i].pos)),turret[i].power+1),0);
+								spawnEntity(turret[i].pos,VEC3divR(VEC3normalize(VEC3subVEC3R(player->pos,turret[i].pos)),turret[i].power+1),0);
 								turret[i].cooldown = turret[i].totalCooldown * 3 + 30;
 								break;
 							}
@@ -44,12 +44,12 @@ void ittmap(){
 						turret[i].cooldown--;
 					}
 					else{
-						RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},VEC3subVEC3R(turret[i].pos,(VEC3){player->xpos,player->ypos,player->zpos-0.35f}));
+						RAY ray = rayCreate(player->pos,VEC3subVEC3R(turret[i].pos,(VEC3){player->pos.x,player->pos.y,player->pos.z-0.35f}));
 						rayItterate(&ray);
 						while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 							u32 block = crds2map(ray.ix,ray.iy,ray.iz);
 							if((u32)turret[i].pos.x == ray.ix && (u32)turret[i].pos.y == ray.iy && (u32)turret[i].pos.z == ray.iz){
-								ray = rayCreate(turret[i].pos,VEC3subVEC3R((VEC3){player->xpos,player->ypos,player->zpos-0.35f},turret[i].pos));
+								ray = rayCreate(turret[i].pos,VEC3subVEC3R((VEC3){player->pos.x,player->pos.y,player->pos.z-0.35f},turret[i].pos));
 								rayItterate(&ray);
 								while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 									block = crds2map(ray.ix,ray.iy,ray.iz);
@@ -74,7 +74,7 @@ void ittmap(){
 					break;
 				case 2:
 					if(!turret[i].cooldown){
-						RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},VEC3subVEC3R(turret[i].pos,(VEC3){player->xpos,player->ypos,player->zpos-0.35f}));
+						RAY ray = rayCreate(player->pos,VEC3subVEC3R(turret[i].pos,(VEC3){player->pos.x,player->pos.y,player->pos.z-0.35f}));
 						rayItterate(&ray);
 						while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 							u32 block = crds2map(ray.ix,ray.iy,ray.iz);

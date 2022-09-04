@@ -3,7 +3,7 @@
 
 u8 touchStatus;
 
-volatile VEC3 angleSteep;
+VEC3 angleSteep;
 
 u8 effect;
 u8 effectdata;
@@ -33,10 +33,10 @@ void blockDetection(float x,float y,float z,int axis){
 		if(spos.x > (f32)metadt[block].id/255.0f - (f32)metadt2[block].id/255.0f && spos.x < (f32)metadt[block].id/255.0f + (f32)metadt2[block].id/255.0f &&
 			spos.y > (f32)metadt[block].r/255.0f - (f32)metadt2[block].r/255.0f && spos.y < (f32)metadt[block].r/255.0f + (f32)metadt2[block].r/255.0f && 
 			spos.z > (f32)metadt[block].g/255.0f - (f32)metadt2[block].g/255.0f - 0.02f && spos.z < (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + 0.02f){
-			if(metadt3[block].r == 0 && metadt3[block].id == 0 && metadt3[block].g == 0 && (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z > player->zpos - 1.7f && 
-				(f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z < player->zpos - 1.2f){
-				player->zpos += (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z - player->zpos + 1.8f;
-				player->zvel = 0.0f;
+			if(metadt3[block].r == 0 && metadt3[block].id == 0 && metadt3[block].g == 0 && (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z > player->pos.z - player->hitboxHeight && 
+				(f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z < player->pos.z - player->hitboxHeight + 0.5f){
+				player->pos.z += (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z - player->pos.z + player->hitboxHeight + 0.1f;
+				player->vel.z = 0.0f;
 			}
 			else{
 				angleSteep.x = fmaxf(sinf((f32)metadt3[block].id/127.0f*PI) * 0.60f,angleSteep.x);
@@ -55,7 +55,7 @@ void blockDetection(float x,float y,float z,int axis){
 	case BLOCK_CLIP:
 	case BLOCK_REFLECTIVE:
 	case BLOCK_SOLID:
-		if((u32)z < player->zpos-1.7f && (u32)z > player->zpos-2.5f){
+		if(spos.z > 0.5f && z > player->pos.z-player->hitboxHeight && z < player->pos.z-player->hitboxHeight+0.5f){
 			switch(map[block+properties->lvlSz*properties->lvlSz].id){
 			case BLOCK_CLIP:
 			case BLOCK_SOLID:
@@ -63,14 +63,14 @@ void blockDetection(float x,float y,float z,int axis){
 				touchStatus |= axis;
 				break;
 			default:{
-				u32 standingBlock = crds2map(player->xpos,player->ypos,player->zpos) - (u32)player->hitboxHeight * properties->lvlSz * properties->lvlSz;
+				u32 standingBlock = crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.05f);
 				switch(map[standingBlock].id){
-				case 1:
+				case BLOCK_AIR:
 					touchStatus |= axis;
 					break;
 				default:
-					player->zpos += player->zpos - z - 1.2f;
-					player->zvel = 0.0f;
+					player->pos.z += player->pos.z - z - player->hitboxHeight + 0.52f;
+					player->vel.z = 0.0f;
 					break;
 				}
 				break;
@@ -85,44 +85,44 @@ void blockDetection(float x,float y,float z,int axis){
 }
 
 void hitboxZdown(float x,float y,float z){
-	x -= player->xvel;
-	y -= player->yvel;
-	z += player->zvel;
+	x -= player->vel.x;
+	y -= player->vel.y;
+	z += player->vel.z;
 	blockDetection(x,y,z,1);
 }
 
 void hitboxZup(float x,float y,float z){
-	x -= player->xvel;
-	y -= player->yvel;
-	z += player->zvel;
+	x -= player->vel.x;
+	y -= player->vel.y;
+	z += player->vel.z;
 	blockDetection(x,y,z,2);
 }
 
 void hitboxXdown(float x,float y,float z){
-	x += player->xvel;
-	y -= player->yvel;
-	z -= player->zvel;
+	x += player->vel.x;
+	y -= player->vel.y;
+	z -= player->vel.z;
 	blockDetection(x,y,z,4);
 }
 
 void hitboxXup(float x,float y,float z){
-	x += player->xvel;
-	y -= player->yvel;
-	z -= player->zvel;
+	x += player->vel.x;
+	y -= player->vel.y;
+	z -= player->vel.z;
 	blockDetection(x,y,z,8);
 }
 
 void hitboxYdown(float x,float y,float z){
-	y += player->yvel;
-	x -= player->xvel;
-	z -= player->zvel;
+	y += player->vel.y;
+	x -= player->vel.x;
+	z -= player->vel.z;
 	blockDetection(x,y,z,16);
 }
 
 void hitboxYup(float x,float y,float z){
-	y += player->yvel;
-	x -= player->xvel;
-	z -= player->zvel;
+	y += player->vel.y;
+	x -= player->vel.x;
+	z -= player->vel.z;
 	blockDetection(x,y,z,32);
 }
 
@@ -133,47 +133,47 @@ void playerWorldCollision(){
 	else{
 		player->stamina = 1.0f;
 	}
-	if(player->zvel < 0.0f){
+	if(player->vel.z < 0.0f){
 		for(float i = -0.2f;i <= 0.2f;i+=0.1f){
 			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxZdown(player->xpos + i, player->ypos + i2, player->zpos - player->hitboxHeight);
+				hitboxZdown(player->pos.x + i, player->pos.y + i2, player->pos.z - player->hitboxHeight);
 			}
 		}
 	}
 	else{
 		for(float i = -0.2f;i <= 0.2f;i+=0.1f){
 			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxZup(player->xpos + i, player->ypos + i2, player->zpos + 0.2f);
+				hitboxZup(player->pos.x + i, player->pos.y + i2, player->pos.z + 0.1f);
 			}
 		}
 	}
-	if(player->xvel < 0.0f){
-		for(float i = -player->hitboxHeight;i <= 0.2;i+=0.1){
+	if(player->vel.x < 0.0f){
+		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
 			for(float i2 = -0.2;i2 <= 0.2;i2+=0.05){
-				hitboxXdown(player->xpos - 0.2f, player->ypos + i2, player->zpos + i);
+				hitboxXdown(player->pos.x - 0.2f, player->pos.y + i2, player->pos.z + i);
 			}
 		}
 
 	}
 	else{
-		for(float i = -player->hitboxHeight;i <= 0.2;i+=0.1){
-			for(float i2 = -0.2;i2 <= 0.2;i2+=0.05){
-				hitboxXup(player->xpos + 0.2f, player->ypos + i2, player->zpos + i);
+		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
+			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
+				hitboxXup(player->pos.x + 0.2f, player->pos.y + i2, player->pos.z + i);
 			}
 		}
 	}
-	if(player->yvel < 0.0f){
-		for(float i = -player->hitboxHeight;i <= 0.2f;i+=0.1f){
+	if(player->vel.y < 0.0f){
+		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
 			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxYdown(player->xpos + i2, player->ypos - 0.2f, player->zpos + i);
+				hitboxYdown(player->pos.x + i2, player->pos.y - 0.2f, player->pos.z + i);
 			}
 		}
 
 	}
 	else{
-		for(float i = -player->hitboxHeight;i <= 0.2f;i+=0.1f){
+		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
 			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxYup(player->xpos + i2, player->ypos + 0.2f, player->zpos + i);
+				hitboxYup(player->pos.x + i2, player->pos.y + 0.2f, player->pos.z + i);
 			}
 		}
 	}
@@ -182,8 +182,8 @@ void playerWorldCollision(){
 			player->hitboxWantedHeight = player->hitboxWantedHeightQueued;
 			player->hitboxWantedHeightQueued = 0.0f;
 		}
-		if(player->zvel < -0.1f){
-			switch(metadt6[crds2map(player->xpos,player->ypos,player->zpos-player->hitboxHeight-0.1f)].r){
+		if(player->vel.z < -0.15f){
+			switch(metadt6[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].r){
 			case 0:
 				playSound(landSound,0,-2000);
 				break;
@@ -192,24 +192,26 @@ void playerWorldCollision(){
 				break;
 			}
 		}
-		if(player->zvel < -0.3f){
-			if(!player->wounded){
-				player->wounded = 1;
-			}
-			else{
-				playerDeath();
-			}
-			switch(metadt6[crds2map(player->xpos,player->ypos,player->zpos-player->hitboxHeight-0.1f)].r){
-			case 0:
-				playSound(boneBreakSound,0,0);
-				break;
-			case 1:
-				playSound(boneBreakSound,0,0);
-				break;
+		if(settings & 0x100){
+			if(player->vel.z < -0.3f){
+				if(!player->wounded){
+					player->wounded = 1;
+				}
+				else{
+					playerDeath();
+				}
+				switch(metadt6[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].r){
+				case 0:
+					playSound(boneBreakSound,0,0);
+					break;
+				case 1:
+					playSound(boneBreakSound,0,0);
+					break;
+				}
 			}
 		}
 		if(stepSoundCooldown < 0.0f){
-			switch(metadt6[crds2map(player->xpos,player->ypos,player->zpos-player->hitboxHeight-0.1f)].r){
+			switch(metadt6[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].r){
 			case 0:
 				playSound(stepSound,1,0);
 				break;
@@ -220,177 +222,177 @@ void playerWorldCollision(){
 			stepSoundCooldown = 2.0f;
 		}
 		else{
-			stepSoundCooldown -= fabsf(player->xvel) + fabsf(player->yvel);
+			stepSoundCooldown -= fabsf(player->vel.x) + fabsf(player->vel.y);
 		}
-		player->zpos -= (1.0f-fmaxf(angleSteep.y,angleSteep.z)) * player->zvel;
-		player->xpos -= angleSteep.y * player->zvel;
-		player->xvel -= angleSteep.y * player->zvel;
-		player->ypos -= angleSteep.z * player->zvel;
-		player->yvel -= angleSteep.z * player->zvel;
-		player->zvel *= fmaxf(angleSteep.y,angleSteep.z);
+		player->pos.z -= (1.0f-fmaxf(angleSteep.y,angleSteep.z)) * player->vel.z;
+		player->pos.x -= angleSteep.y * player->vel.z;
+		player->vel.x -= angleSteep.y * player->vel.z;
+		player->pos.y -= angleSteep.z * player->vel.z;
+		player->vel.y -= angleSteep.z * player->vel.z;
+		player->vel.z *= fmaxf(angleSteep.y,angleSteep.z);
 		if(touchStatus == 1){
 			switch(effect){
 			case 1:
-				player->zvel = (f32)effectdata/255.0f;
+				player->vel.z = (f32)effectdata/255.0f;
 				effect = 0;
 				break;
 			}
 		}
 		if(GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->zvel += 0.2f * player->stamina;
-			player->xvel *= 1.7f * player->stamina;
-			player->yvel *= 1.7f * player->stamina;
+			player->vel.z += 0.2f * player->stamina;
+			player->vel.x *= 1.7f * player->stamina;
+			player->vel.y *= 1.7f * player->stamina;
 			player->stamina = 0.0;
 		}
 	}
 	if(touchStatus & 0x02){
-		player->zpos -= (1.0f-fmaxf(angleSteep.y,angleSteep.z)) * player->zvel;
-		player->xpos += angleSteep.y * player->zvel;
-		player->xvel += angleSteep.y * player->zvel;
-		player->ypos += angleSteep.z * player->zvel;
-		player->yvel += angleSteep.z * player->zvel;
-		player->zvel *= fmaxf(angleSteep.y,angleSteep.z);
+		player->pos.z -= (1.0f-fmaxf(angleSteep.y,angleSteep.z)) * player->vel.z;
+		player->pos.x += angleSteep.y * player->vel.z;
+		player->vel.x += angleSteep.y * player->vel.z;
+		player->pos.y += angleSteep.z * player->vel.z;
+		player->vel.y += angleSteep.z * player->vel.z;
+		player->vel.z *= fmaxf(angleSteep.y,angleSteep.z);
 	}
 	if(touchStatus & 0x04){
 		if(angleSteep.x){
-			player->xpos -= (1.0f-angleSteep.x) * player->xvel;
-			player->ypos -= angleSteep.x * player->xvel;
-			player->yvel -= angleSteep.x * player->xvel;
-			player->xvel *= angleSteep.x;
+			player->pos.x -= (1.0f-angleSteep.x) * player->vel.x;
+			player->pos.y -= angleSteep.x * player->vel.x;
+			player->vel.y -= angleSteep.x * player->vel.x;
+			player->vel.x *= angleSteep.x;
 		}
 		if(angleSteep.y){
-			player->xpos -= player->xvel * angleSteep.y;
-			player->zpos += angleSteep.y * (player->xvel + 0.05f * (1.0f - angleSteep.y));
-			player->zvel += angleSteep.y * (player->xvel + 0.05f * (1.0f - angleSteep.y));
-			player->xvel *= 1.0f - angleSteep.y;
-			player->yvel *= 1.1f;
+			player->pos.x -= player->vel.x * angleSteep.y;
+			player->pos.z += angleSteep.y * (player->vel.x + 0.05f * (1.0f - angleSteep.y));
+			player->vel.z += angleSteep.y * (player->vel.x + 0.05f * (1.0f - angleSteep.y));
+			player->vel.x *= 1.0f - angleSteep.y;
+			player->vel.y *= 1.1f;
 		}
 		if(!angleSteep.x && !angleSteep.y){
-			player->xpos -= player->xvel;
-			player->xvel = 0;
+			player->pos.x -= player->vel.x;
+			player->vel.x = 0;
 		}
-		if(player->zvel < -0.05){
-			player->zvel = -0.05;
+		if(player->vel.z < -0.05){
+			player->vel.z = -0.05;
 		}
 		switch(effect){
 		case 1:
-			player->xvel = (f32)effectdata/255.0f;
+			player->vel.x = (f32)effectdata/255.0f;
 			effect = 0;
 			break;
 		}
 		if(touchStatus == 0x04 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->zvel += 0.25 * player->stamina;
-			player->xvel += 0.25 * player->stamina;
+			player->vel.z += 0.25 * player->stamina;
+			player->vel.x += 0.25 * player->stamina;
 			player->stamina = 0.0;
 		}
 	}
 	if(touchStatus & 0x08){
 		if(angleSteep.x){
-			player->xpos -= (1.0f-angleSteep.x) * player->xvel;
-			player->ypos -= angleSteep.x * player->xvel;
-			player->yvel -= angleSteep.x * player->xvel;
-			player->xvel *= angleSteep.x;
+			player->pos.x -= (1.0f-angleSteep.x) * player->vel.x;
+			player->pos.y -= angleSteep.x * player->vel.x;
+			player->vel.y -= angleSteep.x * player->vel.x;
+			player->vel.x *= angleSteep.x;
 		}
 		if(angleSteep.y){
-			player->xpos -= player->xvel * angleSteep.y;
-			player->zpos += angleSteep.y * (player->xvel + 0.05f * (1.0f - angleSteep.y));
-			player->zvel += angleSteep.y * (player->xvel + 0.05f * (1.0f - angleSteep.y));
-			player->xvel *= 1.0f - angleSteep.y;
-			player->yvel *= 1.1f;
+			player->pos.x -= player->vel.x * angleSteep.y;
+			player->pos.z += angleSteep.y * (player->vel.x + 0.05f * (1.0f - angleSteep.y));
+			player->vel.z += angleSteep.y * (player->vel.x + 0.05f * (1.0f - angleSteep.y));
+			player->vel.x *= 1.0f - angleSteep.y;
+			player->vel.y *= 1.1f;
 		}
 		if(!angleSteep.x && !angleSteep.y){
-			player->xpos -= player->xvel;
-			player->xvel = 0;
+			player->pos.x -= player->vel.x;
+			player->vel.x = 0;
 		}
-		if(player->zvel < -0.05f){
-			player->zvel = -0.05f;
+		if(player->vel.z < -0.05f){
+			player->vel.z = -0.05f;
 		}
 		switch(effect){
 		case 1:
-			player->xvel = -(f32)effectdata/255.0f;
+			player->vel.x = -(f32)effectdata/255.0f;
 			effect = 0;
 			break;
 		}
 		if(touchStatus == 0x08 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->zvel += 0.25f * player->stamina;
-			player->xvel += -0.25f * player->stamina;
+			player->vel.z += 0.25f * player->stamina;
+			player->vel.x += -0.25f * player->stamina;
 			player->stamina = 0.0f;
 		}
 	}
 	if(touchStatus & 0x10){
 		if(angleSteep.x){
-			player->ypos -= (1.0f-angleSteep.x) * player->yvel;
-			player->xpos -= angleSteep.x * player->yvel;
-			player->xvel -= angleSteep.x * player->yvel;
-			player->yvel *= angleSteep.x;
+			player->pos.y -= (1.0f-angleSteep.x) * player->vel.y;
+			player->pos.x -= angleSteep.x * player->vel.y;
+			player->vel.x -= angleSteep.x * player->vel.y;
+			player->vel.y *= angleSteep.x;
 		}
 		if(angleSteep.z){
-			player->ypos -= player->yvel * angleSteep.z;
-			player->zpos += angleSteep.z * (player->yvel + 0.05f * (1.0f - angleSteep.z));
-			player->zvel += angleSteep.z * (player->yvel + 0.05f * (1.0f - angleSteep.z));
-			player->yvel *= 1.0f - angleSteep.z;
-			player->xvel *= 1.1f;
+			player->pos.y -= player->vel.y * angleSteep.z;
+			player->pos.z += angleSteep.z * (player->vel.y + 0.05f * (1.0f - angleSteep.z));
+			player->vel.z += angleSteep.z * (player->vel.y + 0.05f * (1.0f - angleSteep.z));
+			player->vel.y *= 1.0f - angleSteep.z;
+			player->vel.x *= 1.1f;
 		}
 		if(!angleSteep.x && !angleSteep.z){
-			player->ypos -= player->yvel;
-			player->yvel = 0;
+			player->pos.y -= player->vel.y;
+			player->vel.y = 0.0f;
 		}
-		if(player->zvel < -0.05){
-			player->zvel = -0.05;
+		if(player->vel.z < -0.05f){
+			player->vel.z = -0.05f;
 		}
 		switch(effect){
 		case 1:
-			player->yvel = (f32)effectdata/255.0f;
+			player->vel.y = (f32)effectdata/255.0f;
 			effect = 0;
 			break;
 		}
 		if(touchStatus == 0x10 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->zvel += 0.25f * player->stamina;
-			player->yvel += 0.25f * player->stamina;
+			player->vel.z += 0.25f * player->stamina;
+			player->vel.y += 0.25f * player->stamina;
 			player->stamina = 0.0f;
 		}
 	}
 	if(touchStatus & 0x20){
 		if(angleSteep.x){
-			player->ypos -= (1.0f-angleSteep.x) * player->yvel;
-			player->xpos -= angleSteep.x * player->yvel;
-			player->xvel -= angleSteep.x * player->yvel;
-			player->yvel *= angleSteep.x;
+			player->pos.y -= (1.0f-angleSteep.x) * player->vel.y;
+			player->pos.x -= angleSteep.x * player->vel.y;
+			player->vel.x -= angleSteep.x * player->vel.y;
+			player->vel.y *= angleSteep.x;
 		}
 		if(angleSteep.z){
-			player->ypos -= player->yvel * angleSteep.z;
-			player->zpos += angleSteep.z * (player->yvel + 0.05f * (1.0f - angleSteep.z));
-			player->zvel += angleSteep.z * (player->yvel + 0.05f * (1.0f - angleSteep.z));
-			player->yvel *= 1.0f - angleSteep.z;
-			player->xvel *= 1.2f;
+			player->pos.y -= player->vel.y * angleSteep.z;
+			player->pos.z += angleSteep.z * (player->vel.y + 0.05f * (1.0f - angleSteep.z));
+			player->vel.z += angleSteep.z * (player->vel.y + 0.05f * (1.0f - angleSteep.z));
+			player->vel.y *= 1.0f - angleSteep.z;
+			player->vel.x *= 1.2f;
 		}
 		if(!angleSteep.x && !angleSteep.z){
-			player->ypos -= player->yvel;
-			player->yvel = 0;
+			player->pos.y -= player->vel.y;
+			player->vel.y = 0;
 		}
 		switch(effect){
 		case 1:
-			player->yvel = -(f32)effectdata/255.0f;
+			player->vel.y = -(f32)effectdata/255.0f;
 			effect = 0;
 			break;
 		}
 		if(touchStatus == 0x20 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->zvel += 0.25 * player->stamina;
-			player->yvel += -0.25 * player->stamina;
+			player->vel.z += 0.25 * player->stamina;
+			player->vel.y += -0.25 * player->stamina;
 			player->stamina = 0.0;
 		}
 	}
-	if(player->zpos < 1.81f){
+	if(player->pos.z < 1.81f){
 		playerDeath();
 	}
-	if(player->hitboxHeight<player->hitboxWantedHeight){
-		player->hitboxHeight += player->zvel;
+	if(player->hitboxHeight<player->hitboxWantedHeight && player->vel.z > -0.05f){
+		player->hitboxHeight += player->vel.z;
 		if(player->hitboxHeight>player->hitboxWantedHeight){
 			player->hitboxHeight = player->hitboxWantedHeight;
-			player->zvel = 0.0f;
+			player->vel.z = 0.0f;
 		}
 		else{
-			player->zvel = 0.1f;
+			player->vel.z = 0.1f;
 		}
 	}
 	else if(player->hitboxHeight>player->hitboxWantedHeight){
@@ -399,20 +401,20 @@ void playerWorldCollision(){
 			player->hitboxHeight = player->hitboxWantedHeight;
 		}
 		else{
-			player->zvel = -0.1f + 0.015f;
+			player->vel.z = -0.1f + 0.015f;
 		}
 	}
-	switch(map[crds2map(player->xpos,player->ypos,player->zpos-player->hitboxHeight-0.1f)].id){
+	switch(map[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].id){
 	case BLOCK_CLIP:
 	case BLOCK_CUBE:
 	case BLOCK_SOLID:
 	case BLOCK_GLASS:
-		player->xvel /= 1.12;
-		player->yvel /= 1.12;
+		player->vel.x /= 1.12f;
+		player->vel.y /= 1.12f;
 		break;
 	default:
-		player->xvel /= 1.06;
-		player->yvel /= 1.06;
+		player->vel.x /= 1.06f;
+		player->vel.y /= 1.06f;
 		break;
 	}
 	if(GetKeyState(VK_SPACE)&0x80){

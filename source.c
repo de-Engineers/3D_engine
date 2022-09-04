@@ -7,6 +7,8 @@
 #pragma comment(lib,"winmm.lib")
 
 MAP   *map;
+EXRGB *bmap;
+
 LPMAP *lpmap;
 
 MAP   *metadt;
@@ -34,6 +36,7 @@ bit
 8: pauze	  : 0x80
 9: gameplay   : 0x100
 10:vsync      : 0x200
+11:smooth     : 0x400
 */
 
 char threadStatus;
@@ -77,12 +80,8 @@ i16 offsetB = -1;
 
 void playerDeath(){
 	player->wounded = 0;
-	player->xpos = player->xspawn;
-	player->ypos = player->yspawn;
-	player->zpos = player->zspawn;
-	player->xvel = 0.0f;
-	player->yvel = 0.0f;
-	player->zvel = 0.0f;
+	player->pos = player->spawn;
+	player->vel = (VEC3){0.0f,0.0f,0.0f};
 	entityC = 0;
 	for(u32 i = 0;i < turretC;i++){
 		turret[i].cooldown = 0;
@@ -251,7 +250,7 @@ void levelSave(char *lname){
 	CreateDirectoryA("levels",0);
 	HANDLE h = CreateFileA(name,GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
 	WriteFile(h,&properties->lvlSz,1,0,0);
-	WriteFile(h,&properties->lmapSz,1,0,0);
+	WriteFile(h,&properties->lmapSz,4,0,0);
 	WriteFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	WriteFile(h,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	WriteFile(h,metadt2,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
@@ -261,7 +260,7 @@ void levelSave(char *lname){
 	WriteFile(h,metadt6,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	if(lmapC){
 		WriteFile(h,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),0,0);
-		WriteFile(h,&properties->lmapSz,4,0,0);
+		WriteFile(h,&properties->lmapSz,1,0,0);
 		WriteFile(h,&lmapC,4,0,0);
 		WriteFile(h,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,0);
 	}
@@ -269,7 +268,7 @@ void levelSave(char *lname){
 	CloseHandle(h);
 	memcpy(name+strlen(lname)+7,"Backup.lvl\0",11);
 	h = CreateFileA(name,GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
-	WriteFile(h,&properties->lvlSz,1,0,0);
+	WriteFile(h,&properties->lvlSz,2,0,0);
 	WriteFile(h,&properties->lmapSz,1,0,0);
 	WriteFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	WriteFile(h,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
@@ -287,10 +286,9 @@ void levelLoad(char *lname){
 	memcpy(name+7,lname,strlen(lname));
 	memcpy(name+strlen(lname)+7,".lvl\0",5);
 	HANDLE h = CreateFileA(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
-	SetFilePointer(h,2,0,FILE_CURRENT);
-	properties->lmapSz3 = properties->lmapSz*properties->lmapSz*properties->lmapSz;
-	properties->lmapSz2  = properties->lmapSz*properties->lvlSz;
-	map        = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
+	ReadFile(h,&properties->lvlSz,1,0,0);
+	ReadFile(h,&properties->lmapSz,4,0,0);
+	map        = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(MAP));
 	ReadFile(h,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	ReadFile(h,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	ReadFile(h,metadt2,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
@@ -299,18 +297,19 @@ void levelLoad(char *lname){
 	ReadFile(h,metadt5,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	ReadFile(h,metadt6,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0,0);
 	ReadFile(h,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),0,0);
-	ReadFile(h,&properties->lmapSz,4,0,0);
+	ReadFile(h,&properties->lmapSz,1,0,0);
 	ReadFile(h,&lmapC,4,0,0);
 	lmap = HeapAlloc(GetProcessHeap(),8,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
+	bmap = HeapAlloc(GetProcessHeap(),8,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
 	ReadFile(h,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,0);
 	HeapFree(GetProcessHeap(),0,name);
 	for(u32 i = 0;i < BLOCKCOUNT;i++){
 		switch(map[i].id){
 		case BLOCK_SPAWN:{
 			CVEC3 spwncrd = map2crds(i);
-			player->xspawn = (f32)spwncrd.x+0.5f;
-			player->yspawn = (f32)spwncrd.y+0.5f;
-			player->zspawn = (f32)spwncrd.z+2.0f;
+			player->spawn.x = (f32)spwncrd.x+0.5f;
+			player->spawn.y = (f32)spwncrd.y+0.5f;
+			player->spawn.z = (f32)spwncrd.z+2.25f;
 			break;
 		}
 		case BLOCK_CUBE:
@@ -331,6 +330,9 @@ void levelLoad(char *lname){
 			starC++;
 			break;
 		}
+	}
+	for(u32 i = 0;i < lmapC*properties->lmapSz*properties->lmapSz;i++){
+		bmap[i] = lmap[i];
 	}
 	CloseHandle(h);
 	glMes[glMesC].id = 3;
@@ -353,13 +355,13 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_QUIT:
 	case WM_CLOSE:
 	case WM_DESTROY:
-		if(~settings&0x100){
+		if(~settings&0x100&&~networkSettings&0x01){
 			levelSave("level");
 		}
 		settings &= ~0x80;
 		HANDLE h = CreateFileA("config.cfg",GENERIC_WRITE,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
 		WriteFile(h,&settings,4,0,0);
-		WriteFile(h,&player->yfov,4,0,0);
+		WriteFile(h,&player->fov.y,4,0,0);
 		WriteFile(h,&properties->sensitivity,4,0,0);
 		CloseHandle(h);
 		ExitProcess(0);
@@ -384,6 +386,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_SIZE:
 		properties->xres = lParam & 0xffff;
 		properties->yres = lParam >> 16;
+		player->fov.x = player->fov.y*((f32)properties->xres/properties->yres);
 		if(renderingThread){
 			glMes[glMesC].id = 0;
 			glMesC++;
@@ -462,8 +465,10 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			settings ^= 0x40;
 			break;
 		case VK_F6:
-			glMes[glMesC].id = 8;
-			glMesC++;
+			settings ^= 0x400;
+			break;
+		case VK_F7:
+			CreateThread(0,0,networking,0,0,0);
 			break;
 		case VK_F11:
 			settings ^= 0x20;
@@ -555,9 +560,9 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		if(!menuSel){
 			POINT curp;
 			GetCursorPos(&curp);
-			mousex = ((f32)curp.x - 50 - properties->windowOffsetX) / 80.0f;
-			mousey = ((f32)curp.y - 50 - properties->windowOffsetY) / 80.0f;
-			SetCursorPos(50+properties->windowOffsetX,50+properties->windowOffsetY);
+			mousex = ((f32)curp.x - 100 - properties->windowOffsetX) / 80.0f;
+			mousey = ((f32)curp.y - 100 - properties->windowOffsetY) / 80.0f;
+			SetCursorPos(100+properties->windowOffsetX,100+properties->windowOffsetY);
 			if(mousex > 0.5f || mousey > 0.5f){
 				break;
 			}
@@ -573,7 +578,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		break;
 	case WM_MBUTTONDOWN:
 		if((settings & 0x10) == 0){
-			RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 				int block = crds2map(ray.ix,ray.iy,ray.iz);
 				if(map[block].id!=1){
@@ -647,8 +652,8 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_RBUTTONDOWN:
 		if(~settings & 0x100){
 			if((settings & 0x10) == 0){
-				RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-			while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<=properties->lvlSz){
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 				int block = crds2map(ray.ix,ray.iy,ray.iz);
 				if(map[block].id!=1){
 					deleteBlock(block);
@@ -664,29 +669,28 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 }
 WNDCLASS wndclass = {0,proc,0,0,0,0,0,0,name,name};
 void physics(){
-	player->xfov = 2;
+	player->fov.x = 2;
 	for (;;){
 		if(GetKeyState(VK_LBUTTON)&0x80){
+			for(u32 i = 0;i < sliderC;i++){
+				if(mousePos.x > slider[i].pos.x - 0.266666667f && mousePos.x < slider[i].pos.x + 0.26666667f
+					&& mousePos.y > slider[i].pos.y - 0.015f && mousePos.y < slider[i].pos.y + 0.015f){
+					sliderId = slider[i].id;
+					sliderPos = (mousePos.x-slider[i].pos.x+0.266666667f)*480.0f;
+				}
+			}
 			if((~GetKeyState(VK_LCONTROL))&0x80 && sliderId!=-1){
 				sliders[sliderId](sliderPos);
 				sliderId = -1;
 			}
 			switch(toolSel){
 			case 7:
-				RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 				i32 l = getLmapLocation(&ray);
 				if(l!=-1){
-					u16 br = max(max(lmap[l].r,lmap[l].g),lmap[l].b);
-					if(GetKeyState(VK_LCONTROL)&0x80){
-						lmap[l].r = (f32)br / (f32)colorSel.r / 255.0f;
-						lmap[l].g = (f32)br / (f32)colorSel.g / 255.0f;
-						lmap[l].b = (f32)br / (f32)colorSel.b / 255.0f;
-					}
-					else{
-						lmap[l].r = (f32)br * (f32)colorSel.r / 255.0f;
-						lmap[l].g = (f32)br * (f32)colorSel.g / 255.0f;
-						lmap[l].b = (f32)br * (f32)colorSel.b / 255.0f;
-					}
+					lmap[l].r = (f32)bmap[l].r * colorSel.r / 255.0f;
+					lmap[l].g = (f32)bmap[l].g * colorSel.g / 255.0f;
+					lmap[l].b = (f32)bmap[l].b * colorSel.b / 255.0f;
 					glMes[glMesC].data1 = l;
 					glMes[glMesC].id = 7;
 					glMesC++;
@@ -705,49 +709,49 @@ void physics(){
 			}
 			if (GetKeyState(0x57) & 0x80){
 				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->xpos += player->xdir * player->flightSpeed * amp * 0.7071f;
-					player->ypos += player->ydir * player->flightSpeed * amp * 0.7071f;
+					player->pos.x += player->xdir * player->flightSpeed * amp * 0.7071f;
+					player->pos.y += player->ydir * player->flightSpeed * amp * 0.7071f;
 				}
 				else{
-					player->xpos += player->xdir * player->flightSpeed * amp;
-					player->ypos += player->ydir * player->flightSpeed * amp;
+					player->pos.x += player->xdir * player->flightSpeed * amp;
+					player->pos.y += player->ydir * player->flightSpeed * amp;
 				}
 			}
 			if (GetKeyState(0x53) & 0x80){
 				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->xpos -= player->xdir * player->flightSpeed * amp * 0.7071f;
-					player->ypos -= player->ydir * player->flightSpeed * amp * 0.7071f;
+					player->pos.x -= player->xdir * player->flightSpeed * amp * 0.7071f;
+					player->pos.y -= player->ydir * player->flightSpeed * amp * 0.7071f;
 				}
 				else{
-					player->xpos -= player->xdir * player->flightSpeed * amp;
-					player->ypos -= player->ydir * player->flightSpeed * amp;
+					player->pos.x -= player->xdir * player->flightSpeed * amp;
+					player->pos.y -= player->ydir * player->flightSpeed * amp;
 				}
 			}
 			if (GetKeyState(0x44) & 0x80){
 				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->xpos += cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
-					player->ypos += sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+					player->pos.x += cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+					player->pos.y += sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
 				}
 				else{
-					player->xpos += cosf(player->xangle + PI_05) * player->flightSpeed * amp;
-					player->ypos += sinf(player->xangle + PI_05) * player->flightSpeed * amp;
+					player->pos.x += cosf(player->xangle + PI_05) * player->flightSpeed * amp;
+					player->pos.y += sinf(player->xangle + PI_05) * player->flightSpeed * amp;
 				}
 			}
 			if (GetKeyState(0x41) & 0x80){
 				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->xpos -= cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
-					player->ypos -= sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+					player->pos.x -= cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+					player->pos.y -= sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
 				}
 				else{
-					player->xpos -= cosf(player->xangle + PI_05) * player->flightSpeed * amp;
-					player->ypos -= sinf(player->xangle + PI_05) * player->flightSpeed * amp;
+					player->pos.x -= cosf(player->xangle + PI_05) * player->flightSpeed * amp;
+					player->pos.y -= sinf(player->xangle + PI_05) * player->flightSpeed * amp;
 				}
 			}
 			if (GetKeyState(VK_SPACE) & 0x80){
-				player->zpos += player->flightSpeed * amp;
+				player->pos.z += player->flightSpeed * amp;
 			} 
 			if (GetKeyState(VK_LSHIFT) & 0x80){
-				player->zpos -= player->flightSpeed * amp;
+				player->pos.z -= player->flightSpeed * amp;
 			}
 		}
 		else{
@@ -763,7 +767,7 @@ void physics(){
 					switch(player->weaponEquiped){
 					case 1:
 						if(!player->shotCooldown){
-							RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
+							RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
 							i32 l = getLmapLocation(&ray);
 							if(l!=-1){
 								lmap[l].r /= 2.0f;
@@ -775,7 +779,7 @@ void physics(){
 							}
 							for(u32 i = 0;i < entityC;i++){
 								if(entity.cpu[i].id==4){
-									spawnEntity((VEC3){player->xpos,player->ypos,player->zpos-0.1f},VEC3mulR((VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f},1.5f),0);
+									spawnEntity((VEC3){player->pos.x,player->pos.y,player->pos.z-0.1f},VEC3mulR((VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f},1.5f),0);
 									VEC3mul(&entity.gpu[i].color,10.0f);
 									entity.cpu[i].aniTime = 11;
 									entity.cpu[i].aniType = 2;
@@ -800,71 +804,69 @@ void physics(){
 			}
 			if(GetKeyState(0x57) & 0x80){
 				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->xvel += player->xdir / 120 * amp * 0.7071f;
-					player->yvel += player->ydir / 120 * amp * 0.7071f;
+					player->vel.x += player->xdir / 120 * amp * 0.7071f;
+					player->vel.y += player->ydir / 120 * amp * 0.7071f;
 				}
 				else{
-					player->xvel += player->xdir / 120 * amp;
-					player->yvel += player->ydir / 120 * amp;
+					player->vel.x += player->xdir / 120 * amp;
+					player->vel.y += player->ydir / 120 * amp;
 				}
 			}
 			if(GetKeyState(0x53) & 0x80){
 				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->xvel -= player->xdir / 120 * amp * 0.7071f;
-					player->yvel -= player->ydir / 120 * amp * 0.7071f;
+					player->vel.x -= player->xdir / 120 * amp * 0.7071f;
+					player->vel.y -= player->ydir / 120 * amp * 0.7071f;
 				}
 				else{
-					player->xvel -= player->xdir / 120 * amp;
-					player->yvel -= player->ydir / 120 * amp;
+					player->vel.x -= player->xdir / 120 * amp;
+					player->vel.y -= player->ydir / 120 * amp;
 				} 
 			}
 			if(GetKeyState(0x44) & 0x80){
 				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->xvel += cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-					player->yvel += sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+					player->vel.x += cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+					player->vel.y += sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
 				}
 				else{
-					player->xvel += cosf(player->xangle + PI_05) / 120 * amp;
-					player->yvel += sinf(player->xangle + PI_05) / 120 * amp;
+					player->vel.x += cosf(player->xangle + PI_05) / 120 * amp;
+					player->vel.y += sinf(player->xangle + PI_05) / 120 * amp;
 				}
 			}
 			if(GetKeyState(0x41) & 0x80){
 				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->xvel -= cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-					player->yvel -= sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+					player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+					player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
 				}
 				else{
-					player->xvel -= cosf(player->xangle + PI_05) / 120 * amp;
-					player->yvel -= sinf(player->xangle + PI_05) / 120 * amp;
+					player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp;
+					player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp;
 				}
 			}
-			player->zvel -= 0.015f;
+			player->vel.z -= 0.015f;
 
-			player->xpos += player->xvel;
-			player->ypos += player->yvel;
-			player->zpos += player->zvel;
+			VEC3addVEC3(&player->pos,player->vel);
 
 			playerWorldCollision();
 		}
-		if(player->xpos < 0.0){
-			player->xpos = 0.0;
+		if(player->pos.x < 0.0f){
+			player->pos.x = 0.0f;
 		}
-		if(player->ypos < 0.0){
-			player->ypos = 0.0;
+		if(player->pos.y < 0.0f){
+			player->pos.y = 0.0f;
 		}
-		if(player->zpos < 0.0){
-			player->zpos = 0.0;
+		if(player->pos.z < 0.0f){
+			player->pos.z = 0.0f;
 		}
-		if(player->xpos > properties->lvlSz){
-			player->xpos = properties->lvlSz;
+		if(player->pos.x > properties->lvlSz){
+			player->pos.x = properties->lvlSz;
 		}
-		if(player->ypos > properties->lvlSz){
-			player->ypos = properties->lvlSz;
+		if(player->pos.y > properties->lvlSz){
+			player->pos.y = properties->lvlSz;
 		}
-		if(player->zpos > properties->lvlSz){
-			player->zpos = properties->lvlSz;
+		if(player->pos.z > properties->lvlSz){
+			player->pos.z = properties->lvlSz;
 		}
-		player->zvel /= 1.003;	
+		player->vel.z /= 1.003;	
 		tick++;
 		if(properties->lmapSz){
 			HDR();
@@ -901,7 +903,7 @@ void main(){
 
 	skyboxTexture = HeapAlloc(GetProcessHeap(),8,skyboxSz*skyboxSz*sizeof(RGB));
 
-	entityTexture = HeapAlloc(GetProcessHeap(),8,16*16*sizeof(RGB)*128);
+	entityTexture = HeapAlloc(GetProcessHeap(),8,ENTITYTEXTSZ*ENTITYTEXTSZ*sizeof(RGB)*128);
 
 	properties->xres = GetSystemMetrics(SM_CXSCREEN);
 	properties->yres = GetSystemMetrics(SM_CYSCREEN);
@@ -918,15 +920,15 @@ void main(){
 	HANDLE h = CreateFileA("config.cfg",GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
 	if(h!=-1){
 		ReadFile(h,&settings,4,0,0);
-		ReadFile(h,&player->yfov,4,0,0);
+		ReadFile(h,&player->fov.y,4,0,0);
 		ReadFile(h,&properties->sensitivity,4,0,0);
 
-		player->xfov = player->yfov*16.0f/9.0f;
+		player->fov.x = player->fov.y*16.0f/9.0f;
 	}
 	else{
 		settings = 0x25;
-		player->xfov   = 16.0f/9.0f;
-		player->yfov   = 1.0f;
+		player->fov.x   = 16.0f/9.0f;
+		player->fov.y   = 1.0f;
 		properties->sensitivity = 0.5f;
 	}
 	CloseHandle(h);
@@ -934,25 +936,20 @@ void main(){
 	player->flightSpeed = 0.125f;
 
 	properties->lvlSz          = MAPSZ;
-	properties->renderDistance = RENDERDISTANCE;
-	properties->lmapSz2        = MAPSZ*LMAPSZ;
-	properties->lmapSz3        = LMAPSZT;
 	properties->lmapSzb        = LMAPSZ;
 
 	player->hitboxHeight = 1.7f;
 	player->hitboxWantedHeight = 1.7f;
 
-	player->xspawn = 5.5f;
-	player->yspawn = 5.5f;
-	player->zspawn = 2.8f;
+	player->spawn.x = 5.5f;
+	player->spawn.y = 5.5f;
+	player->spawn.z = 2.8f;
 
 	renderingThread      = CreateThread(0,0,openGL,0,0,0);
 
 	levelgen();
 
-	player->zpos   = player->zspawn;
-	player->xpos   = player->xspawn;
-	player->ypos   = player->yspawn;
+	player->pos = player->spawn;
 
 	ShowCursor(0);
 

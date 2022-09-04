@@ -1,8 +1,11 @@
 ﻿#include "main.h"
 #include <stdio.h>
 #include <math.h>
+#include "network.h"
 
 #include "ivec3.h"
+
+#define LUMINANCESAMPLECOUNT 16
 
 char sprite;
 u32 entityC;
@@ -21,8 +24,8 @@ i32 getLmapLocation(RAY *ray){
 	while(ray->ix >= 0 && ray->iy >= 0 && ray->iz >= 0 && ray->ix < properties->lvlSz && ray->iy < properties->lvlSz && ray->iz < properties->lvlSz){
 		u32 block = crds2map(ray->ix,ray->iy,ray->iz);
 		switch(map[block].id){
-		case 27:
-		case 28:{
+		case BLOCK_REFLECTIVE:
+		case BLOCK_SOLID:{
 			VEC2 wall;
 			switch(ray->sid){
 			case 0:{
@@ -69,12 +72,25 @@ i32 getLmapLocation(RAY *ray){
 	return -1;
 }
 
+void spawnPlayer(u8 id){
+	entity.gpu[entityC].rad = 0.2f;
+	entity.gpu[entityC].pos2 = (VEC3){0.0f,0.0f,-1.0f};
+	entity.gpu[entityC].id = 2;
+	entity.cpu[entityC].id = 9;
+	entity.gpu[entityC].color = (VEC3){0.7f,0.1f,0.1f};
+	entity.cpu[entityC].baseColor = (VEC3){0.7f,0.1f,0.1f};
+	entity.cpu[entityC].health = id;
+	entity.gpu[entityC].tId = entityC;
+	entityC++;
+}
+
 void spawnEntityEx(VEC3 pos,VEC3 pos2,VEC3 vel,u8 id,VEC3 color){
 	entity.cpu[entityC].id = id;
 	entity.gpu[entityC].pos = pos;
 	entity.cpu[entityC].vel = vel;
 	entity.gpu[entityC].color = color;
 	entity.cpu[entityC].baseColor = color;
+	entity.gpu[entityC].tId = entityC;
 	switch(id){
 	case 1:
 		entity.gpu[entityC].rad = 0.05f;
@@ -116,6 +132,7 @@ void spawnEntity(VEC3 pos,VEC3 vel,u8 id){
 	entity.cpu[entityC].id = id;
 	entity.gpu[entityC].pos = pos;
 	entity.cpu[entityC].vel = vel;
+	entity.gpu[entityC].tId = entityC;
 	switch(id){
 	case 0:
 		entity.gpu[entityC].id = 0;
@@ -139,10 +156,20 @@ void spawnEntity(VEC3 pos,VEC3 vel,u8 id){
 		entity.cpu[entityC].baseColor = (VEC3){0.5f,0.5f,0.5f};
 		entity.gpu[entityC].id = 0;
 		entity.gpu[entityC].rad = 0.25f;
-		entity.gpu[entityC].color = (VEC3){rnd()-1.0f,rnd()-1.0f,rnd()-1.0f};
+		entity.gpu[entityC].color = (VEC3){0.5f,0.5f,0.5f};
+		for(u32 i = 0;i < ENTITYTEXTSZ;i++){
+			for(u32 i2 = 0;i2 < ENTITYTEXTSZ;i2++){
+				u8 b = irnd();
+				entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].r = b;
+				entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].g = b;
+				entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].b = b;
+			}
+		}
 		break;
 	}
 	entityC++;
+	glMes[glMesC].id = 12;
+	glMesC++;
 }
 
 max3f(float val1,float val2,float val3){
@@ -185,6 +212,139 @@ VEC4 PointBoxCollision(VEC3 spherePos,VEC3 boxPos,VEC3 boxSZ){
 	VEC3 p = VEC3subVEC3R(spherePos,boxPos);
 	VEC3 q = VEC3subVEC3R(VEC3absR(p),boxSZ);
 	return (VEC4){VEC3length(VEC3maxR(q,0.0f)) + fminf(fmaxf(q.x,fmaxf(q.y,q.z)),0.0f),q.x,q.y,q.z};
+}
+
+VEC3 PointBoxNormal(VEC3 spherePos,VEC3 boxPos,VEC3 boxSz){
+	VEC3 p = VEC3subVEC3R(spherePos,boxPos);
+	if(p.x < 0.0f){
+		if(p.y < 0.0f){
+			if(p.z < 0.0f){
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else{
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.y},(VEC2){boxPos.x,boxPos.y}));
+				return (VEC3){r.x,r.y,0.0f};
+			}
+		}
+		else if(p.y > boxSz.y){
+			boxPos.y += boxSz.y;
+			if(p.z < 0.0f){
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else{
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.y},(VEC2){boxPos.x,boxPos.y}));
+				return (VEC3){r.x,r.y,0.0f};
+			}
+		}
+		else{
+			if(p.z < 0.0f){
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.z},(VEC2){boxPos.x,boxPos.z}));
+				return (VEC3){r.x,0.0f,r.y};
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.z},(VEC2){boxPos.x,boxPos.z}));
+				return (VEC3){r.x,0.0f,r.y};
+			}
+			else{
+				return (VEC3){1.0f,0.0f,0.0f};
+			}
+		}
+	}
+	else if(p.x > boxSz.x){
+		boxPos.x += boxSz.x;
+		if(p.y < 0.0f){
+			if(p.z < 0.0f){
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else{
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.y},(VEC2){boxPos.x,boxPos.y}));
+				return (VEC3){r.x,r.y,0.0f};
+			}
+		}
+		else if(p.y > boxSz.y){
+			boxPos.y += boxSz.y;
+			if(p.z < 0.0f){
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				return VEC3normalize(VEC3subVEC3R(spherePos,boxPos));
+			}
+			else{
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.y},(VEC2){boxPos.x,boxPos.y}));
+				return (VEC3){r.x,r.y,0.0f};
+			}
+		}
+		else{
+			if(p.z < 0.0f){
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.z},(VEC2){boxPos.x,boxPos.z}));
+				return (VEC3){r.x,0.0f,r.y};
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.x,spherePos.z},(VEC2){boxPos.x,boxPos.z}));
+				return (VEC3){r.x,0.0f,r.y};
+			}
+			else{
+				return (VEC3){-1.0f,0.0f,0.0f};
+			}
+		}
+	}
+	else{
+		if(p.y < 0.0f){
+			if(p.z < 0.0f){
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.y,spherePos.z},(VEC2){boxPos.y,boxPos.z}));
+				return (VEC3){0.0f,r.x,r.y};
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.y,spherePos.z},(VEC2){boxPos.y,boxPos.z}));
+				return (VEC3){0.0f,r.x,r.y};
+			}
+			else{
+				return (VEC3){0.0f,1.0f,0.0f};
+			}
+		}
+		else if(p.y > boxSz.y){
+			if(p.z < 0.0f){
+				ExitProcess(0);
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.y,spherePos.z},(VEC2){boxPos.y,boxPos.z}));
+				return (VEC3){0.0f,r.x,r.y};
+			}
+			else if(p.z > boxSz.z){
+				boxPos.z += boxSz.z;
+				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.y,spherePos.z},(VEC2){boxPos.y,boxPos.z}));
+				return (VEC3){0.0f,r.x,r.y};
+			}
+			else{
+				return (VEC3){0.0f,-1.0f,0.0f};
+			}
+		}
+		else{
+			if(p.z < 0.0f){
+				return (VEC3){0.0f,0.0f,1.0f};
+			}
+			else if(p.z > boxSz.z){
+				return (VEC3){0.0f,0.0f,-1.0f};
+			}
+			else{
+				return (VEC3){0.0f,0.0f,1.0f};
+			}
+		}
+	}
 }
 
 typedef struct{
@@ -265,7 +425,7 @@ void SphereMapCollision(IVEC3 ePos,u32 i){
 void entities(){
 	for(;;){
 		for(u32 i = 0;i < entityC;i++){
-			entity.cpu[i].playerDist = VEC3dist((VEC3){player->xpos,player->ypos,player->zpos},entity.gpu[i].pos);
+			entity.cpu[i].playerDist = VEC3dist(player->pos,entity.gpu[i].pos);
 			VEC3addVEC3(&entity.gpu[i].pos,entity.cpu[i].vel);
 			IVEC3 ss = {entity.gpu[i].pos.x,entity.gpu[i].pos.y,entity.gpu[i].pos.z};
 			switch((u32)entity.cpu[i].id){
@@ -296,12 +456,12 @@ void entities(){
 				VEC2 r2 = rotVEC2((VEC2){entity.gpu[i].pos2.x,entity.gpu[i].pos2.y},0.017f);
 				entity.gpu[i].pos2.x = r2.x;
 				entity.gpu[i].pos2.y = r2.y;
-				if(player->xpos > entity.cpu[i].pos.x - 0.3f  && player->xpos < entity.cpu[i].pos.x + 0.3f &&
-					player->ypos > entity.cpu[i].pos.y - 0.3f && player->ypos < entity.cpu[i].pos.y + 0.3f && 
-					player->zpos > entity.cpu[i].pos.z - 0.2f && player->zpos < entity.cpu[i].pos.z + 2.0f){
+				if(player->pos.x > entity.cpu[i].pos.x - 0.3f  && player->pos.x < entity.cpu[i].pos.x + 0.3f &&
+					player->pos.y > entity.cpu[i].pos.y - 0.3f && player->pos.y < entity.cpu[i].pos.y + 0.3f && 
+					player->pos.z > entity.cpu[i].pos.z - 0.2f && player->pos.z < entity.cpu[i].pos.z + 2.0f){
 					entityDeath(i);
 					player->weaponEquiped = 1;
-					spawnEntityEx((VEC3){player->xpos+player->xdir,player->ypos+player->ydir,player->zpos},(VEC3){0.1f,0.1f,-0.3f},(VEC3){0.0f,0.0f,0.0f},4,(VEC3){0.0f,0.04f,0.0f});
+					spawnEntityEx((VEC3){player->pos.x+player->xdir,player->pos.y+player->ydir,player->pos.z},(VEC3){0.1f,0.1f,-0.3f},(VEC3){0.0f,0.0f,0.0f},4,(VEC3){0.0f,0.04f,0.0f});
 				}
 				break;
 			}
@@ -337,7 +497,7 @@ void entities(){
 							case BLOCK_SOLID:
 								VEC4 p = PointBoxCollision(entity.gpu[i].pos,(VEC3){ss.x+i2+0.5f,ss.y+i3+0.5f,ss.z+i4+0.5f},(VEC3){0.5f,0.5f,0.5f});
 								if(p.x < entity.gpu[i].rad){
-									VEC2 rp = VEC2normalize(VEC2subVEC2R((VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y},(VEC2){player->xpos,player->ypos}));
+									VEC2 rp = VEC2normalize(VEC2subVEC2R((VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y},(VEC2){player->pos.x,player->pos.y}));
 									if(p.y < entity.gpu[i].rad){
 										entity.gpu[i].pos.x-=entity.cpu[i].vel.x;
 										entity.cpu[i].vel.x = 0.0;
@@ -353,7 +513,7 @@ void entities(){
 										entity.cpu[i].vel.z = 0.0f;
 									}
 									if(irnd()%40==1){
-										RAY ray = rayCreate(entity.gpu[i].pos,VEC3subVEC3R((VEC3){player->xpos,player->ypos,player->zpos},entity.gpu[i].pos));
+										RAY ray = rayCreate(entity.gpu[i].pos,VEC3subVEC3R(player->pos,entity.gpu[i].pos));
 										rayItterate(&ray);
 										while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 											u32 block = crds2map(ray.ix,ray.iy,ray.iz);
@@ -363,7 +523,7 @@ void entities(){
 											default:
 												goto end;
 											}
-											if((u32)player->xpos == ray.ix && (u32)player->ypos == ray.iy && (u32)player->zpos == ray.iz){
+											if((u32)player->pos.x == ray.ix && (u32)player->pos.y == ray.iy && (u32)player->pos.z == ray.iz){
 												entity.cpu[i].vel.x = -rp.x/5.0f;
 												entity.cpu[i].vel.y = -rp.y/5.0f;
 												entity.cpu[i].vel.z = 0.21f;
@@ -384,9 +544,9 @@ void entities(){
 				}
 			end2:
 				entity.cpu[i].vel.z -= 0.015f;
-				if(player->xpos > entity.gpu[i].pos.x - 0.3f  && player->xpos < entity.gpu[i].pos.x + 0.3f &&
-					player->ypos > entity.gpu[i].pos.y - 0.3f && player->ypos < entity.gpu[i].pos.y + 0.3f && 
-					player->zpos > entity.gpu[i].pos.z - 0.2f && player->zpos < entity.gpu[i].pos.z + 2.0f){
+				if(player->pos.x > entity.gpu[i].pos.x - 0.3f  && player->pos.x < entity.gpu[i].pos.x + 0.3f &&
+					player->pos.y > entity.gpu[i].pos.y - 0.3f && player->pos.y < entity.gpu[i].pos.y + 0.3f && 
+					player->pos.z > entity.gpu[i].pos.z - 0.2f && player->pos.z < entity.gpu[i].pos.z + 2.0f){
 					if(!player->wounded){
 						player->wounded = 1;
 						player->aniType = 1;
@@ -398,9 +558,9 @@ void entities(){
 				}
 				UVEC3 entityLuminance = {0,0,0};
 				u32 hits = 0;
-				for(i32 i2 = 0;i2 < eTxtSz;i2++){
-					for(i32 i3 = 0;i3 < eTxtSz;i3++){
-						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/eTxtSz*PI_2)*-sinf((f32)i2/eTxtSz*PI),cosf((f32)i3/eTxtSz*PI_2)*-sinf((f32)i2/eTxtSz*PI),-cosf((f32)i2/eTxtSz*PI)});
+				for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
+					for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
+						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
 						rayItterate(&ray);
 						i32 l = getLmapLocation(&ray);
 						if(l != -1){
@@ -432,15 +592,17 @@ void entities(){
 				VEC2 r2 = rotVEC2((VEC2){entity.gpu[i].pos2.x,entity.gpu[i].pos2.y},0.017f);
 				entity.gpu[i].pos2.x = r2.x;
 				entity.gpu[i].pos2.y = r2.y;
-				if(player->xpos > entity.cpu[i].pos.x - 0.3f  && player->xpos < entity.cpu[i].pos.x + 0.3f &&
-					player->ypos > entity.cpu[i].pos.y - 0.3f && player->ypos < entity.cpu[i].pos.y + 0.3f && 
-					player->zpos > entity.cpu[i].pos.z - 0.2f && player->zpos < entity.cpu[i].pos.z + 2.0f && player->wounded){
+				if(player->pos.x > entity.cpu[i].pos.x - 0.3f  && player->pos.x < entity.cpu[i].pos.x + 0.3f &&
+					player->pos.y > entity.cpu[i].pos.y - 0.3f && player->pos.y < entity.cpu[i].pos.y + 0.3f && 
+					player->pos.z > entity.cpu[i].pos.z - 0.2f && player->pos.z < entity.cpu[i].pos.z + 2.0f && player->wounded){
 					entityDeath(i);
 					player->wounded = 0;
 				}
 				break;
 			}
 			case 8:{
+				entity.gpu[i].rot.x += entity.cpu[i].vel.x * 2.0f;
+				entity.gpu[i].rot.y += entity.cpu[i].vel.y * 2.0f;
 				if(ss.x<0||ss.y<0||ss.z<0||ss.x>properties->lvlSz-1||ss.y>properties->lvlSz-1||ss.z>properties->lvlSz-1){
 					entityDeath(i);
 					continue;
@@ -463,41 +625,101 @@ void entities(){
 				if(ss.z > properties->lvlSz - 2){
 					ss.z = properties->lvlSz - 2;
 				}
-				for(u32 i2 = i+1;i2 < entityC;i2++){
-				switch(entity.cpu[i2].id){
-				case 8:
-					if(VEC2dist((VEC2){entity.gpu[i2].pos.x,entity.gpu[i2].pos.y},(VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y}) < entity.gpu[i].rad + entity.gpu[i2].rad){
-						f32 m1 = entity.gpu[i].rad * entity.gpu[i].rad * PI;
-						f32 m2 = entity.gpu[i2].rad * entity.gpu[i2].rad * PI;
-						VEC2 normal = VEC2normalize(VEC2subVEC2R((VEC2){entity.gpu[i2].pos.x,entity.gpu[i2].pos.y},(VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y}));
-						VEC2 ang = (VEC2){ normal.y,-normal.x};
-						f32 normalVel1 = VEC2dot((VEC2){entity.cpu[i].vel.x,entity.cpu[i].vel.y}, normal);
-						f32 tangVel1 = VEC2dot((VEC2){entity.cpu[i].vel.x,entity.cpu[i].vel.y}, ang);
-						f32 normalVel2 = VEC2dot((VEC2){entity.cpu[i2].pos.x,entity.cpu[i2].pos.y}, normal);
-						f32 tangVel2 = VEC2dot((VEC2){entity.cpu[i2].pos.x,entity.cpu[i2].pos.y}, ang);
-						VEC2 normal1 = VEC2mulR(normal,(normalVel1 * (m1 - m2) + 2 * m2 * normalVel2) / (m1 + m2));
-						VEC2 normal2 = VEC2mulR(normal,(normalVel2 * (m2 - m1) + 2 * m1 * normalVel1) / (m1 + m2));
-						VEC2 tang1 = VEC2mulR(ang, tangVel1);
-						VEC2 tang2 = VEC2mulR(ang, tangVel2);
-						VEC2 temp = VEC2addVEC2R(normal1,tang1);
-						entity.cpu[i].vel.x = temp.x;
-						entity.cpu[i].vel.y = temp.y;
-						temp = VEC2addVEC2R(normal2,tang2);
-						entity.cpu[i2].vel.x = temp.x;
-						entity.cpu[i2].vel.y = temp.y;
+				u8 axisE = 0;
+				VEC3 depth[3] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+				for(i32 i2 = -1;i2 < 2;i2++){
+					for(i32 i3 = -1;i3 < 2;i3++){
+						for(i32 i4 = -1;i4 < 2;i4++){
+							switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z+i4)].id){
+							case BLOCK_SOLID:
+								VEC4 p = PointBoxCollision(entity.gpu[i].pos,(VEC3){ss.x+i2+0.5f,ss.y+i3+0.5f,ss.z+i4+0.5f},(VEC3){0.5f,0.5f,0.5f});
+								if(p.x < entity.gpu[i].rad){
+									VEC3 ps = VEC3subR((VEC3){p.y,p.z,p.w},p.x);
+									ps = VEC3absR(ps);
+									switch(map[crds2map(ss.x,ss.y+i3,ss.z+i4)].id){
+									case BLOCK_SOLID:
+										break;
+									default:
+										axisE |= 0x01;
+										depth[0] = PointBoxNormal(entity.gpu[i].pos,(VEC3){ss.x+i2,ss.y+i3,ss.z+i4},(VEC3){1.0f,1.0f,1.0f});
+										break;
+									}
+									switch(map[crds2map(ss.x+i2,ss.y,ss.z+i4)].id){
+									case BLOCK_SOLID:
+										break;
+									default:
+										axisE |= 0x02;
+										depth[1] = PointBoxNormal(entity.gpu[i].pos,(VEC3){ss.x+i2,ss.y+i3,ss.z+i4},(VEC3){1.0f,1.0f,1.0f});
+										break;
+									}
+									switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z)].id){
+									case BLOCK_SOLID:
+										break;
+									default:
+										axisE |= 0x04;
+										depth[2] = PointBoxNormal(entity.gpu[i].pos,(VEC3){ss.x+i2,ss.y+i3,ss.z+i4},(VEC3){1.0f,1.0f,1.0f});
+									}						
+								}
+								break;
+							}
+						}
 					}
-					break;
 				}
+				if(axisE&0x01){
+					entity.gpu[i].pos.x -= entity.cpu[i].vel.x;
+					entity.cpu[i].vel = VEC3reflect(entity.cpu[i].vel,depth[0]);
+					VEC3mul(&entity.cpu[i].vel,0.96f);
 				}
-				if(VEC2dist((VEC2){player->xpos,player->ypos},(VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y}) < 0.3f + entity.gpu[i].rad){
+				if(axisE&0x02){
+					entity.gpu[i].pos.y -= entity.cpu[i].vel.y;
+					entity.cpu[i].vel = VEC3reflect(entity.cpu[i].vel,depth[1]);
+					VEC3mul(&entity.cpu[i].vel,0.96f);
+				}
+				if(axisE&0x04){
+					entity.gpu[i].pos.z -= entity.cpu[i].vel.z;
+					entity.cpu[i].vel = VEC3reflect(entity.cpu[i].vel,depth[2]);
+					VEC3mul(&entity.cpu[i].vel,0.96f);
+				}
+				entity.cpu[i].vel.z -= 0.015f;
+				for(u32 i2 = i+1;i2 < entityC;i2++){
+					switch(entity.cpu[i2].id){
+					case 8:
+						if(VEC3dist(entity.gpu[i2].pos,entity.gpu[i].pos) < entity.gpu[i].rad + entity.gpu[i2].rad){
+							VEC3subVEC3(&entity.gpu[i].pos,entity.cpu[i].vel);
+							f32 m1 = entity.gpu[i].rad * entity.gpu[i].rad * PI;
+							f32 m2 = entity.gpu[i2].rad * entity.gpu[i2].rad * PI;
+							VEC3 normal = VEC3normalize(VEC3subVEC3R(entity.gpu[i2].pos,entity.gpu[i].pos));
+							VEC3 ang = {normal.z,normal.y,-normal.x};
+							f32 normalVel1 = VEC3dot(entity.cpu[i].vel, normal);
+							f32 tangVel1 = VEC3dot(entity.cpu[i].vel, ang);
+							f32 normalVel2 = VEC3dot(entity.cpu[i2].pos, normal);
+							f32 tangVel2 = VEC3dot(entity.cpu[i2].pos, ang);
+							VEC3 normal1 = VEC3mulR(normal,(normalVel1 * (m1 - m2) + 2 * m2 * normalVel2) / (m1 + m2));
+							VEC3 normal2 = VEC3mulR(normal,(normalVel2 * (m2 - m1) + 2 * m1 * normalVel1) / (m1 + m2));
+							VEC3 tang1 = VEC3mulR(ang, tangVel1);
+							VEC3 tang2 = VEC3mulR(ang, tangVel2);
+							VEC3 temp = VEC3addVEC3R(normal1,tang1);
+							entity.cpu[i].vel.x = temp.x;
+							entity.cpu[i].vel.y = temp.y;
+							entity.cpu[i].vel.z = temp.z;
+							temp = VEC3addVEC3R(normal2,tang2);
+							entity.cpu[i2].vel.x = temp.x;
+							entity.cpu[i2].vel.y = temp.y;
+							entity.cpu[i2].vel.z = temp.z;
+							break;
+						}
+						break;
+					}
+				}
+				if(VEC2dist((VEC2){player->pos.x,player->pos.y},(VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y}) < 0.3f + entity.gpu[i].rad){
 					f32 m1 = entity.gpu[i].rad * entity.gpu[i].rad * PI;
 					f32 m2 = 25.0f;
-					VEC2 normal = VEC2normalize(VEC2subVEC2R((VEC2){player->xpos,player->ypos},(VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y}));
+					VEC2 normal = VEC2normalize(VEC2subVEC2R((VEC2){player->pos.x,player->pos.y},(VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y}));
 					VEC2 ang = (VEC2){ normal.y,-normal.x };
 					f32 normalVel1 = VEC2dot((VEC2){entity.cpu[i].vel.x,entity.cpu[i].vel.y}, normal);
 					f32 tangVel1 = VEC2dot((VEC2){entity.cpu[i].vel.x,entity.cpu[i].vel.y}, ang);
-					f32 normalVel2 = VEC2dot((VEC2){player->xvel,player->yvel}, normal);
-					f32 tangVel2 = VEC2dot((VEC2){player->xvel,player->yvel}, ang);
+					f32 normalVel2 = VEC2dot((VEC2){player->vel.x,player->vel.y}, normal);
+					f32 tangVel2 = VEC2dot((VEC2){player->vel.x,player->vel.y}, ang);
 					VEC2 normal1 = VEC2mulR(normal,(normalVel1 * (m1 - m2) + 2 * m2 * normalVel2) / (m1 + m2));
 					VEC2 normal2 = VEC2mulR(normal,(normalVel2 * (m2 - m1) + 2 * m1 * normalVel1) / (m1 + m2));
 					VEC2 tang1 = VEC2mulR(ang, tangVel1);
@@ -506,53 +728,14 @@ void entities(){
 					entity.cpu[i].vel.x = temp.x*2.0f;
 					entity.cpu[i].vel.y = temp.y*2.0f;
 					temp = VEC2addVEC2R(normal2,tang2);
-					player->xvel = temp.x;
-					player->yvel = temp.y;
+					player->vel.x = temp.x;
+					player->vel.y = temp.y;
 				}
-				u8 touchStatusE = 0;
-				for(i32 i2 = -1;i2 < 2;i2++){
-					for(i32 i3 = -1;i3 < 2;i3++){
-						for(i32 i4 = -1;i4 < 2;i4++){
-							switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z+i4)].id){
-							case BLOCK_SOLID:
-								VEC4 p = PointBoxCollision(entity.gpu[i].pos,(VEC3){ss.x+i2+0.5f,ss.y+i3+0.5f,ss.z+i4+0.5f},(VEC3){0.5f,0.5f,0.5f});
-								if(p.x < entity.gpu[i].rad){
-									VEC2 rp = VEC2normalize(VEC2subVEC2R((VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y},(VEC2){player->xpos,player->ypos}));
-									if(p.y == p.x){
-										touchStatusE |= 0x01;
-									}
-									if(p.z == p.x){
-										touchStatusE |= 0x04;
-									}
-									if(p.w < entity.gpu[i].rad){
-										touchStatusE |= 0x10;
-									}
-								}
-								break;
-							}
-						}
-					}
-				}
-				if(touchStatusE & 0x01){
-					entity.gpu[i].pos.x-=entity.cpu[i].vel.x;
-					entity.cpu[i].vel.x = -entity.cpu[i].vel.x*0.8f;
-				}
-				if(touchStatusE & 0x04){
-					entity.gpu[i].pos.y-=entity.cpu[i].vel.y;
-					entity.cpu[i].vel.y = -entity.cpu[i].vel.y*0.8f;
-				}
-				if(touchStatusE & 0x10){
-					entity.gpu[i].pos.z-=entity.cpu[i].vel.z;
-					entity.cpu[i].vel.x /= 1.01f;
-					entity.cpu[i].vel.y /= 1.01f;
-					entity.cpu[i].vel.z = 0.0f;
-				}
-				entity.cpu[i].vel.z -= 0.015f;
 				UVEC3 entityLuminance = {0,0,0};
 				u32 hits = 0;
-				for(i32 i2 = 0;i2 < eTxtSz;i2++){
-					for(i32 i3 = 0;i3 < eTxtSz;i3++){
-						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/eTxtSz*PI_2)*-sinf((f32)i2/eTxtSz*PI),cosf((f32)i3/eTxtSz*PI_2)*-sinf((f32)i2/eTxtSz*PI),-cosf((f32)i2/eTxtSz*PI)});
+				for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
+					for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
+						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
 						rayItterate(&ray);
 						i32 l = getLmapLocation(&ray);
 						if(l != -1){
@@ -568,12 +751,15 @@ void entities(){
 				entity.gpu[i].color.b = (f32)entityLuminance.b/hits*entity.cpu[i].baseColor.b / (brightness+1.0f)*4.0f;
 				break;
 			}
+			case 9:
+				entity.gpu[i].pos = networkplayer[entity.cpu[i].health].pos;
+				break;
 			default:{
 				UVEC3 entityLuminance = {0,0,0};
 				u32 hits = 0;
-				for(i32 i2 = 0;i2 < eTxtSz;i2++){
-					for(i32 i3 = 0;i3 < eTxtSz;i3++){
-						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/eTxtSz*PI_2)*-sinf((f32)i2/eTxtSz*PI),cosf((f32)i3/eTxtSz*PI_2)*-sinf((f32)i2/eTxtSz*PI),-cosf((f32)i2/eTxtSz*PI)});
+				for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
+					for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
+						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
 						rayItterate(&ray);
 						i32 l = getLmapLocation(&ray);
 						if(l != -1){

@@ -84,7 +84,7 @@ void HDR(){
 	u16 hits = 0;
 	for(f32 i = player->xangle - 0.5f;i < player->xangle + 0.5f;i+=0.05f){
 		for(f32 i2 = player->yangle - 0.5f;i2 < player->yangle + 0.5f;i2+=0.05f){
-			RAY ray = rayCreate((VEC3){player->xpos,player->ypos,player->zpos},(VEC3){cosf(i)*cosf(i2),sinf(i)*cosf(i2),sinf(i2)});
+			RAY ray = rayCreate(player->pos,(VEC3){cosf(i)*cosf(i2),sinf(i)*cosf(i2),sinf(i2)});
 			rayItterate(&ray);
 			u8 itt = 1;
 			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
@@ -261,7 +261,7 @@ void HDR(){
 	if(hits){
 		polBrightness /= hits;
 		brightness = (brightness * 99 + polBrightness) / 100;
-		brightness = (brightness * 29 + 512) / 30;
+		brightness = (brightness * 49 + 512) / 50;
 	}
 
 }

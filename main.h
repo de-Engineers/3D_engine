@@ -11,7 +11,7 @@
 
 #define godraySz 128
 
-#define eTxtSz 32
+#define ENTITYTEXTSZ 32
 
 #define RENDERDISTANCE 32
 
@@ -97,25 +97,18 @@ typedef struct{
 	f32 xangle;
 	f32 yangle;
 
-	f32 xpos;
-	f32 ypos;
-	f32 zpos;
+	VEC3 pos;
 
-	f32 xfov;
-	f32 yfov;
+	VEC2 fov;
 
-	f32 xvel;
-	f32 yvel;
-	f32 zvel;
+	VEC3 vel;
 
 	f32 xydir;
 	f32 xdir;
 	f32 ydir;
 	f32 zdir;
 
-	f32 xspawn;
-	f32 yspawn;
-	f32 zspawn;
+	VEC3 spawn;
 
 	f32 stamina;
 
@@ -134,18 +127,15 @@ typedef struct{
 }PLAYERDATA;
 
 typedef struct{
-	u32 xres;
-	u32 yres;
-	u32 lvlSz;
-	u32 renderDistance;
+	u16 xres;
+	u16 yres;
+	u16 lvlSz;
 	u32 lmapSzb;
 	u32 lmapSz;
-	u32 lmapSz2;
-	u32 lmapSz3;
 	u32 tex3DSzLimit;
 	f32 sensitivity;
-	u32 windowOffsetX;
-	u32 windowOffsetY;
+	u16 windowOffsetX;
+	u16 windowOffsetY;
 }PROPERTIES;
 
 typedef struct{
@@ -168,12 +158,22 @@ typedef struct{
 }EXRGB;
 
 typedef struct{
+	u16 r;
+	u16 g;
+	u16 b;
+	u16 a;
+}EXRGBA;
+
+typedef struct{
 	VEC3 pos;
 	f32  id;
 	VEC3 color;
 	f32  rad;
-	VEC3 pos2;
-	f32  res1;
+	union{
+		VEC3 pos2;
+		VEC3 rot;
+	};
+	f32  tId;
 	VEC3 scale;
 	f32  res2;
 	VEC3 srot;
@@ -280,6 +280,7 @@ extern MAP            *metadt5;
 extern MAP            *metadt6;
 extern LPMAP          *lpmap;
 extern EXRGB          *lmap;
+extern EXRGB          *bmap;
 extern RGBA           *godraymap;
 extern RGB            *entityTexture;
 extern RGB            *skyboxTexture;
@@ -322,6 +323,8 @@ extern long long fps;
 extern f32 brightness;
 extern u32 skyboxText;
 extern u8 touchedSpace;
+extern VEC2 mousePos;
+extern u8 networkSettings;
 
 extern unsigned char *inputStr;
 
@@ -352,6 +355,8 @@ void genGodraysMap();
 void playerWorldCollision();
 void generateSkyBox();
 void playerDeath();
+void networking();
+void spawnPlayer();
 
 RAY rayCreate(VEC3 pos,VEC3 dir);
 

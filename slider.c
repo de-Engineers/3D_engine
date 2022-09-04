@@ -162,8 +162,8 @@ void sliderMetadt3z(u8 pos){
 }
 
 void sliderFOV(u8 pos){
-	player->yfov = (f32)pos/127.5f;
-	player->xfov = (f32)pos/127.5f*16.0f/9.0f;
+	player->fov.y = (f32)pos/127.5f;
+	player->fov.x = (f32)pos/127.5f*16.0f/9.0f;
 	glMes[glMesC].id = 10;
 	glMesC++;
 }

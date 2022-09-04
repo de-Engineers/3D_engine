@@ -452,6 +452,7 @@ void updateLight2(){
 
 	lmap  = HeapAlloc(GetProcessHeap(),8,sizeof(EXRGB)*properties->lmapSzb*properties->lmapSzb*lmapC);
 	lmapb = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->lmapSzb*properties->lmapSzb*lmapC);
+	bmap  = HeapAlloc(GetProcessHeap(),8,sizeof(EXRGB)*properties->lmapSzb*properties->lmapSzb*lmapC);
 
 	properties->lmapSz = properties->lmapSzb;
 
@@ -590,21 +591,21 @@ void updateLight2(){
 			}
 
 			u64 sampleC;
-			sampleC = 2024.0f*2024.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.y))*sqrtf(1.0f-fabsf(ang.z));
+			sampleC = 4096.0f*4096.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.y))*sqrtf(1.0f-fabsf(ang.z));
 			sampleC -= sampleC%one;
 
 			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientX,1,0,&sampleC,&one,0,0,0));
 			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 
-			sampleC = 2024.0f*2024.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.x))*sqrtf(1.0f-fabsf(ang.z));
+			sampleC = 4096.0f*4096.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.x))*sqrtf(1.0f-fabsf(ang.z));
 			sampleC -= sampleC%one;
 
 			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientY,1,0,&sampleC,&one,0,0,0));
 			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 	
-			sampleC = 2024.0f*2024.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.x))*sqrtf(1.0f-fabsf(ang.y));
+			sampleC = 4096.0f*4096.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.x))*sqrtf(1.0f-fabsf(ang.y));
 			sampleC -= sampleC%one;
 
 			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
@@ -637,9 +638,9 @@ void updateLight2(){
 		switch(map[i].id){
 		case BLOCK_SPAWN:{
 			CVEC3 spwncrd = map2crds(i);
-			player->xspawn = (f32)spwncrd.x+0.5f;
-			player->yspawn = (f32)spwncrd.y+0.5f;
-			player->zspawn = (f32)spwncrd.z+2.0f;
+			player->spawn.x = (f32)spwncrd.x+0.5f;
+			player->spawn.y = (f32)spwncrd.y+0.5f;
+			player->spawn.z = (f32)spwncrd.z+2.0f;
 			break;
 		}
 		case BLOCK_CUBE:
@@ -664,6 +665,9 @@ void updateLight2(){
 		lmap[i].r = lmapb[i].x;
 		lmap[i].g = lmapb[i].y;
 		lmap[i].b = lmapb[i].z;
+		bmap[i].r = lmapb[i].x;
+		bmap[i].g = lmapb[i].y;
+		bmap[i].b = lmapb[i].z;
 	}
 	HeapFree(GetProcessHeap(),0,lmapb);
 	glMes[glMesC].id = 6;

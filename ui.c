@@ -142,14 +142,11 @@ void drawWord(u8 *str,f32 x,f32 y,f32 id){
 void drawUI(){
 	if(~settings & 0x100){
 		drawChar(33,-0.9f,0.9f,-0.99f,0,0.04f,0.04f);
-		drawVar(-0.9f,0.9f,player->xpos);
+		drawVar(-0.9f,0.9f,player->pos.x);
 		drawChar(34,-0.75,0.9,-0.99f,0,0.04f,0.04f);
-		drawVar(-0.75,0.9,player->ypos);
+		drawVar(-0.75,0.9,player->pos.y);
 		drawChar(35,-0.6f,0.9f,-0.99f,0,0.04f,0.04f);
-		drawVar(-0.6f,0.9f,player->zpos);
-		drawVar(-0.9f,0.8f,fabs(player->xvel * 100));
-		drawVar(-0.75f,0.8f,fabsf(player->yvel * 100));
-		drawVar(-0.6f,0.8f,fabsf(player->zvel * 100));
+		drawVar(-0.6f,0.9f,player->pos.z);
 		drawChar(15,-0.96f,0.7f,-0.99f,0,0.04f,0.04f);
 		drawChar(25,-0.93f,0.7f,-0.99f,0,0.04f,0.04f);
 		drawChar(28,-0.9f,0.7f,-0.99f,0 ,0.04f,0.04f);
@@ -160,45 +157,115 @@ void drawUI(){
 		if(toolSel < 10){
 			drawWord(words2[toolSel],-0.9f,-0.78f,0.0f);
 		}
-		drawVar(0.8f,-0.90f,colorSel.r);
-		drawVar(0.8f,-0.85f,colorSel.g);
-		drawVar(0.8f,-0.80f,colorSel.b);
-		drawVar(0.8f,-0.75f,colorSel.a);
+		drawVar(0.85f,-0.90f,colorSel.r);
+		drawVar(0.85f,-0.85f,colorSel.g);
+		drawVar(0.85f,-0.80f,colorSel.b);
+		drawVar(0.85f,-0.75f,colorSel.a);
 		if(settings & 0x40){
 			drawWord("sub block 2",-0.9f,-0.66f,0.0f);
-			drawVar(0.8f,-0.50f,metadt4Sel.r);
-			drawVar(0.8f,-0.45f,metadt4Sel.g);
-			drawVar(0.8f,-0.35f,metadt4Sel.a);
-			drawVar(0.8f,-0.40f,metadt4Sel.b);
+			drawVar(0.85f,-0.50f,metadt4Sel.r);
+			drawVar(0.85f,-0.45f,metadt4Sel.g);
+			drawVar(0.85f,-0.40f,metadt4Sel.a);
+			drawVar(0.85f,-0.35f,metadt4Sel.b);
 
-			drawVar(0.8f,-0.20f,metadt5Sel.r);
-			drawVar(0.8f,-0.15f,metadt5Sel.g);
-			drawVar(0.8f,-0.05f,metadt5Sel.a);
-			drawVar(0.8f,-0.10f,metadt5Sel.b);
+			drawVar(0.85f,-0.20f,metadt5Sel.r);
+			drawVar(0.85f,-0.15f,metadt5Sel.g);
+			drawVar(0.85f,-0.10f,metadt5Sel.a);
+			drawVar(0.85f,-0.05f,metadt5Sel.b);
 
-			drawVar(0.8f,0.10f,metadt6Sel.r);
-			drawVar(0.8f,0.15f,metadt6Sel.g);
-			drawVar(0.8f,0.25f,metadt6Sel.a);
-			drawVar(0.8f,0.20f,metadt6Sel.b);
+			drawVar(0.85f,0.10f,metadt6Sel.r);
+			drawVar(0.85f,0.15f,metadt6Sel.g);
+			drawVar(0.85f,0.20f,metadt6Sel.a);
+			drawVar(0.85f,0.25f,metadt6Sel.b);
 		}
 		else{
 			drawWord("sub block 1",-0.9f,-0.66f,0.0f);
-			drawVar(0.8f,-0.50f,metadtSel.r);
-			drawVar(0.8f,-0.45f,metadtSel.g);
-			drawVar(0.8f,-0.35f,metadtSel.a);
-			drawVar(0.8f,-0.40f,metadtSel.b);
+			drawVar(0.85f,-0.50f,metadtSel.r);
+			drawVar(0.85f,-0.45f,metadtSel.g);
+			drawVar(0.85f,-0.40f,metadtSel.a);
+			drawVar(0.85f,-0.35f,metadtSel.b);
 
-			drawVar(0.8f,-0.20f,metadt2Sel.r);
-			drawVar(0.8f,-0.15f,metadt2Sel.g);
-			drawVar(0.8f,-0.05f,metadt2Sel.a);
-			drawVar(0.8f,-0.10f,metadt2Sel.b);
+			drawVar(0.85f,-0.20f,metadt2Sel.r);
+			drawVar(0.85f,-0.15f,metadt2Sel.g);
+			drawVar(0.85f,-0.10f,metadt2Sel.a);
+			drawVar(0.85f,-0.05f,metadt2Sel.b);
 
-			drawVar(0.8f,0.10f,metadt3Sel.r);
-			drawVar(0.8f,0.15f,metadt3Sel.g);
-			drawVar(0.8f,0.25f,metadt3Sel.a);
-			drawVar(0.8f,0.20f,metadt3Sel.b);
+			drawVar(0.85f,0.10f,metadt3Sel.r);
+			drawVar(0.85f,0.15f,metadt3Sel.g);
+			drawVar(0.85f,0.20f,metadt3Sel.a);
+			drawVar(0.85f,0.25f,metadt3Sel.b);
+
+			switch(menuSel){
+			case 0:
+				switch(blockSel){
+				case BLOCK_LIGHT1:
+				case BLOCK_LIGHT2:
+				case BLOCK_LIGHT3:
+				case BLOCK_LIGHT4:
+				case BLOCK_LIGHT5:
+				case BLOCK_LIGHT6:
+					drawWord("areasize x",0.6f,-0.50f,0.0f);
+					drawWord("areasize y",0.6f,-0.45f,0.0f);
+					drawWord("areasize z",0.6f,-0.40f,0.0f);
+
+					drawWord("areapos x",0.6f,-0.20f,0.0f);
+					drawWord("areapos y",0.6f,-0.15f,0.0f);
+					drawWord("areapos z",0.6f,-0.10f,0.0f);
+
+					drawWord("size",0.7f,0.15f,0.0f);
+					break;
+				case BLOCK_CUBE:
+					drawWord("position x",0.6f,-0.50f,0.0f);
+					drawWord("position y",0.6f,-0.45f,0.0f);
+					drawWord("position z",0.6f,-0.40f,0.0f);
+
+					drawWord("size x",0.6f,-0.20f,0.0f);
+					drawWord("size y",0.6f,-0.15f,0.0f);
+					drawWord("size z",0.6f,-0.10f,0.0f);
+
+					drawWord("rotation x",0.6f,0.10f,0.0f);
+					drawWord("rotation y",0.6f,0.15f,0.0f);
+					drawWord("rotation z",0.6f,0.20f,0.0f);
+					break;
+				}
+				break;
+				break;
+			case 4:
+				switch(map[editBlockSel].id){
+				case BLOCK_LIGHT1:
+				case BLOCK_LIGHT2:
+				case BLOCK_LIGHT3:
+				case BLOCK_LIGHT4:
+				case BLOCK_LIGHT5:
+				case BLOCK_LIGHT6:
+					drawWord("areasize x",0.0f,-0.50f,0.0f);
+					drawWord("areasize y",0.0f,-0.45f,0.0f);
+					drawWord("areasize z",0.0f,-0.40f,0.0f);
+
+					drawWord("areapos x",0.0f,-0.20f,0.0f);
+					drawWord("areapos y",0.0f,-0.15f,0.0f);
+					drawWord("areapos z",0.0f,-0.10f,0.0f);
+
+					drawWord("size",0.0f,0.15f,0.0f);
+					break;
+				case BLOCK_CUBE:
+					drawWord("position x",0.07f,-0.50f,0.0f);
+					drawWord("position y",0.07f,-0.45f,0.0f);
+					drawWord("position z",0.07f,-0.40f,0.0f);
+
+					drawWord("size x",0.16f,-0.20f,0.0f);
+					drawWord("size y",0.16f,-0.15f,0.0f);
+					drawWord("size z",0.16f,-0.10f,0.0f);
+
+					drawWord("rotation x",0.07f,0.10f,0.0f);
+					drawWord("rotation y",0.07f,0.15f,0.0f);
+					drawWord("rotation z",0.07f,0.20f,0.0f);
+					break;				
+				}					
+				break;							
+			}
 		}
-		drawSprite((VEC3){0.8f,-0.65f,-0.2f},(VEC2){0.05f,0.05f},7);
+		drawSprite((VEC3){0.927f,-0.603f,-0.2f},(VEC2){0.05f,0.05f},7);
 	}
 	for(u32 i = 0;i < buttonC;i++){
 		VEC2 buttonMiddle = {button[i].pos.x+0.0075f,button[i].pos.y+0.0125f};
@@ -215,13 +282,8 @@ void drawUI(){
 		}
 	}
 	buttonId = -1;
-foundButton:
+	foundButton:
 	for(u32 i = 0;i < sliderC;i++){
-		if(mousePos.x > slider[i].pos.x - 0.266666667f && mousePos.x < slider[i].pos.x + 0.26666667f
-			&& mousePos.y > slider[i].pos.y - 0.015f && mousePos.y < slider[i].pos.y + 0.015f){
-			sliderId = slider[i].id;
-			sliderPos = (mousePos.x-slider[i].pos.x+0.266666667f)*480.0f;
-		}
 		drawSprite((VEC3){slider[i].pos.x,slider[i].pos.y,-0.05f},(VEC2){0.266666667f,0.015f},8+slider[i].id);
 	}
 	switch(menuSel){

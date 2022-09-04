@@ -75,6 +75,7 @@ i8 *FRAGsourceEditor;
 i8 *fontImage;
 i8 *VERTsourcePost;
 i8 *FRAGsourcePost;
+i8 *FRAGsourceSmooth;
 i8 *epicTexture;
 i8 *epicTexture2;
 i8 *slope;
@@ -91,6 +92,7 @@ u32 shaderProgram;
 u32 shaderProgramFont;
 u32 shaderProgramEditor;
 u32 shaderProgramPost;
+u32 shaderProgramSmooth;
 u32 VBO;
 
 u32 vertexShader;
@@ -100,6 +102,7 @@ u32 vertexShaderPost;
 u32 fragmentShaderFont;
 u32 fragmentShaderEditor;
 u32 fragmentShaderPost;
+u32 fragmentShaderSmooth;
 u32 mapText;
 u32 mapTextFont;
 u32 *blockTextures[30];
@@ -179,6 +182,45 @@ char *loadFile(char *name){
 }
 
 void GPUtextureUpload(){
+	if(lmapC > properties->tex3DSzLimit*3){
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_3D, lmapText);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0, GL_RGB, GL_UNSIGNED_SHORT, lmap);
+		glActiveTexture(GL_TEXTURE17);
+		glBindTexture(GL_TEXTURE_3D, lmapText2);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
+		glActiveTexture(GL_TEXTURE18);
+		glBindTexture(GL_TEXTURE_3D, lmapText3);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * 2 * properties->lmapSz * properties->lmapSz);
+		glActiveTexture(GL_TEXTURE19);
+		glBindTexture(GL_TEXTURE_3D, lmapText4);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit * 3, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit*3*properties->lmapSz * properties->lmapSz);
+	}
+	else if(lmapC > properties->tex3DSzLimit * 2){
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_3D, lmapText);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT,lmap);
+		glActiveTexture(GL_TEXTURE17);
+		glBindTexture(GL_TEXTURE_3D, lmapText2);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT,lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
+		glActiveTexture(GL_TEXTURE18);
+		glBindTexture(GL_TEXTURE_3D, lmapText3);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit*2,0,GL_RGB, GL_UNSIGNED_SHORT,lmap+properties->tex3DSzLimit*2*properties->lmapSz*properties->lmapSz);
+	}
+	else if(lmapC > properties->tex3DSzLimit){
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_3D, lmapText);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT, lmap);
+		glActiveTexture(GL_TEXTURE17);
+		glBindTexture(GL_TEXTURE_3D, lmapText2);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
+	}
+	else{
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_3D, lmapText);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC,0,GL_RGB,GL_UNSIGNED_SHORT,lmap);
+	}
+
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,lpmapText);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
@@ -249,6 +291,18 @@ void GPUtextureUpload(){
 
 }
 
+void updateShaderVariables(u32 program){
+	glUseProgram(program);
+	glUniform1i(glGetUniformLocation(program,"wounded"),player->wounded);
+	glUniform2f(glGetUniformLocation(program,"angle"),player->xangle,player->yangle);
+	glUniform4f(glGetUniformLocation(program,"dir"),player->xdir,player->ydir, player->zdir,player->xydir);
+	glUniform1i(glGetUniformLocation(program,"tick"),tick);
+	glUniform1i(glGetUniformLocation(program,"state"),settings);
+	glUniform1i(glGetUniformLocation(program,"entityC"),entityC);
+	glUniform1f(glGetUniformLocation(program,"brightness"),brightness);
+	glUniform3f(glGetUniformLocation(program,"Pos"),player->pos.x,player->pos.y,player->pos.z);
+}
+
 void openGL(){
 	glMes = HeapAlloc(GetProcessHeap(),8,sizeof(OPENGLMESSAGE) * 1024);
 
@@ -259,6 +313,7 @@ void openGL(){
 	FRAGsourceEditor = loadFile("shaders/editor.frag");
 	VERTsourcePost   = loadFile("shaders/post.vert");
 	FRAGsourcePost   = loadFile("shaders/post.frag");
+	FRAGsourceSmooth = loadFile("shaders/smooth.frag");
 
 	fontImage    = loadTexture("textures/font.bmp");
 
@@ -300,9 +355,7 @@ void openGL(){
 	glFramebufferRenderbuffer = wglGetProcAddress("glFramebufferRenderbuffer");
 	glCheckFramebufferStatus  = wglGetProcAddress("glCheckFramebufferStatus");
 
-
 	wglSwapIntervalEXT        = wglGetProcAddress("wglSwapIntervalEXT");
-	//wglChoosePixelFormatARB   = wglGetProcAddress("wglChoosePixelFormatARB");
 
 	wglSwapIntervalEXT(settings&0x200);
 
@@ -315,6 +368,7 @@ void openGL(){
 	shaderProgramFont   = glCreateProgram();
 	shaderProgramEditor = glCreateProgram();
 	shaderProgramPost   = glCreateProgram();
+	shaderProgramSmooth = glCreateProgram();
 
 	vertexShader         = glCreateShader(GL_VERTEX_SHADER);
 	fragmentShader       = glCreateShader(GL_FRAGMENT_SHADER);
@@ -323,6 +377,7 @@ void openGL(){
 	fragmentShaderEditor = glCreateShader(GL_FRAGMENT_SHADER);
 	fragmentShaderPost   = glCreateShader(GL_FRAGMENT_SHADER);
 	vertexShaderPost     = glCreateShader(GL_VERTEX_SHADER);
+	fragmentShaderSmooth = glCreateShader(GL_FRAGMENT_SHADER);
 
 	glShaderSource(vertexShader,1,(const char**)&VERTsource,0);
 	glShaderSource(fragmentShader,1,(const char**)&FRAGsource,0);
@@ -331,6 +386,7 @@ void openGL(){
 	glShaderSource(fragmentShaderEditor,1,(const char**)&FRAGsourceEditor,0);
 	glShaderSource(vertexShaderPost,1,(const char**)&VERTsourcePost,0);
 	glShaderSource(fragmentShaderPost,1,(const char**)&FRAGsourcePost,0);
+	glShaderSource(fragmentShaderSmooth,1,(const char**)&FRAGsourceSmooth,0);
 
 	glCompileShader(vertexShader);
 	glCompileShader(fragmentShader);
@@ -339,9 +395,10 @@ void openGL(){
 	glCompileShader(fragmentShaderEditor);
 	glCompileShader(fragmentShaderPost);
 	glCompileShader(vertexShaderPost);
+	glCompileShader(fragmentShaderSmooth);
 
 	char *bericht = HeapAlloc(GetProcessHeap(),8,1000);
-	glGetShaderInfoLog(fragmentShader,1000,0,bericht);
+	glGetShaderInfoLog(fragmentShaderSmooth,1000,0,bericht);
 	printf("%s\n",bericht);
 	glGetShaderInfoLog(vertexShader,1000,0,bericht);
 	printf("%s\n",bericht);
@@ -355,11 +412,14 @@ void openGL(){
 	glAttachShader(shaderProgramFont,fragmentShaderFont);
 	glAttachShader(shaderProgramPost,fragmentShaderPost);
 	glAttachShader(shaderProgramPost,vertexShaderPost);
+	glAttachShader(shaderProgramSmooth,vertexShader);
+	glAttachShader(shaderProgramSmooth,fragmentShaderSmooth);
 
 	glLinkProgram(shaderProgramEditor);
 	glLinkProgram(shaderProgram);
 	glLinkProgram(shaderProgramFont);
 	glLinkProgram(shaderProgramPost);
+	glLinkProgram(shaderProgramSmooth);
 
 	glCreateBuffers(1,&quadVBO);
 	glBindBuffer(GL_ARRAY_BUFFER,quadVBO);
@@ -392,51 +452,6 @@ void openGL(){
 	glGenTextures(1,&entityTextText);
 	glGenTextures(1,&skyboxText);
 
-	generateSkyBox();
-
-	glUseProgram(shaderProgramEditor);
-
-	glUseProgram(shaderProgram);
-
-	if(lmapC > properties->tex3DSzLimit*3){
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0, GL_RGB, GL_UNSIGNED_SHORT, lmap);
-		glActiveTexture(GL_TEXTURE17);
-		glBindTexture(GL_TEXTURE_3D, lmapText2);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
-		glActiveTexture(GL_TEXTURE18);
-		glBindTexture(GL_TEXTURE_3D, lmapText3);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * 2 * properties->lmapSz * properties->lmapSz);
-		glActiveTexture(GL_TEXTURE19);
-		glBindTexture(GL_TEXTURE_3D, lmapText4);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit * 3, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit*3*properties->lmapSz * properties->lmapSz);
-	}
-	else if(lmapC > properties->tex3DSzLimit * 2){
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT,lmap);
-		glActiveTexture(GL_TEXTURE17);
-		glBindTexture(GL_TEXTURE_3D, lmapText2);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT,lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
-		glActiveTexture(GL_TEXTURE18);
-		glBindTexture(GL_TEXTURE_3D, lmapText3);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit*2,0,GL_RGB, GL_UNSIGNED_SHORT,lmap+properties->tex3DSzLimit*2*properties->lmapSz*properties->lmapSz);
-	}
-	else if(lmapC > properties->tex3DSzLimit){
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT, lmap);
-		glActiveTexture(GL_TEXTURE17);
-		glBindTexture(GL_TEXTURE_3D, lmapText2);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
-	}
-	else{
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC,0,GL_RGB,GL_UNSIGNED_SHORT,lmap);
-	}
-
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,godraysText);
 	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,godraySz,godraySz,0,GL_RGBA,GL_UNSIGNED_BYTE,godraymap);
@@ -444,7 +459,7 @@ void openGL(){
 
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_3D,entityTextText);
-	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,eTxtSz,eTxtSz,entityC,0,GL_RGBA,GL_UNSIGNED_BYTE,entityTexture);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGB,ENTITYTEXTSZ,ENTITYTEXTSZ,entityC,0,GL_RGB,GL_UNSIGNED_BYTE,entityTexture);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glBindTexture(GL_TEXTURE_1D,entityText);
@@ -454,7 +469,30 @@ void openGL(){
 
 	GPUtextureUpload();
 
+	glUseProgram(shaderProgramSmooth);
+
+	GPUtextureUpload();
+
 	glUseProgram(shaderProgram);
+
+	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
+	glUniform1i(glGetUniformLocation(shaderProgram,"godraymap"),2);
+	glUniform1i(glGetUniformLocation(shaderProgram,"entityTextures"),3);
+	glUniform1i(glGetUniformLocation(shaderProgram,"skybox"),4);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lpmap"),6);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lmap"),9);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt"),10);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt2"),11);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt3"),12);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt4"),13);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt5"),14);
+	glUniform1i(glGetUniformLocation(shaderProgram,"metadt6"),15);
+	glUniform1i(glGetUniformLocation(shaderProgram,"entity"),16);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lmap2"),17);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lmap3"),18);
+	glUniform1i(glGetUniformLocation(shaderProgram,"lmap4"),19);
+
+	glUseProgram(shaderProgramSmooth);
 
 	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
 	glUniform1i(glGetUniformLocation(shaderProgram,"godraymap"),2);
@@ -501,26 +539,34 @@ void openGL(){
 	glUseProgram(shaderProgram);
 
 	glUniform2i(glGetUniformLocation(shaderProgram,"reso"),properties->xres,properties->yres);
-	glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->xfov,player->yfov);
+	glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->fov.x,player->fov.y);
 	glUniform1i(glGetUniformLocation(shaderProgram,"mapSz"),properties->lvlSz);
 	glUniform1f(glGetUniformLocation(shaderProgram,"lmapsz"),properties->lmapSz);
 	glUniform1i(glGetUniformLocation(shaderProgram,"tex3DszLimit"),properties->tex3DSzLimit);
 
+	glUseProgram(shaderProgramSmooth);
+
+	glUniform2i(glGetUniformLocation(shaderProgramSmooth,"reso"),properties->xres,properties->yres);
+	glUniform2f(glGetUniformLocation(shaderProgramSmooth,"fov"),player->fov.x,player->fov.y);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"mapSz"),properties->lvlSz);
+	glUniform1f(glGetUniformLocation(shaderProgramSmooth,"lmapsz"),properties->lmapSz);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"tex3DszLimit"),properties->tex3DSzLimit);
+
 	glUseProgram(shaderProgramEditor);
 
 	glUniform2i(glGetUniformLocation(shaderProgramEditor,"reso"),properties->xres,properties->yres);
-	glUniform2f(glGetUniformLocation(shaderProgramEditor,"fov"),player->xfov,player->yfov);
+	glUniform2f(glGetUniformLocation(shaderProgramEditor,"fov"),player->fov.x,player->fov.y);
 	glUniform1i(glGetUniformLocation(shaderProgramEditor,"mapSz"),properties->lvlSz);
 	glUniform1f(glGetUniformLocation(shaderProgramEditor,"lmapsz"),properties->lmapSz);
 
 	glUseProgram(shaderProgramFont);
 	glUniform1i(glGetUniformLocation(shaderProgramFont,"font"),0);
 	glUniform2i(glGetUniformLocation(shaderProgramFont,"reso"),properties->xres,properties->yres);
-	glUniform2f(glGetUniformLocation(shaderProgramFont,"fov"),player->xfov*0.5f,player->yfov*0.5f);
+	glUniform2f(glGetUniformLocation(shaderProgramFont,"fov"),player->fov.x*0.5f,player->fov.y*0.5f);
 	glUniform1f(glGetUniformLocation(shaderProgramFont,"sensitivity"),properties->sensitivity);
 	glUseProgram(shaderProgram);
 	for(;;){
-		long long timeB;
+		u64 timeB;
 		QueryPerformanceCounter(&timeB);
 		if(settings & 0x80){
 			SwapBuffers(dc);
@@ -530,11 +576,6 @@ void openGL(){
 			if(settings & 0x20){
 				drawUI();
 			}
-			/*
-			glActiveTexture(GL_TEXTURE2);
-			glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,godraySz,godraySz,0,GL_RGBA,GL_UNSIGNED_BYTE,godraymap);
-			glGenerateMipmap(GL_TEXTURE_2D);
-			*/
 			glUseProgram(shaderProgramFont);
 			glUniform3i(glGetUniformLocation(shaderProgramFont,"colorSel"),colorSel.r,colorSel.g,colorSel.b);
 			glUniform3i(glGetUniformLocation(shaderProgramFont,"metadt1"),metadtSel.r,metadtSel.g,metadtSel.a);
@@ -552,9 +593,14 @@ void openGL(){
 				switch(glMes[glMesC].id){
 				case 0:
 					glViewport(0,0,properties->xres,properties->yres);
+					glUseProgram(shaderProgram);
 					glUniform2i(glGetUniformLocation(shaderProgram,"reso"),properties->xres,properties->yres);
+					glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->fov.x,player->fov.y);
 					glUseProgram(shaderProgramFont);
 					glUniform2i(glGetUniformLocation(shaderProgramFont,"reso"),properties->xres,properties->yres);
+					glUseProgram(shaderProgramEditor);
+					glUniform2i(glGetUniformLocation(shaderProgramEditor,"reso"),properties->xres,properties->yres);
+					glUniform2f(glGetUniformLocation(shaderProgramEditor,"fov"),player->fov.x,player->fov.y);
 					glUseProgram(shaderProgram);
 					break;
 				case 1:
@@ -635,15 +681,22 @@ void openGL(){
 					break;
 				case 10:
 					glUseProgram(shaderProgram);
-					glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->xfov,player->yfov);
+					glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->fov.x,player->fov.y);
 					glUseProgram(shaderProgramEditor);
-					glUniform2f(glGetUniformLocation(shaderProgramEditor,"fov"),player->xfov,player->yfov);
+					glUniform2f(glGetUniformLocation(shaderProgramEditor,"fov"),player->fov.x,player->fov.y);
 					glUseProgram(shaderProgramFont);
-					glUniform2f(glGetUniformLocation(shaderProgramFont,"fov"),player->xfov*0.5f,player->yfov*0.5f);
+					glUniform2f(glGetUniformLocation(shaderProgramFont,"fov"),player->fov.x*0.5f,player->fov.y*0.5f);
 					break;
 				case 11:
 					glUseProgram(shaderProgramFont);
 					glUniform1f(glGetUniformLocation(shaderProgramFont,"sensitivity"),properties->sensitivity);
+					break;
+				case 12:
+					glUseProgram(shaderProgram);
+					glActiveTexture(GL_TEXTURE3);
+					glBindTexture(GL_TEXTURE_3D,entityTextText);
+					glTexImage3D(GL_TEXTURE_3D,0,GL_RGB,ENTITYTEXTSZ,ENTITYTEXTSZ,entityC,0,GL_RGB,GL_UNSIGNED_BYTE,entityTexture);
+					glGenerateMipmap(GL_TEXTURE_3D);
 					break;
 				}
 			}
@@ -654,31 +707,26 @@ void openGL(){
 				glUseProgram(shaderProgramEditor);
 				glUniform2f(glGetUniformLocation(shaderProgramEditor,"angle"),player->xangle,player->yangle);
 				glUniform4f(glGetUniformLocation(shaderProgramEditor,"dir"),player->xdir,player->ydir, player->zdir,player->xydir);
-				glUniform3f(glGetUniformLocation(shaderProgramEditor,"Pos"),player->xpos,player->ypos,player->zpos);
+				glUniform3f(glGetUniformLocation(shaderProgramEditor,"Pos"),player->pos.x,player->pos.y,player->pos.z);
 				glUniform1i(glGetUniformLocation(shaderProgramEditor,"tick"),tick);
 				glUniform1i(glGetUniformLocation(shaderProgramEditor,"state"),settings);
 				glUniform1i(glGetUniformLocation(shaderProgramEditor,"entityC"),entityC);
-				glUniform1i(glGetUniformLocation(shaderProgramEditor,"renderDistance"),properties->renderDistance);
 				glUniform1f(glGetUniformLocation(shaderProgramEditor,"brightness"),brightness);
 				glDrawArrays(GL_TRIANGLES,0,6);
 			}
 			else{
-				glUseProgram(shaderProgram);
-				glUniform1i(glGetUniformLocation(shaderProgram,"wounded"),player->wounded);
-				glUniform2f(glGetUniformLocation(shaderProgram,"angle"),player->xangle,player->yangle);
-				glUniform4f(glGetUniformLocation(shaderProgram,"dir"),player->xdir,player->ydir, player->zdir,player->xydir);
-				glUniform1i(glGetUniformLocation(shaderProgram,"tick"),tick);
-				glUniform1i(glGetUniformLocation(shaderProgram,"state"),settings);
-				glUniform1i(glGetUniformLocation(shaderProgram,"entityC"),entityC);
-				glUniform1i(glGetUniformLocation(shaderProgram,"renderDistance"),properties->renderDistance);
-				glUniform1f(glGetUniformLocation(shaderProgram,"brightness"),brightness);
-				glUniform3f(glGetUniformLocation(shaderProgram,"Pos"),player->xpos,player->ypos,player->zpos);
+				if(settings & 0x400){
+					updateShaderVariables(shaderProgramSmooth);
+				}
+				else{
+					updateShaderVariables(shaderProgram);
+				}
 				for(u32 i = 0;i < entityC;i++){
 					switch(entity.cpu[i].id){
 					case 4:
-						entity.gpu[i].pos.x = player->xpos-player->xdir*player->xydir/16.0f;
-						entity.gpu[i].pos.y = player->ypos-player->ydir*player->xydir/16.0f;
-						entity.gpu[i].pos.z = player->zpos-player->zdir/16.0f-0.1f;
+						entity.gpu[i].pos.x = player->pos.x-player->xdir*player->xydir/16.0f;
+						entity.gpu[i].pos.y = player->pos.y-player->ydir*player->xydir/16.0f;
+						entity.gpu[i].pos.z = player->pos.z-player->zdir/16.0f-0.1f;
 						entity.gpu[i].pos2.x = cosf(player->xangle)*cosf(player->yangle)/4.0f;
 						entity.gpu[i].pos2.y = sinf(player->xangle)*cosf(player->yangle)/4.0f;
 						entity.gpu[i].pos2.z = sinf(player->yangle)/4.0f;
@@ -703,6 +751,7 @@ void openGL(){
 				glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA32F,entityC*20,0,GL_RGBA,GL_FLOAT,entity.gpu);
 				glGenerateMipmap(GL_TEXTURE_1D);
 				glDrawArrays(GL_TRIANGLES,0,6);
+				glUseProgram(shaderProgram);
 			}
 			if(settings & 0x20){
 				glUseProgram(shaderProgramFont);
