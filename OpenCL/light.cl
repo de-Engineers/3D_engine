@@ -479,14 +479,14 @@ float lxo,float lyo,float lzo){
                     rspos *= 2.0f;
                     offset += (uint)(tfract(rspos)*lmapSz)*lmapSz;
                     offset += (uint)rspos*lmapSz*lmapSz*2;
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     lightmap[(lpmap[block*12+0]*lmapSz*lmapSz+offset)*3+0] += red   / ((float)metadt[block*4+3]/255.0f);
                     lightmap[(lpmap[block*12+0]*lmapSz*lmapSz+offset)*3+1] += green / ((float)metadt[block*4+3]/255.0f);
                     lightmap[(lpmap[block*12+0]*lmapSz*lmapSz+offset)*3+2] += blue  / ((float)metadt[block*4+3]/255.0f);
                     dir = reflect(ray.dir,normalize(spos-(float3){metadt[block*4],metadt[block*4+1],metadt[block*4+2]}/255.0f));
                     ray = rayCreate((float3){ray.ipos.x,ray.ipos.y,ray.ipos.z}+spos,dir);
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -551,6 +551,9 @@ float lxo,float lyo,float lzo){
                 nspos.xz = rotVEC2(nspos.xz,-(float)metadt3[block*4+1]/255.0f*PI);
                 nspos.xy = rotVEC2(nspos.xy,-(float)metadt3[block*4]/255.0f*PI);
 				if(nspos.x>=0.0&&nspos.y>=0.0&&nspos.z>=0.0&&nspos.x<=1.0&&nspos.y<=1.0&&nspos.z<=1.0){
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     if(spos.x>mtdt.x-mtdt2.x-0.0001&&spos.x<mtdt.x-mtdt2.x+0.0001){
                         float mt = tmax(mtdt2.y,mtdt2.z)*2.0;
                         uint xt = (spos.y-mtdt.y+mtdt2.y)*lmapSz/mt;
@@ -633,9 +636,6 @@ float lxo,float lyo,float lzo){
                     dir.xz = rotVEC2(dir.xz,(float){metadt3[block*4+1]}/255.0*PI);
                     dir.yz = rotVEC2(dir.yz,(float){metadt3[block*4+2]}/255.0*PI);
                     ray = rayCreate((float3){ray.ipos.x,(float)ray.ipos.y,(float)ray.ipos.z}+nspos,normalize(dir));
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -656,12 +656,12 @@ float lxo,float lyo,float lzo){
                     uint txt = tx / lmapSz;
                     tx %= lmapSz;
                     uint offset = tx+ty;
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     lightmap[(lpmap[block*12+txt]*lmapSz*lmapSz+offset)*3+0] += red   * mtdt2.x * mtdt2.y * 4.0f;
                     lightmap[(lpmap[block*12+txt]*lmapSz*lmapSz+offset)*3+1] += green * mtdt2.x * mtdt2.y * 4.0f;
                     lightmap[(lpmap[block*12+txt]*lmapSz*lmapSz+offset)*3+2] += blue  * mtdt2.x * mtdt2.y * 4.0f;
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -693,12 +693,12 @@ float lxo,float lyo,float lzo){
                     uint txt = offset / lmapSz;
                     offset %= lmapSz;
                     offset += (uint)(q.z*lmapSz)*lmapSz;
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     lightmap[(lpmap[block*12+txt]*lmapSz*lmapSz+offset)*3+0] += red   / mtdt2.x / 2.0f;
                     lightmap[(lpmap[block*12+txt]*lmapSz*lmapSz+offset)*3+1] += green / mtdt2.x / 2.0f;
                     lightmap[(lpmap[block*12+txt]*lmapSz*lmapSz+offset)*3+2] += blue  / mtdt2.x / 2.0f;
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     dir = reflect(dir,normalize(d.yzw));
                     ray = rayCreate((float3){ray.ipos.x+spos.x,(float)ray.ipos.y+spos.y,(float)ray.ipos.z+spos.z},dir);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
@@ -740,9 +740,9 @@ float lxo,float lyo,float lzo){
                         refractDynamicCube(spos,mtdt.xyz,mtdt2.xyz,&ray.dir);
                     }
                     ray = rayCreate((float3){ray.ipos.x+spos.x,(float)ray.ipos.y+spos.y,(float)ray.ipos.z+spos.z},ray.dir);
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -752,6 +752,7 @@ float lxo,float lyo,float lzo){
             break;
         }
         case 16:{
+
             float3 spos = getSubCoords(ray);
             float3 mtdt  = {(float)metadt[block*4]/255.0f,(float)metadt[block*4+1]/255.0f,(float)metadt[block*4+2]/255.0f};
             float3 mtdt2 = {(float)metadt2[block*4]/255.0f,(float)metadt2[block*4+1]/255.0f,(float)metadt2[block*4+2]/255.0f};
@@ -768,7 +769,10 @@ float lxo,float lyo,float lzo){
                 d2 = 999999.0;
             }
 
-            if(d < d2 && d != 999999.0){   
+            if(d < d2 && d != 999999.0){ 
+                red   *= (float)map[block*4+1]/256.0f;
+                green *= (float)map[block*4+2]/256.0f;
+                blue  *= (float)map[block*4+3]/256.0f;  
                 spos += ray.dir * d;        
                 if(spos.x>mtdt.x-mtdt2.x-0.0001f&&spos.x<mtdt.x-mtdt2.x+0.0001f){
                     float mt = tmax(mtdt2.x,mtdt2.z)*2.0f;
@@ -849,14 +853,14 @@ float lxo,float lyo,float lzo){
                     }
                 }
                 ray = rayCreate((float3){ray.ipos.x,(float)ray.ipos.y,(float)ray.ipos.z}+spos,normalize(dir));
-                red   *= sqrt((float)map[block*4+1]/265.0f);
-                green *= sqrt((float)map[block*4+2]/265.0f);
-                blue  *= sqrt((float)map[block*4+3]/265.0f);
                 if(red < 0.01f && green < 0.01f && blue < 0.01f){
                     return;
                 }
             }
             else if(d2 != 999999.0){
+                red   *= (float)map[block*4+1]/256.0f;
+                green *= (float)map[block*4+2]/256.0f;
+                blue  *= (float)map[block*4+3]/256.0f;  
                 spos += ray.dir * d2;
                 if(spos.x>mtdt4.x-mtdt5.x-0.0001&&spos.x<mtdt4.x-mtdt5.x+0.0001){
                     float mt = tmax(mtdt5.x,mtdt5.z)*2.0;
@@ -937,9 +941,6 @@ float lxo,float lyo,float lzo){
                     }
                 }
                 ray = rayCreate((float3){ray.ipos.x,(float)ray.ipos.y,(float)ray.ipos.z}+spos,normalize(dir));
-                red   *= sqrt((float)map[block*4+1]/265.0f);
-                green *= sqrt((float)map[block*4+2]/265.0f);
-                blue  *= sqrt((float)map[block*4+3]/265.0f);
                 if(red < 0.01f && green < 0.01f && blue < 0.01f){
                     return;
                 }
@@ -949,7 +950,10 @@ float lxo,float lyo,float lzo){
         case 27:
         case 32:
         case 30:
-        case 28:{
+        case 28:{     
+            red   *= (float)map[block*4+1]/256.0f;
+            green *= (float)map[block*4+2]/256.0f;
+            blue  *= (float)map[block*4+3]/256.0f;
             switch(ray.sid){
             case 0:{
                 wall.x = tfract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
@@ -1036,9 +1040,6 @@ float lxo,float lyo,float lzo){
                 break;
             }
             }
-            red   *= sqrt((float)map[block*4+1]/265.0f);
-            green *= sqrt((float)map[block*4+2]/265.0f);
-            blue  *= sqrt((float)map[block*4+3]/265.0f);
             if(red < 0.01f && green < 0.01f && blue < 0.01f){
                 return;
             }
@@ -1103,6 +1104,9 @@ float ax,float ay,float az,float pos){
                 nspos.xz = rotVEC2(nspos.xz,-(float)metadt3[block*4+1]/255.0f*PI);
                 nspos.xy = rotVEC2(nspos.xy,-(float)metadt3[block*4]/255.0f*PI);
 				if(nspos.x>=0.0&&nspos.y>=0.0&&nspos.z>=0.0&&nspos.x<=1.0&&nspos.y<=1.0&&nspos.z<=1.0){
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     if(spos.x>mtdt.x-mtdt2.x-0.0001&&spos.x<mtdt.x-mtdt2.x+0.0001){
                         float mt = tmax(mtdt2.y,mtdt2.z)*2.0;
                         uint xt = (spos.y-mtdt.y+mtdt2.y)*lmapSz/mt;
@@ -1185,9 +1189,6 @@ float ax,float ay,float az,float pos){
                     dir.xz = rotVEC2(dir.xz,(float){metadt3[block*4+1]}/255.0*PI);
                     dir.yz = rotVEC2(dir.yz,(float){metadt3[block*4+2]}/255.0*PI);
                     ray = rayCreate((float3){ray.ipos.x,(float)ray.ipos.y,(float)ray.ipos.z}+nspos,normalize(dir));
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -1240,6 +1241,9 @@ float ax,float ay,float az,float pos){
         }
         case 27:
         case 28:{
+            red   *= (float)map[block*4+1]/256.0f;
+            green *= (float)map[block*4+2]/256.0f;
+            blue  *= (float)map[block*4+3]/256.0f;  
             switch(ray.sid){
             case 0:{
                 wall.x = tfract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
@@ -1326,9 +1330,6 @@ float ax,float ay,float az,float pos){
                 break;
             }
             }
-            red   *= sqrt((float)map[block*4+1]/265.0f);
-            green *= sqrt((float)map[block*4+2]/265.0f);
-            blue  *= sqrt((float)map[block*4+3]/265.0f);
             if(red < 0.01f && green < 0.01f && blue < 0.01f){
                 return;
             }
@@ -1350,7 +1351,7 @@ float ax,float ay,float az,float pos){
     while(ray.ipos.x >= 0 && ray.ipos.y >= 0 && ray.ipos.z >= 0 && ray.ipos.x < 64 && ray.ipos.y < 64 && ray.ipos.z < 64){
         uint block = ray.ipos.x+ray.ipos.y*mapSz+ray.ipos.z*mapSz*mapSz;
         switch(map[block*4]){
-       case 12:{
+        case 12:{
             float3 spos = getSubCoords(ray);
             float3 mtdt = {(float)metadt[block*4]/255.0f,(float)metadt[block*4+1]/255.0f,(float)metadt[block*4+2]/255.0f};
             float3 mtdt2 = {(float)metadt2[block*4]/255.0f,(float)metadt2[block*4+1]/255.0f,(float)metadt2[block*4+2]/255.0f};
@@ -1372,6 +1373,9 @@ float ax,float ay,float az,float pos){
                 nspos.xz = rotVEC2(nspos.xz,-(float)metadt3[block*4+1]/255.0f*PI);
                 nspos.xy = rotVEC2(nspos.xy,-(float)metadt3[block*4]/255.0f*PI);
 				if(nspos.x>=0.0&&nspos.y>=0.0&&nspos.z>=0.0&&nspos.x<=1.0&&nspos.y<=1.0&&nspos.z<=1.0){
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     if(spos.x>mtdt.x-mtdt2.x-0.0001&&spos.x<mtdt.x-mtdt2.x+0.0001){
                         float mt = tmax(mtdt2.y,mtdt2.z)*2.0;
                         uint xt = (spos.y-mtdt.y+mtdt2.y)*lmapSz/mt;
@@ -1454,9 +1458,6 @@ float ax,float ay,float az,float pos){
                     dir.xz = rotVEC2(dir.xz,(float){metadt3[block*4+1]}/255.0*PI);
                     dir.yz = rotVEC2(dir.yz,(float){metadt3[block*4+2]}/255.0*PI);
                     ray = rayCreate((float3){ray.ipos.x,(float)ray.ipos.y,(float)ray.ipos.z}+nspos,normalize(dir));
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -1509,6 +1510,9 @@ float ax,float ay,float az,float pos){
         }
         case 27:
         case 28:{
+            red   *= (float)map[block*4+1]/256.0f;
+            green *= (float)map[block*4+2]/256.0f;
+            blue  *= (float)map[block*4+3]/256.0f;  
             switch(ray.sid){
             case 0:{
                 wall.x = tfract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
@@ -1595,9 +1599,6 @@ float ax,float ay,float az,float pos){
                 break;
             }
             }
-            red   *= sqrt((float)map[block*4+1]/265.0f);
-            green *= sqrt((float)map[block*4+2]/265.0f);
-            blue  *= sqrt((float)map[block*4+3]/265.0f);
             if(red < 0.01f && green < 0.01f && blue < 0.01f){
                 return;
             }
@@ -1641,6 +1642,9 @@ float ax,float ay,float az,float pos){
                 nspos.xz = rotVEC2(nspos.xz,-(float)metadt3[block*4+1]/255.0f*PI);
                 nspos.xy = rotVEC2(nspos.xy,-(float)metadt3[block*4]/255.0f*PI);
 				if(nspos.x>=0.0&&nspos.y>=0.0&&nspos.z>=0.0&&nspos.x<=1.0&&nspos.y<=1.0&&nspos.z<=1.0){
+                    red   *= (float)map[block*4+1]/256.0f;
+                    green *= (float)map[block*4+2]/256.0f;
+                    blue  *= (float)map[block*4+3]/256.0f;  
                     if(spos.x>mtdt.x-mtdt2.x-0.0001&&spos.x<mtdt.x-mtdt2.x+0.0001){
                         float mt = tmax(mtdt2.y,mtdt2.z)*2.0;
                         uint xt = (spos.y-mtdt.y+mtdt2.y)*lmapSz/mt;
@@ -1723,9 +1727,6 @@ float ax,float ay,float az,float pos){
                     dir.xz = rotVEC2(dir.xz,(float){metadt3[block*4+1]}/255.0*PI);
                     dir.yz = rotVEC2(dir.yz,(float){metadt3[block*4+2]}/255.0*PI);
                     ray = rayCreate((float3){ray.ipos.x,(float)ray.ipos.y,(float)ray.ipos.z}+nspos,normalize(dir));
-                    red   *= sqrt((float)map[block*4+1]/265.0f);
-                    green *= sqrt((float)map[block*4+2]/265.0f);
-                    blue  *= sqrt((float)map[block*4+3]/265.0f);
                     if(red < 0.01f && green < 0.01f && blue < 0.01f){
                         return;
                     }
@@ -1778,6 +1779,9 @@ float ax,float ay,float az,float pos){
         }
         case 27:
         case 28:{
+            red   *= (float)map[block*4+1]/256.0f;
+            green *= (float)map[block*4+2]/256.0f;
+            blue  *= (float)map[block*4+3]/256.0f;  
             switch(ray.sid){
             case 0:{
                 wall.x = tfract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
@@ -1864,9 +1868,6 @@ float ax,float ay,float az,float pos){
                 break;
             }
             }
-            red   *= sqrt((float)map[block*4+1]/265.0f);
-            green *= sqrt((float)map[block*4+2]/265.0f);
-            blue  *= sqrt((float)map[block*4+3]/265.0f);
             if(red < 0.01f && green < 0.01f && blue < 0.01f){
                 return;
             }
