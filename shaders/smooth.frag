@@ -1033,7 +1033,7 @@ void main(){
 				vec4 mtdt2 = texelFetch(metadt2,ivec3(x,y,z),0);
 				if(fog.a == 0.0){
 					vec3 spos = getSubCoords();
-					fog.rgb = texelFetch(lmap,ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer),0).rgb * 32767.0 / (brightness+1.0);
+					fog.rgb = texelFetch(lmap,ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer),0).rgb * block.gba * 32767.0 / (brightness+1.0);
 					switch(side){
 					case 0:
 						if(ang.x < 0.0){
@@ -1078,7 +1078,7 @@ void main(){
 					rayInitialize(spos);
 				}
 				else{
-					FragColor.rgb = texelFetch(lmap,ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer),0).rgb * 32767.0 / (brightness+1.0);
+					FragColor.rgb = texelFetch(lmap,ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer),0).rgb * block.gba * 32767.0 / (brightness+1.0);
 					ePos = getRayPos();
 					calcFog();
 					return;
@@ -1087,16 +1087,35 @@ void main(){
 			}
 			case 28:{
 				uint pointer = texelFetch(lpmap,ivec3(x*12+bside,y,z),0).x;
-				ivec3 crd = ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer%tex3DszLimit);
+				ivec3 crd = ivec3(wall.x*lmapsz-0.5,wall.y*lmapsz-0.5,pointer%tex3DszLimit);
+                vec2 fpos = fract(wall*lmapsz-0.5);
 				switch(pointer/tex3DszLimit){
 				case 0:
-					FragColor.rgb = texelFetch(lmap,crd,0).rgb * 32767.0 / (brightness+1.0);
+					switch(bside){
+					case 0:
+					case 1:
+						break;
+					case 2:
+					case 3:
+
+						break;
+					case 4:
+					case 5:
+						break;
+					}
+                    vec3 t1 = texelFetch(lmap,crd,0).rgb;
+                    vec3 t2 = texelFetch(lmap,crd+ivec3(1,0,0),0).rgb;
+                    vec3 t3 = texelFetch(lmap,crd+ivec3(0,1,0),0).rgb;
+                    vec3 t4 = texelFetch(lmap,crd+ivec3(1,1,0),0).rgb;
+                    vec3 m1 = mix(t1,t2,fpos.x);
+                    vec3 m2 = mix(t3,t4,fpos.x);
+                    FragColor.rgb = mix(m1,m2,fpos.y) * 32767.0 / (brightness+1.0);
 					break;
 				case 1:
 					FragColor.rgb = texelFetch(lmap2,crd,0).rgb * 32767.0 / (brightness+1.0);
 					break;
 				case 2:
-					FragColor.rgb = texelFetch(lmap3,crd,0).rga * 32767.0 / (brightness+1.0);
+					FragColor.rgb = texelFetch(lmap3,crd,0).rgb * 32767.0 / (brightness+1.0);
 					break;
 				case 3:
 					FragColor.rgb = texelFetch(lmap4,crd,0).rgb * 32767.0 / (brightness+1.0);

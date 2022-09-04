@@ -108,8 +108,11 @@ void main(){
 		discard;
 	}
 	case 7:{
-		FragColor = vec4(color,1.0);
-		return;
+		if(distance(TexCoord,vec2(0.5))<0.5){
+			FragColor = vec4(color,1.0);
+			return;
+		}
+		discard;
 	}
 	case 8:
 		slider();
