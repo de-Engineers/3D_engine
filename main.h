@@ -260,6 +260,7 @@ extern u8 starC;
 extern unsigned char buttonC;
 extern u8 sliderC;
 
+
 extern BUTTON *button;
 extern BUTTON *slider;
 
@@ -285,6 +286,8 @@ extern RGBA           *godraymap;
 extern RGB            *entityTexture;
 extern RGB            *skyboxTexture;
 extern STAR           *star;
+
+extern VEC3           *lmapb;
 
 extern ENTITY         entity;
 
@@ -357,6 +360,7 @@ void generateSkyBox();
 void playerDeath();
 void networking();
 void spawnPlayer();
+void cpuGenLight(VEC3 pos, VEC3 color,u64 itt);
 
 RAY rayCreate(VEC3 pos,VEC3 dir);
 
@@ -366,6 +370,7 @@ inline f32 rnd();
 CVEC3 map2crds(u32 	map);
 VEC3 getCoords(RAY ray);
 VEC2 rotVEC2(VEC2 p,float rot);
+VEC3 getSubCoords(RAY ray);
 
 char *loadFile(char *name);
 

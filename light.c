@@ -117,13 +117,21 @@ void GPUgenLight(u64 totalRays,u32 block){
 	u32 lmapCB = lmapC;
 
 	lmapC = lmapCB;
+	if(clKernel){
+		for(u32 i = 0;i < metadt3[block].id+1;i++){
+			lmapCB = lmapC;
+			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clKernel,1,0,&totalRays,&one,0,0,0));
+			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			lmapC = lmapCB;
+		}
+	}
+	else{
 
-	for(u32 i = 0;i < metadt3[block].id+1;i++){
-		lmapCB = lmapC;
-		clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
-		printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clKernel,1,0,&totalRays,&one,0,0,0));
-		clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
-		lmapC = lmapCB;
+		for (u32 i = 0; i < metadt3[block].id + 1; i++) {
+			cpuGenLight(bpos,color,totalRays);
+			printf("0\n");
+		}
 	}
 }
 

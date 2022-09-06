@@ -42,9 +42,11 @@ u16 *sbufp2;
 SOUNDFILE loadSoundFile(char *name){
 	SOUNDFILE file;
 	HANDLE h = CreateFileA(name,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
-	file.sz = GetFileSize(h,0);
-	file.data = HeapAlloc(GetProcessHeap(),8,file.sz+1);
-	ReadFile(h,file.data,file.sz+1,0,0);
+	if(h!=-1){
+		file.sz = GetFileSize(h,0);
+		file.data = HeapAlloc(GetProcessHeap(),8,file.sz+1);
+		ReadFile(h,file.data,file.sz+1,0,0);
+	}
 	CloseHandle(h);
 	return file;
 }
@@ -90,6 +92,9 @@ void initSound(){
 }
 
 void playSound(SOUNDFILE name,u8 rate,i32 volume){
+	if(!name.sz){
+		return;
+	}
 	switch(rate){
 	case 0:
 		directSoundBSS[outSelectS]->lpVtbl->SetVolume(directSoundBSS[outSelectS],volume);

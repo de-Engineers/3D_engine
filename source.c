@@ -154,6 +154,8 @@ inline int max3(int val1,int val2,int val3){
 	}
 }
 
+
+
 VEC3 getCoords(RAY ray){
 	VEC2 wall;
     switch(ray.sid){

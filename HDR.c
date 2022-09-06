@@ -2,6 +2,7 @@
 #include "vec2.h"
 #include "vec3.h"
 #include "ivec2.h"
+#include "raytracing.h"
 
 f32 brightness;
 
@@ -55,30 +56,6 @@ VEC3 getSubCoords(RAY ray){
 	}
 }
 
-f32 iSphere(VEC3 ro,VEC3 rd,f32 ra){
-    f32 b = VEC3dot(ro,rd);
-    f32 c = VEC3dot(ro,ro) - ra*ra;
-    f32 h = b*b - c;
-    if(h<0.0){
-        return -1.0;
-    }
-    return -b-sqrtf(h);
-}
-
-f32 iBox(VEC3 ro,VEC3 rd,VEC3 boxSize){
-    VEC3 m = VEC3divFR(rd,1.0f);
-    VEC3 n = VEC3mulVEC3R(m,ro);
-    VEC3 k = VEC3mulVEC3R(VEC3absR(m),boxSize);
-    VEC3 t1 = VEC3subVEC3R(VEC3subVEC3R(n,VEC3mulR(n,2.0f)),k);
-    VEC3 t2 = VEC3addVEC3R(VEC3subVEC3R(n,VEC3mulR(n,2.0f)),k);
-    f32 tN = fmaxf(fmaxf( t1.x, t1.y ), t1.z );
-    f32 tF = fminf(fminf( t2.x, t2.y ), t2.z );
-	if( tN>tF || tF<0.0f){
-		return -1.0f;
-	}
-    return tN;
-}
-
 void HDR(){
 	u32 polBrightness = 0;
 	u16 hits = 0;
@@ -95,6 +72,7 @@ void HDR(){
 					float d = iSphere(VEC3subVEC3R(spos,VEC3subR((VEC3){metadt[block].r,metadt[block].g,metadt[block].b},255.0f)),ray.dir,(float)metadt[block].id/255.0f);
 					if(d > 0.0f){
 						f32 rcpos = (atan2f(spos.x-0.5f,spos.y-0.5f)+PI)*properties->lmapSz/PI;
+
 						u32 offset = fract(rcpos)*properties->lmapSz;
 						f32 minz,maxz;
 						maxz = (float)metadt[block].b/255.0f+(float)metadt[block].id/255.0f;
