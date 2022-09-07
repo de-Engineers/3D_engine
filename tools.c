@@ -78,6 +78,7 @@ void tools(){
 			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 				u32 block = crds2map(ray.ix,ray.iy,ray.iz);
 				if(map[block].id!=BLOCK_AIR){
+					ShowCursor(1);
 					SetCursorPos(properties->xres/2,properties->yres/2);
 					menuSel = 4;
 					editBlockSel = block;

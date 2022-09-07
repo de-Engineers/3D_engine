@@ -478,6 +478,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		case VK_ESCAPE:
 			switch(menuSel){
 			case 0:
+				ShowCursor(1);
 				menuSel = 1;
 				buttonCreate((VEC2){0.05f,-0.33f},1);
 				buttonCreate((VEC2){0.05f,-0.40f},0);
@@ -489,7 +490,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				sliderCreate((VEC2){0.108f,0.09f},12);
 				sliderCreate((VEC2){0.108f,0.16f},13);
 				buttonCreate((VEC2){0.05f,0.24f},7);
-				SetCursorPos(properties->xres/2,properties->yres/2);
+				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
 				break;
 			case 4:
 			case 1:
@@ -497,6 +498,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				sliderC = 0;
 				menuSel = 0;
 				buttonC = 0;
+				ShowCursor(0);
 				break;
 			case 2:
 				menuSel = 1;
@@ -948,6 +950,10 @@ void main(){
 	player->spawn.z = 2.8f;
 
 	renderingThread      = CreateThread(0,0,openGL,0,0,0);
+	
+	while(!openglINIT){
+		Sleep(1);
+	}
 
 	levelgen();
 

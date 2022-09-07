@@ -2,7 +2,14 @@
 #include "vec3.h"
 #include "raytracing.h"
 
-VEC3 rayColor,rayPos;
+VEC3 rayColor;
+typedef union {
+    VEC3 Pos;
+    VEC3 Dir;
+}RAYPROP;
+
+RAYPROP rayy;
+
 u64 threadItt;
 
 inline void castLightRay(RAY ray,VEC3 color){
@@ -156,6 +163,7 @@ inline void castLightRay(RAY ray,VEC3 color){
             }
             break;
         }
+        case 27:
         case 28:
             color.r *= (f32)map[block].r / 255.0f;
             color.g *= (f32)map[block].g / 255.0f;
@@ -262,18 +270,96 @@ void lightRaysGenerate(){
             VEC3addVEC3(&dir,(VEC3) { (rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f });
         }
         dir = VEC3normalize(dir);
-        castLightRay(rayCreate(rayPos,dir),rayColor);
+        castLightRay(rayCreate(rayy.Pos,dir),rayColor);
         Sleep(0);
     }
 }
 
+void lightRaysGenerateAmbientX(){
+    if(rayy.Dir.x < 0.0f){
+        for(u64 i = 0;i < threadItt;i++){
+            castLightRay(rayCreate((VEC3){ (f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            Sleep(0);
+        }
+    }
+    else{
+        for(u64 i = 0;i < threadItt;i++){
+            castLightRay(rayCreate((VEC3){ 0.0f, (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            Sleep(0);
+        }
+    }
+}
+
+void lightRaysGenerateAmbientY(){
+    if(rayy.Dir.y < 0.0f){
+        for(u64 i = 0;i < threadItt;i++){
+            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            Sleep(0);
+        }
+    }
+    else{
+        for(u64 i = 0;i < threadItt;i++){
+            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            Sleep(0);
+        }
+    }
+}
+
+void lightRaysGenerateAmbientZ(){
+    if(rayy.Dir.z < 0.0f){
+        for(u64 i = 0;i < threadItt;i++){
+            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f},rayy.Dir),rayColor);
+            Sleep(0);
+        }
+    }
+    else{
+        for(u64 i = 0;i < threadItt;i++){
+            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f },rayy.Dir),rayColor);
+            Sleep(0);
+        }
+    }
+}
+
+void cpuGenLightAmbientX(VEC3 dir,VEC3 color,u64 itt){
+    rayColor = color;
+    rayy.Dir = dir;
+    threadItt = itt/8;
+    HANDLE cpulightgenthreads[8];
+    for(u64 i = 0;i < 8;i++){
+        cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerateAmbientX,0,0,0);
+    }
+    WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
+}
+
+void cpuGenLightAmbientY(VEC3 dir,VEC3 color,u64 itt){
+    rayColor = color;
+    rayy.Dir = dir;
+    threadItt = itt/8;
+    HANDLE cpulightgenthreads[8];
+    for(u64 i = 0;i < 8;i++){
+        cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerateAmbientY,0,0,0);
+    }
+    WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
+}
+
+void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt){
+    rayColor = color;
+    threadItt = itt/8;
+    rayy.Dir = dir;
+    HANDLE cpulightgenthreads[8];
+    for(u64 i = 0;i < 8;i++){
+        cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerateAmbientZ,0,0,0);
+    }
+    WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
+}
+
 void cpuGenLight(VEC3 pos,VEC3 color,u64 itt){
-    rayPos = pos;
+    rayy.Pos = pos;
     rayColor = color;
     threadItt = itt/8;
     HANDLE cpulightgenthreads[8];
     for(u64 i = 0;i < 8;i++){
         cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerate,0,0,0);
     }
-    WaitForMultipleObjects(8,&cpulightgenthreads,1,INFINITE);
+    WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
 }

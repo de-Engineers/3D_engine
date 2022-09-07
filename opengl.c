@@ -139,6 +139,8 @@ unsigned char *inputStr;
 
 long long fps = 1;
 
+u8 openglINIT = 0;
+
 f32 quadVertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -398,7 +400,7 @@ void openGL(){
 	glCompileShader(fragmentShaderSmooth);
 
 	char *bericht = HeapAlloc(GetProcessHeap(),8,1000);
-	glGetShaderInfoLog(fragmentShaderSmooth,1000,0,bericht);
+	glGetShaderInfoLog(fragmentShader,1000,0,bericht);
 	printf("%s\n",bericht);
 	glGetShaderInfoLog(vertexShader,1000,0,bericht);
 	printf("%s\n",bericht);
@@ -565,6 +567,9 @@ void openGL(){
 	glUniform2f(glGetUniformLocation(shaderProgramFont,"fov"),player->fov.x*0.5f,player->fov.y*0.5f);
 	glUniform1f(glGetUniformLocation(shaderProgramFont,"sensitivity"),properties->sensitivity);
 	glUseProgram(shaderProgram);
+
+	openglINIT = 1;
+
 	for(;;){
 		u64 timeB;
 		QueryPerformanceCounter(&timeB);

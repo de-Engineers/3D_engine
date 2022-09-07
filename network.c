@@ -25,6 +25,7 @@ void serverRecv(){
 			recv(tcpSock,networkplayer,networkplayerC*sizeof(NETWORKPLAYER),0);
 			break;
 		case 1:
+			Sleep(999);
 			networkplayerC++;
 			spawnPlayer();
 			break;
@@ -38,7 +39,7 @@ void networking(){
 
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
-	tcpAddress.sin_addr.S_un.S_addr = inet_addr("192.168.2.100");
+	tcpAddress.sin_addr.S_un.S_addr = inet_addr("192.168.2.193");
 
 	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress))){}
 
@@ -80,7 +81,6 @@ void networking(){
 	recv(tcpSock,metadt6,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
 	recv(tcpSock,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),0);
 	lmap = HeapAlloc(GetProcessHeap(),8,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
-	Sleep(100);
 	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,0);
 	printf("loaded\n");
 	for(u32 i = 0;i < networkplayerC;i++){

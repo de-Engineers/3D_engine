@@ -296,7 +296,6 @@ void drawUI(){
 		ScreenToClient(window,&p);
 		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
 		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-		drawSprite((VEC3){mousePos.x,mousePos.y,-0.2},(VEC2){0.0075f,0.0125f},6);
 		drawWord("settings",-0.11f,0.42f,0.0f);
 		drawWord("save world",-0.45f,-0.21f,0.0f);
 		drawWord("load world",-0.45f,-0.28f,0.0f);
@@ -327,7 +326,6 @@ void drawUI(){
 		ScreenToClient(window,&p);
 		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
 		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-		drawSprite((VEC3){mousePos.x,mousePos.y,-0.2},(VEC2){0.0075f,0.0125f},6);
 		drawWord("worlds",-0.11f,0.42f,0.0f);
 		drawWord("load",0.02f,0.35f,0.0f);
 		drawWord("delete",0.19f,0.35f,0.0f);
@@ -343,7 +341,6 @@ void drawUI(){
 		ScreenToClient(window,&p);
 		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
 		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-		drawSprite((VEC3){mousePos.x,mousePos.y,-0.2},(VEC2){0.0075f,0.0125f},6);
 		drawWord("save",-0.11f,0.42f,0.0f);
 		drawWord(inputStr,-0.45f,0.0f,0.0f);
 		drawSprite((VEC3){0.0f,0.0f,0.0},(VEC2){0.5f,0.5f},2);
@@ -355,7 +352,6 @@ void drawUI(){
 		ScreenToClient(window,&p);
 		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
 		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-		drawSprite((VEC3){mousePos.x,mousePos.y,-0.2},(VEC2){0.0075f,0.0125f},6);
 		break;
 	}
 	}

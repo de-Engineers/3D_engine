@@ -602,23 +602,39 @@ void updateLight2(){
 			sampleC = 4096.0f*4096.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.y))*sqrtf(1.0f-fabsf(ang.z));
 			sampleC -= sampleC%one;
 
-			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
-			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientX,1,0,&sampleC,&one,0,0,0));
-			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			if(clAmbientX){
+				clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+				printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientX,1,0,&sampleC,&one,0,0,0));
+				clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			}
+			else{
+				cpuGenLightAmbientX(ang,color2,sampleC);
+			}
 
 			sampleC = 4096.0f*4096.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.x))*sqrtf(1.0f-fabsf(ang.z));
 			sampleC -= sampleC%one;
 
-			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
-			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientY,1,0,&sampleC,&one,0,0,0));
-			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			if(clAmbientY){
+				clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+				printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientZ,1,0,&sampleC,&one,0,0,0));
+				clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			}
+			else{
+				cpuGenLightAmbientY(ang,color2,sampleC);
+			}
 	
 			sampleC = 4096.0f*4096.0f*properties->lmapSz*properties->lmapSz*sqrtf(1.0f-fabsf(ang.x))*sqrtf(1.0f-fabsf(ang.y));
 			sampleC -= sampleC%one;
 
-			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
-			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientZ,1,0,&sampleC,&one,0,0,0));
-			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			if(clAmbientZ){
+				clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+				printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientZ,1,0,&sampleC,&one,0,0,0));
+				clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+			}
+			else{
+				cpuGenLightAmbientZ(ang,color2,sampleC);
+			}
+
 			break;
 		}
 		case 3:

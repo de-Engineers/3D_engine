@@ -328,6 +328,7 @@ extern u32 skyboxText;
 extern u8 touchedSpace;
 extern VEC2 mousePos;
 extern u8 networkSettings;
+extern u8 openglINIT;
 
 extern unsigned char *inputStr;
 
@@ -361,6 +362,10 @@ void playerDeath();
 void networking();
 void spawnPlayer();
 void cpuGenLight(VEC3 pos, VEC3 color,u64 itt);
+void cpuGenLightSky(VEC3 color,u64 itt);
+void cpuGenLightAmbientX(VEC3 dir,VEC3 color,u64 itt);
+void cpuGenLightAmbientY(VEC3 dir,VEC3 color,u64 itt);
+void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt);
 
 RAY rayCreate(VEC3 pos,VEC3 dir);
 

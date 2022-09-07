@@ -23,5 +23,11 @@ void levelgen(){
 		metadt2[crds2map(32,32,7)].id  = 127;
 		map[crds2map(32,32,7)].id = BLOCK_LIGHT5;
 		metadt[crds2map(32,32,7)].b = 255;
+		glMes[glMesC].id = 8;
+		glMesC++;
+		glMes[glMesC].id = 3;
+		glMesC++;
+		glMes[glMesC].id = 6;
+		glMesC++;
 	}
 }

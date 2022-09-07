@@ -405,16 +405,13 @@ void playerWorldCollision(){
 		}
 	}
 	switch(map[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].id){
-	case BLOCK_CLIP:
-	case BLOCK_CUBE:
-	case BLOCK_SOLID:
-	case BLOCK_GLASS:
-		player->vel.x /= 1.12f;
-		player->vel.y /= 1.12f;
-		break;
-	default:
+	case BLOCK_AIR:
 		player->vel.x /= 1.06f;
 		player->vel.y /= 1.06f;
+		break;
+	default:
+		player->vel.x /= 1.12f;
+		player->vel.y /= 1.12f;
 		break;
 	}
 	if(GetKeyState(VK_SPACE)&0x80){
