@@ -82,6 +82,7 @@ void tools(){
 					SetCursorPos(properties->xres/2,properties->yres/2);
 					menuSel = 4;
 					editBlockSel = block;
+					blockSel = map[block].id;
 					colorSel.r = map[block].r;
 					colorSel.g = map[block].g;
 					colorSel.b = map[block].b;
@@ -386,7 +387,7 @@ void tools(){
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
-				if(settings & 0x40){
+				if(settings & SETTINGS_SUBBLOCK){
 					metadt4[block].r = metadt4Sel.r;
 					metadt4[block].g = metadt4Sel.g;
 					metadt4[block].b = metadt4Sel.b;
@@ -411,7 +412,7 @@ void tools(){
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
-				if(settings & 0x40){
+				if(settings & SETTINGS_SUBBLOCK){
 					metadt5[block].r = metadt5Sel.r;
 					metadt5[block].g = metadt5Sel.g;
 					metadt5[block].b = metadt5Sel.b;
@@ -437,7 +438,7 @@ void tools(){
 			rayItterate(&ray);
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
-				if(settings & 0x40){
+				if(settings & SETTINGS_SUBBLOCK){
 					metadt6[block].r = metadt6Sel.r;
 					metadt6[block].g = metadt6Sel.g;
 					metadt6[block].b = metadt6Sel.b;
@@ -721,7 +722,11 @@ void tools(){
 				for(int i = selarea.x;i <= x;i++){
 					for(int i2 = selarea.y;i2 <= y;i2++){
 						for(int i3 = selarea.z;i3 <= z;i3++){
+							if(i >= properties->lvlSz || i2 >= properties->lvlSz || i3 >= properties->lvlSz){
+								goto fillLoopEnd;
+							}
 							u32 block = (i + i2 * properties->lvlSz + i3 * properties->lvlSz * properties->lvlSz);
+							
 							switch(ray.sid){
 							case 0:
 								if(ray.dir.x>0.0f){
@@ -783,6 +788,7 @@ void tools(){
 						}
 					}
 				}
+			fillLoopEnd:
 				selarea.x = 0;
 				selarea.y = 0;
 				selarea.z = 0;

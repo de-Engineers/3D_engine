@@ -16,8 +16,6 @@ void blockDetection(float x,float y,float z,int axis){
 	int block = crds2map(x,y,z);
 	VEC3 spos = VEC3fractR((VEC3){x,y,z});
 	switch(map[block].id){
-	case 3:
-		break;
 	case BLOCK_CUBE:
 	case BLOCK_GLASS:
 		VEC2 r;
@@ -192,7 +190,7 @@ void playerWorldCollision(){
 				break;
 			}
 		}
-		if(settings & 0x100){
+		if(settings & SETTINGS_GAMEPLAY){
 			if(player->vel.z < -0.3f){
 				if(!player->wounded){
 					player->wounded = 1;
@@ -242,7 +240,7 @@ void playerWorldCollision(){
 			player->vel.z += 0.2f * player->stamina;
 			player->vel.x *= 1.7f * player->stamina;
 			player->vel.y *= 1.7f * player->stamina;
-			player->stamina = 0.0;
+			player->stamina = 0.0f;
 		}
 	}
 	if(touchStatus & 0x02){
@@ -271,8 +269,8 @@ void playerWorldCollision(){
 			player->pos.x -= player->vel.x;
 			player->vel.x = 0;
 		}
-		if(player->vel.z < -0.05){
-			player->vel.z = -0.05;
+		if(player->vel.z < -0.05f){
+			player->vel.z = -0.05f;
 		}
 		switch(effect){
 		case 1:
@@ -281,9 +279,9 @@ void playerWorldCollision(){
 			break;
 		}
 		if(touchStatus == 0x04 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->vel.z += 0.25 * player->stamina;
-			player->vel.x += 0.25 * player->stamina;
-			player->stamina = 0.0;
+			player->vel.z += 0.25f * player->stamina;
+			player->vel.x += 0.25f * player->stamina;
+			player->stamina = 0.0f;
 		}
 	}
 	if(touchStatus & 0x08){
@@ -377,9 +375,9 @@ void playerWorldCollision(){
 			break;
 		}
 		if(touchStatus == 0x20 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
-			player->vel.z += 0.25 * player->stamina;
-			player->vel.y += -0.25 * player->stamina;
-			player->stamina = 0.0;
+			player->vel.z += 0.25f * player->stamina;
+			player->vel.y += -0.25f * player->stamina;
+			player->stamina = 0.0f;
 		}
 	}
 	if(player->pos.z < 1.81f){

@@ -139,8 +139,63 @@ void drawWord(u8 *str,f32 x,f32 y,f32 id){
 	}
 }
 
+void drawDescription(f32 offset){
+	switch(blockSel){
+	case BLOCK_AMBIENTLIGHT:
+		drawWord("angle x",offset+0.0235f*3,-0.50f,0.0f);
+		drawWord("angle y",offset+0.0235f*3,-0.45f,0.0f);
+		drawWord("angle z",offset+0.0235f*3,-0.40f,0.0f);
+
+		drawWord("skycolor x",offset,-0.20f,0.0f);
+		drawWord("skycolor y",offset,-0.15f,0.0f);
+		drawWord("skycolor z",offset,-0.10f,0.0f);
+		break;
+	case BLOCK_LIGHT1:
+	case BLOCK_LIGHT2:
+	case BLOCK_LIGHT3:
+	case BLOCK_LIGHT4:
+	case BLOCK_LIGHT5:
+	case BLOCK_LIGHT6:
+		drawWord("areasize x",offset,-0.50f,0.0f);
+		drawWord("areasize y",offset,-0.45f,0.0f);
+		drawWord("areasize z",offset,-0.40f,0.0f);
+
+		drawWord("areapos x",offset+0.0235f*1,-0.20f,0.0f);
+		drawWord("areapos y",offset+0.0235f*1,-0.15f,0.0f);
+		drawWord("areapos z",offset+0.0235f*1,-0.10f,0.0f);
+
+		drawWord("size",0.764f,0.15f,0.0f);
+		break;
+	case BLOCK_GLASS:
+		drawWord("position x",offset,-0.50f,0.0f);
+		drawWord("position y",offset,-0.45f,0.0f);
+		drawWord("position z",offset,-0.40f,0.0f);
+
+		drawWord("size x",offset+0.0235f*4,-0.20f,0.0f);
+		drawWord("size y",offset+0.0235f*4,-0.15f,0.0f);
+		drawWord("size z",offset+0.0235f*4,-0.10f,0.0f);
+		break;
+	case BLOCK_CUBE:
+		drawWord("position x",offset,-0.50f,0.0f);
+		drawWord("position y",offset,-0.45f,0.0f);
+		drawWord("position z",offset,-0.40f,0.0f);
+
+		drawWord("size x",offset+0.0235f*4,-0.20f,0.0f);
+		drawWord("size y",offset+0.0235f*4,-0.15f,0.0f);
+		drawWord("size z",offset+0.0235f*4,-0.10f,0.0f);
+
+		drawWord("rotation x",offset,0.10f,0.0f);
+		drawWord("rotation y",offset,0.15f,0.0f);
+		drawWord("rotation z",offset,0.20f,0.0f);
+		break;
+	}
+	drawWord("red",offset+0.0235f*7,-0.90f,0.0f);
+	drawWord("green",offset+0.0235f*5,-0.85f,0.0f);
+	drawWord("blue",offset+0.0235f*6,-0.80f,0.0f);
+}
+
 void drawUI(){
-	if(~settings & 0x100){
+	if(~settings & SETTINGS_GAMEPLAY){
 		drawChar(33,-0.9f,0.9f,-0.99f,0,0.04f,0.04f);
 		drawVar(-0.9f,0.9f,player->pos.x);
 		drawChar(34,-0.75,0.9,-0.99f,0,0.04f,0.04f);
@@ -197,71 +252,10 @@ void drawUI(){
 
 			switch(menuSel){
 			case 0:
-				switch(blockSel){
-				case BLOCK_LIGHT1:
-				case BLOCK_LIGHT2:
-				case BLOCK_LIGHT3:
-				case BLOCK_LIGHT4:
-				case BLOCK_LIGHT5:
-				case BLOCK_LIGHT6:
-					drawWord("areasize x",0.6f,-0.50f,0.0f);
-					drawWord("areasize y",0.6f,-0.45f,0.0f);
-					drawWord("areasize z",0.6f,-0.40f,0.0f);
-
-					drawWord("areapos x",0.6f,-0.20f,0.0f);
-					drawWord("areapos y",0.6f,-0.15f,0.0f);
-					drawWord("areapos z",0.6f,-0.10f,0.0f);
-
-					drawWord("size",0.7f,0.15f,0.0f);
-					break;
-				case BLOCK_CUBE:
-					drawWord("position x",0.6f,-0.50f,0.0f);
-					drawWord("position y",0.6f,-0.45f,0.0f);
-					drawWord("position z",0.6f,-0.40f,0.0f);
-
-					drawWord("size x",0.6f,-0.20f,0.0f);
-					drawWord("size y",0.6f,-0.15f,0.0f);
-					drawWord("size z",0.6f,-0.10f,0.0f);
-
-					drawWord("rotation x",0.6f,0.10f,0.0f);
-					drawWord("rotation y",0.6f,0.15f,0.0f);
-					drawWord("rotation z",0.6f,0.20f,0.0f);
-					break;
-				}
-				break;
+				drawDescription(0.62f);
 				break;
 			case 4:
-				switch(map[editBlockSel].id){
-				case BLOCK_LIGHT1:
-				case BLOCK_LIGHT2:
-				case BLOCK_LIGHT3:
-				case BLOCK_LIGHT4:
-				case BLOCK_LIGHT5:
-				case BLOCK_LIGHT6:
-					drawWord("areasize x",0.0f,-0.50f,0.0f);
-					drawWord("areasize y",0.0f,-0.45f,0.0f);
-					drawWord("areasize z",0.0f,-0.40f,0.0f);
-
-					drawWord("areapos x",0.0f,-0.20f,0.0f);
-					drawWord("areapos y",0.0f,-0.15f,0.0f);
-					drawWord("areapos z",0.0f,-0.10f,0.0f);
-
-					drawWord("size",0.0f,0.15f,0.0f);
-					break;
-				case BLOCK_CUBE:
-					drawWord("position x",0.07f,-0.50f,0.0f);
-					drawWord("position y",0.07f,-0.45f,0.0f);
-					drawWord("position z",0.07f,-0.40f,0.0f);
-
-					drawWord("size x",0.16f,-0.20f,0.0f);
-					drawWord("size y",0.16f,-0.15f,0.0f);
-					drawWord("size z",0.16f,-0.10f,0.0f);
-
-					drawWord("rotation x",0.07f,0.10f,0.0f);
-					drawWord("rotation y",0.07f,0.15f,0.0f);
-					drawWord("rotation z",0.07f,0.20f,0.0f);
-					break;				
-				}					
+				drawDescription(0.055f);
 				break;							
 			}
 		}

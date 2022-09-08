@@ -68,6 +68,7 @@ HANDLE entitiesThread;
 HANDLE staticEntitiesThread;
 HANDLE ittmapThread;
 HANDLE godraysThread;
+HANDLE networkThread;
 
 const u16 name[] = L"3D_engine";
 
@@ -325,8 +326,7 @@ void levelLoad(char *lname){
 			}
 			break;
 		case BLOCK_AMBIENTLIGHT:
-			star[starC].highCol = (RGB){metadt3[i].r,metadt3[i].g,metadt3[i].id};
-			star[starC].lowCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
+			star[starC].skyCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
 			star[starC].pos = VEC3normalize((VEC3){127.0f-metadt[i].r,127.0f-metadt[i].g,127.0f-metadt[i].id});
 			star[starC].col = (RGB){map[i].r,map[i].g,map[i].b};
 			starC++;
@@ -357,10 +357,10 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_QUIT:
 	case WM_CLOSE:
 	case WM_DESTROY:
-		if(~settings&0x100&&~networkSettings&0x01){
+		if(~settings&SETTINGS_GAMEPLAY&&~networkSettings&SETTINGS_MOVEMENT){
 			levelSave("level");
 		}
-		settings &= ~0x80;
+		settings &= ~SETTINGS_PAUZE;
 		HANDLE h = CreateFileA("config.cfg",GENERIC_WRITE,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
 		WriteFile(h,&settings,4,0,0);
 		WriteFile(h,&player->fov.y,4,0,0);
@@ -372,12 +372,12 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		case WA_INACTIVE:
 			SuspendThread(physicsThread);
 			SuspendThread(entitiesThread);
-			settings ^= 0x80;
+			settings ^= SETTINGS_PAUZE;
 			break;
 		default:
 			ResumeThread(entitiesThread);
 			ResumeThread(physicsThread);
-			settings ^= 0x80;
+			settings ^= SETTINGS_PAUZE;
 			break;
 		}
 		break;
@@ -452,28 +452,28 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			}
 			break;
 		case VK_F1:
-			settings ^= 0x01;
+			settings ^= SETTINGS_MOVEMENT;
 			break;
 		case VK_F2:
 			CreateThread(0,0,updateLight2,0,0,0);
 			break;
 		case VK_F3:
-			settings ^= 0x04;
+			settings ^= SETTINGS_LIGHTING;
 			break;
 		case VK_F4:
-			settings ^= 0x100;
+			settings ^= SETTINGS_GAMEPLAY;
 			break;
 		case VK_F5:
-			settings ^= 0x40;
+			settings ^= SETTINGS_SUBBLOCK;
 			break;
 		case VK_F6:
-			settings ^= 0x400;
+			settings ^= SETTINGS_SMOOTH;
 			break;
 		case VK_F7:
-			CreateThread(0,0,networking,0,0,0);
+			networkThread = CreateThread(0,0,networking,0,0,0);
 			break;
 		case VK_F11:
-			settings ^= 0x20;
+			settings ^= SETTINGS_UI;
 			break;
 		case VK_ESCAPE:
 			switch(menuSel){
@@ -580,53 +580,52 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			}
 		}
 		break;
-	case WM_MBUTTONDOWN:
-		if((settings & 0x10) == 0){
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-				int block = crds2map(ray.ix,ray.iy,ray.iz);
-				if(map[block].id!=1){
-					switch(toolSel){
-					case 7:
-					default:
-						blockSel   = map[block].id;
-						colorSel.r = map[block].r;
-						colorSel.g = map[block].g;
-						colorSel.b = map[block].b;
-						metadtSel.r = metadt[block].r;
-						metadtSel.g = metadt[block].g;
-						metadtSel.b = metadt[block].b;
-						metadtSel.a = metadt[block].id;
-						metadt2Sel.r = metadt2[block].r;
-						metadt2Sel.g = metadt2[block].g;
-						metadt2Sel.b = metadt2[block].b;
-						metadt2Sel.a = metadt2[block].id;
-						metadt3Sel.r = metadt3[block].r;
-						metadt3Sel.g = metadt3[block].g;
-						metadt3Sel.b = metadt3[block].b;
-						metadt3Sel.a = metadt3[block].id;
-						metadt4Sel.r = metadt4[block].r;
-						metadt4Sel.g = metadt4[block].g;
-						metadt4Sel.b = metadt4[block].b;
-						metadt4Sel.a = metadt4[block].id;
-						metadt5Sel.r = metadt5[block].r;
-						metadt5Sel.g = metadt5[block].g;
-						metadt5Sel.b = metadt5[block].b;
-						metadt5Sel.a = metadt5[block].id;
-						metadt6Sel.r = metadt6[block].r;
-						metadt6Sel.g = metadt6[block].g;
-						metadt6Sel.b = metadt6[block].b;
-						metadt6Sel.a = metadt6[block].id;
-						break;
-					}
+	case WM_MBUTTONDOWN:{
+		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
+			int block = crds2map(ray.ix,ray.iy,ray.iz);
+			if(map[block].id!=1){
+				switch(toolSel){
+				case 7:
+				default:
+					blockSel   = map[block].id;
+					colorSel.r = map[block].r;
+					colorSel.g = map[block].g;
+					colorSel.b = map[block].b;
+					metadtSel.r = metadt[block].r;
+					metadtSel.g = metadt[block].g;
+					metadtSel.b = metadt[block].b;
+					metadtSel.a = metadt[block].id;
+					metadt2Sel.r = metadt2[block].r;
+					metadt2Sel.g = metadt2[block].g;
+					metadt2Sel.b = metadt2[block].b;
+					metadt2Sel.a = metadt2[block].id;
+					metadt3Sel.r = metadt3[block].r;
+					metadt3Sel.g = metadt3[block].g;
+					metadt3Sel.b = metadt3[block].b;
+					metadt3Sel.a = metadt3[block].id;
+					metadt4Sel.r = metadt4[block].r;
+					metadt4Sel.g = metadt4[block].g;
+					metadt4Sel.b = metadt4[block].b;
+					metadt4Sel.a = metadt4[block].id;
+					metadt5Sel.r = metadt5[block].r;
+					metadt5Sel.g = metadt5[block].g;
+					metadt5Sel.b = metadt5[block].b;
+					metadt5Sel.a = metadt5[block].id;
+					metadt6Sel.r = metadt6[block].r;
+					metadt6Sel.g = metadt6[block].g;
+					metadt6Sel.b = metadt6[block].b;
+					metadt6Sel.a = metadt6[block].id;
 					break;
 				}
-				rayItterate(&ray);
+				break;
 			}
-			break;
+			rayItterate(&ray);
+		}
+		break;
 		}
 	case WM_LBUTTONDOWN:
-		if(~settings & 0x100){
+		if(~settings & SETTINGS_GAMEPLAY){
 			switch(menuSel){
 			case 0:
 				tools();
@@ -654,8 +653,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		break;
 	case WM_RBUTTONDOWN:
-		if(~settings & 0x100){
-			if((settings & 0x10) == 0){
+		if(~settings & SETTINGS_GAMEPLAY){
 			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
 				int block = crds2map(ray.ix,ray.iy,ray.iz);
@@ -667,7 +665,6 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			}
 		}
 		break;
-		}
 	}
 	return DefWindowProc(hwnd,msg,wParam,lParam);
 }
@@ -706,7 +703,7 @@ void physics(){
 		player->xdir  = cosf(player->xangle);
 	 	player->ydir  = sinf(player->xangle);
 	 	player->zdir  = sinf(player->yangle);
-		if(settings & 0x01){
+		if(settings & SETTINGS_MOVEMENT){
 			int amp = 1;
 			if(GetKeyState(VK_CONTROL) & 0x80){
 				amp = 3;
@@ -759,7 +756,7 @@ void physics(){
 			}
 		}
 		else{
-			if(settings & 0x100){
+			if(settings & SETTINGS_GAMEPLAY){
 				if(player->aniTime){
 					switch(player->aniType){
 					default:
@@ -876,9 +873,6 @@ void physics(){
 			HDR();
 		}
 		Sleep(15);
-		while(settings & 0x10){
-			Sleep(15);
-		}
 	}
 }
 
@@ -930,7 +924,7 @@ void main(){
 		player->fov.x = player->fov.y*16.0f/9.0f;
 	}
 	else{
-		settings = 0x25;
+		settings = SETTINGS_UI | SETTINGS_LIGHTING | SETTINGS_MOVEMENT;
 		player->fov.x   = 16.0f/9.0f;
 		player->fov.y   = 1.0f;
 		properties->sensitivity = 0.5f;

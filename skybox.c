@@ -69,9 +69,9 @@ void generateSkyBox(){
 					skyboxTexture[i*skyboxSz+i2].g = fminf(850.0f / powf(fminf(VEC2dist( (VEC2){i,i2},star[i3].skyPos),VEC2dist((VEC2){i,i2},VEC2addVEC2R(star[i3].skyPos,(VEC2){0,skyboxSz}))),0.2f)*star[i3].col.g/512.0f,255.0f),skyboxTexture[i*skyboxSz+i2].g;
 					skyboxTexture[i*skyboxSz+i2].b = fminf(850.0f / powf(fminf(VEC2dist((VEC2){i,i2},star[i3].skyPos),VEC2dist((VEC2){i,i2},VEC2addVEC2R(star[i3].skyPos,(VEC2){0,skyboxSz}))),0.2f)*star[i3].col.b/512.0f,255.0f),skyboxTexture[i*skyboxSz+i2].b;
 				}
-				skyboxTexture[i*skyboxSz+i2].r = mix(max(min(star[0].highCol.r-star[0].lowCol.r+255-min(max(powf(((f32)i-skyboxSz/2+90)/skyboxSz/2,0.5f)*skyboxSz/2,0),255),255),0),skyboxTexture[i*skyboxSz+i2].r,skyboxTexture[i*skyboxSz+i2].r/255.0f);
-				skyboxTexture[i*skyboxSz+i2].g = mix(max(min(star[0].highCol.g-star[0].lowCol.g+255-min(max(powf(((f32)i-skyboxSz/2+90)/skyboxSz/2,0.5f)*skyboxSz/2,0),255),255),0),skyboxTexture[i*skyboxSz+i2].g,skyboxTexture[i*skyboxSz+i2].g/255.0f);
-				skyboxTexture[i*skyboxSz+i2].b = mix(max(min(star[0].highCol.b-star[0].lowCol.b+255-min(max(powf(((f32)i-skyboxSz/2+90)/skyboxSz/2,0.5f)*skyboxSz/2,0),255),255),0),skyboxTexture[i*skyboxSz+i2].b,skyboxTexture[i*skyboxSz+i2].b/255.0f);
+				skyboxTexture[i*skyboxSz+i2].r = mix(max(min(star[0].skyCol.r*2-min(max(powf(((f32)i-skyboxSz/2+90)/skyboxSz/2,0.5f)*skyboxSz/2,0),255),255),0),skyboxTexture[i*skyboxSz+i2].r,skyboxTexture[i*skyboxSz+i2].r/255.0f);
+				skyboxTexture[i*skyboxSz+i2].g = mix(max(min(star[0].skyCol.g*2-min(max(powf(((f32)i-skyboxSz/2+90)/skyboxSz/2,0.5f)*skyboxSz/2,0),255),255),0),skyboxTexture[i*skyboxSz+i2].g,skyboxTexture[i*skyboxSz+i2].g/255.0f);
+				skyboxTexture[i*skyboxSz+i2].b = mix(max(min(star[0].skyCol.b*2-min(max(powf(((f32)i-skyboxSz/2+90)/skyboxSz/2,0.5f)*skyboxSz/2,0),255),255),0),skyboxTexture[i*skyboxSz+i2].b,skyboxTexture[i*skyboxSz+i2].b/255.0f);
 			}
 		}
 		for(u32 i = skyboxSz/2 - 90;i < skyboxSz;i++){

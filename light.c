@@ -540,8 +540,7 @@ void updateLight2(){
 
 			star[starC].pos = ang;
 			star[starC].col = (RGB){map[i].r,map[i].g,map[i].b};
-			star[starC].highCol = (RGB){metadt3[i].r,metadt3[i].g,metadt3[i].id};
-			star[starC].lowCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
+			star[starC].skyCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
 			starC++;
 
 			clSetKernelArg(clAmbientX,9,sizeof(f32),&properties->lvlSz);

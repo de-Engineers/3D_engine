@@ -39,7 +39,7 @@ void networking(){
 
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
-	tcpAddress.sin_addr.S_un.S_addr = inet_addr("192.168.2.193");
+	tcpAddress.sin_addr.S_un.S_addr = inet_addr("192.168.2.100	");
 
 	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress))){}
 

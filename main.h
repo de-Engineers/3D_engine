@@ -46,6 +46,17 @@
 #define BLOCK_REFLECTIVE   27
 #define BLOCK_SOLID        28
 
+#define SETTINGS_MOVEMENT   0x0001
+#define SETTINGS_FULLSCREEN 0x0002
+#define SETTINGS_LIGHTING   0x0004
+#define SETTINGS_FOG        0x0008
+#define SETTINGS_UI         0x0020
+#define SETTINGS_SUBBLOCK   0x0040
+#define SETTINGS_PAUZE      0x0080
+#define SETTINGS_GAMEPLAY   0x0100
+#define SETTINGS_VSYNC      0x0200
+#define SETTINGS_SMOOTH     0x0400
+
 typedef char               i8;
 typedef short              i16;
 typedef int                i32;
@@ -251,8 +262,7 @@ typedef struct{
 	VEC3 pos;
 	RGB col;
 	VEC2 skyPos;
-	RGB lowCol;
-	RGB highCol;
+	RGB skyCol;
 }STAR;
 
 extern u8 starC;
