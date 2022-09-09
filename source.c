@@ -18,7 +18,7 @@ MAP   *metadt4;
 MAP   *metadt5;
 MAP   *metadt6;
 
-unsigned char menuSel;
+u8 menuSel;
 
 unsigned char tempVar[2];
 
@@ -484,12 +484,9 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				buttonCreate((VEC2){0.05f,-0.40f},0);
 				buttonCreate((VEC2){0.05f,-0.26f},2);
 				buttonCreate((VEC2){0.05f,-0.19f},3);
+				buttonCreate((VEC2){0.05f,-0.12f},8);
 				buttonCreate((VEC2){-0.028f,-0.05f},4);
 				buttonCreate((VEC2){-0.139f,-0.05f},5);
-				buttonCreate((VEC2){-0.139f,0.02f},6);
-				sliderCreate((VEC2){0.108f,0.09f},12);
-				sliderCreate((VEC2){0.108f,0.16f},13);
-				buttonCreate((VEC2){0.05f,0.24f},7);
 				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
 				break;
 			case 4:
@@ -515,6 +512,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				break;
 			case 3:
 				menuSel = 1;
+				buttonC = 0;
 				buttonCreate((VEC2){0.05f,-0.35f},1);
 				buttonCreate((VEC2){0.05f,-0.42f},0);
 				buttonCreate((VEC2){0.05f,-0.28f},2);
@@ -523,6 +521,18 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				buttonCreate((VEC2){-0.052f,-0.07f},5);
 				buttonCreate((VEC2){-0.139f,0.02f},6);
 				ZeroMemory(inputStr,255);
+				break;
+			case 5:
+				menuSel = 1;
+				buttonC = 0;
+				sliderC = 0;
+				buttonCreate((VEC2){ 0.05f,-0.33f },1);
+				buttonCreate((VEC2){ 0.05f,-0.40f },0);
+				buttonCreate((VEC2){ 0.05f,-0.26f },2);
+				buttonCreate((VEC2){ 0.05f,-0.19f },3);
+				buttonCreate((VEC2){ 0.05f,-0.12f },8);
+				buttonCreate((VEC2){ -0.028f,-0.05f },4);
+				buttonCreate((VEC2){ -0.139f,-0.05f },5);
 				break;
 			}
 			break;
@@ -685,7 +695,7 @@ void physics(){
 				sliderId = -1;
 			}
 			switch(toolSel){
-			case 7:
+			case 7:{
 				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 				i32 l = getLmapLocation(&ray);
 				if(l!=-1){
@@ -697,6 +707,7 @@ void physics(){
 					glMesC++;
 				}
 				break;
+			}
 			}
 		}
 		player->xydir = cosf(player->yangle);
@@ -867,7 +878,7 @@ void physics(){
 		if(player->pos.z > properties->lvlSz){
 			player->pos.z = properties->lvlSz;
 		}
-		player->vel.z /= 1.003;	
+		player->vel.z /= 1.003f;
 		tick++;
 		if(properties->lmapSz){
 			HDR();

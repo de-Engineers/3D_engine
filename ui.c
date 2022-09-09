@@ -194,6 +194,14 @@ void drawDescription(f32 offset){
 	drawWord("blue",offset+0.0235f*6,-0.80f,0.0f);
 }
 
+void updateMouse(){
+	POINT p;
+	GetCursorPos(&p);
+	ScreenToClient(window,&p);
+	mousePos.x = (float)p.x/properties->xres*2.0f-1.0f;
+	mousePos.y = -((float)p.y/properties->yres*2.0f-1.0f);
+}
+
 void drawUI(){
 	if(~settings & SETTINGS_GAMEPLAY){
 		drawChar(33,-0.9f,0.9f,-0.99f,0,0.04f,0.04f);
@@ -285,41 +293,20 @@ void drawUI(){
 		drawChar(36,-0.01f,-0.02f,-0.99f,0,0.04f,0.04f);
 		break;
 	case 1:{
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(window,&p);
-		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
-		drawWord("settings",-0.11f,0.42f,0.0f);
+		updateMouse();
+		drawWord("settings",-0.45f,0.42f,0.0f);
+		drawWord("video settings",-0.45f,-0.14f,0.0f);
 		drawWord("save world",-0.45f,-0.21f,0.0f);
 		drawWord("load world",-0.45f,-0.28f,0.0f);
 		drawWord("create world",-0.45f,-0.35f,0.0f);
 		drawWord("quit",-0.45f,-0.42f,0.0f);
 		drawWord("lightmapsize",-0.45f,-0.07f,-0.0f);
-		if(settings & 0x200){
-			drawWord("vsync on",-0.45f,0.0f,-0.0f);
-		}
-		else{
-			drawWord("vsync off",-0.45f,0.0f,-0.0f);
-		}
-		drawWord("fov",-0.45f,0.07f,-0.0f);
-		drawWord("sensitivity",-0.45f,0.14f,-0.0f);
 		drawVar(-0.15f,-0.07f,properties->lmapSzb);
-		if(settings & 0x02){
-			drawWord("fullscreen on",-0.45f,0.24f,0.0f);
-		}
-		else{
-			drawWord("fullscreen off",-0.45f,0.24f,0.0f);
-		}
 		drawSprite((VEC3){0.0f,0.0f,0.0f},(VEC2){0.5f,0.5f},2);
 		break;
 		}
 	case 2:{
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(window,&p);
-		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
+		updateMouse();
 		drawWord("worlds",-0.11f,0.42f,0.0f);
 		drawWord("load",0.02f,0.35f,0.0f);
 		drawWord("delete",0.19f,0.35f,0.0f);
@@ -330,22 +317,33 @@ void drawUI(){
 		break;
 		}
 	case 3:{
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(window,&p);
-		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
+		updateMouse();
 		drawWord("save",-0.11f,0.42f,0.0f);
 		drawWord(inputStr,-0.45f,0.0f,0.0f);
 		drawSprite((VEC3){0.0f,0.0f,0.0},(VEC2){0.5f,0.5f},2);
 		}
 		break;
 	case 4:{
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(window,&p);
-		mousePos.x = (float)p.x/properties->xres*2.0-1.0;
-		mousePos.y = -((float)p.y/properties->yres*2.0-1.0);
+		updateMouse();
+		break;
+	case 5:
+		drawWord("video settings",-0.45f,0.42f,0.0f);
+		if(settings & SETTINGS_VSYNC){
+			drawWord("vsync on",-0.45f,0.0f,-0.0f);
+		}
+		else{
+			drawWord("vsync off",-0.45f,0.0f,-0.0f);
+		}
+		drawWord("fov",-0.45f,0.07f,-0.0f);
+		drawWord("sensitivity",-0.45f,0.14f,-0.0f);
+		if(settings & SETTINGS_FULLSCREEN){
+			drawWord("fullscreen on",-0.45f,0.21f,0.0f);
+		}
+		else{
+			drawWord("fullscreen off",-0.45f,0.21f,0.0f);
+		}
+		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
+		updateMouse();
 		break;
 	}
 	}

@@ -89,10 +89,10 @@ void vsyncButton(){
 }
 
 void fullscreenButton(){
-	settings &= ~0x200;
+	settings &= ~SETTINGS_FULLSCREEN;
 	glMes[glMesC].id = 9;
 	glMesC++;
-	settings ^= 0x02;
+	settings ^= SETTINGS_FULLSCREEN;
 	if(settings & 0x02){
 		SetWindowLongPtrA(window,GWL_STYLE,WS_VISIBLE|WS_POPUP);
 		SetWindowPos(window,0,0,0,GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN),0);
@@ -105,4 +105,14 @@ void fullscreenButton(){
 	glMesC++;
 }
 
-void (*buttons[10])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton};
+void videoSettingsButton(){
+	buttonC = 0;
+	sliderC = 0;
+	menuSel = 5;
+	buttonCreate((VEC2){ 0.2f,0.24f },7);
+	buttonCreate((VEC2){ -0.2f,0.02f },6);
+	sliderCreate((VEC2){ 0.208f,0.09f },12);
+	sliderCreate((VEC2){ 0.208f,0.16f },13);
+}
+
+void (*buttons[10])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton};
