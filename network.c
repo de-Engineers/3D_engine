@@ -16,6 +16,8 @@ NETWORKPLAYER networkthis;
 
 u32 networkID;
 
+IPADDRESS serverIP;
+
 void serverRecv(){
 	u8 packetID = 0;
 	for(;;){

@@ -141,6 +141,8 @@ long long fps = 1;
 
 u8 openglINIT = 0;
 
+u32 sliderValues[32];
+
 f32 quadVertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -348,6 +350,7 @@ void openGL(){
 	glGetUniformLocation      = wglGetProcAddress("glGetUniformLocation");
 	glUniform1f				  = wglGetProcAddress("glUniform1f");
 	glUniform2f               = wglGetProcAddress("glUniform2f");
+	glUniform1iv              = wglGetProcAddress("glUniform1iv");
 	glGenFramebuffers         = wglGetProcAddress("glGenFramebuffers");
 	glBindFramebuffer         = wglGetProcAddress("glBindFramebuffer");
 	glFramebufferTexture      = wglGetProcAddress("glFramebufferTexture2D");
@@ -359,7 +362,7 @@ void openGL(){
 
 	wglSwapIntervalEXT        = wglGetProcAddress("wglSwapIntervalEXT");
 
-	wglSwapIntervalEXT(settings&0x200);
+	wglSwapIntervalEXT(settings&SETTINGS_VSYNC);
 
 	glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE,&properties->tex3DSzLimit);
 
@@ -573,12 +576,12 @@ void openGL(){
 	for(;;){
 		u64 timeB;
 		QueryPerformanceCounter(&timeB);
-		if(settings & 0x80){
+		if(settings & SETTINGS_PAUZE){
 			SwapBuffers(dc);
 			Sleep(100);
 		}
 		else{
-			if(settings & 0x20){
+			if(settings & SETTINGS_UI){
 				drawUI();
 			}
 			glUseProgram(shaderProgramFont);
@@ -702,6 +705,10 @@ void openGL(){
 					glBindTexture(GL_TEXTURE_3D,entityTextText);
 					glTexImage3D(GL_TEXTURE_3D,0,GL_RGB,ENTITYTEXTSZ,ENTITYTEXTSZ,entityC,0,GL_RGB,GL_UNSIGNED_BYTE,entityTexture);
 					glGenerateMipmap(GL_TEXTURE_3D);
+					break;
+				case 13:
+					glUseProgram(shaderProgramFont);
+					glUniform1iv(glGetUniformLocation(shaderProgramFont,"sliderValue"),32,sliderValues);
 					break;
 				}
 			}

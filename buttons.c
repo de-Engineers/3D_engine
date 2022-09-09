@@ -83,7 +83,7 @@ void saveLevelButton(){
 }
 
 void vsyncButton(){
-	settings ^= 0x200;
+	settings ^= SETTINGS_VSYNC;
 	glMes[glMesC].id = 9;
 	glMesC++;
 }
@@ -107,12 +107,25 @@ void fullscreenButton(){
 
 void videoSettingsButton(){
 	buttonC = 0;
-	sliderC = 0;
 	menuSel = 5;
-	buttonCreate((VEC2){ 0.2f,0.24f },7);
-	buttonCreate((VEC2){ -0.2f,0.02f },6);
-	sliderCreate((VEC2){ 0.208f,0.09f },12);
-	sliderCreate((VEC2){ 0.208f,0.16f },13);
+	buttonCreate((VEC2){ -0.059f,0.24f },7);
+	buttonCreate((VEC2){ -0.059f,0.02f },6);
+	sliderCreate((VEC2){ 0.190f,0.09f },12);
+	sliderCreate((VEC2){ 0.190f,0.16f },13);
 }
 
-void (*buttons[10])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton};
+void multiplayerButton(){
+	buttonC = 0;
+	sliderCreate((VEC2){0.190f,-0.05f},14);
+	sliderCreate((VEC2){0.190f,-0.12f},15);
+	sliderCreate((VEC2){0.190f,-0.19f},16);
+	sliderCreate((VEC2){0.190f,-0.26f},17);
+	buttonCreate((VEC2){-0.059f,-0.40},10);
+	menuSel = 6;
+}
+
+void serverConnectButton(){
+	networkThread = CreateThread(0,0,networking,0,0,0);
+}
+
+void (*buttons[32])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton,multiplayerButton,serverConnectButton};

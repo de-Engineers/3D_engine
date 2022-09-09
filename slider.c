@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <intrin.h>
 
+#include "network.h"
 #include "main.h"
 
 i8 sliderId = -1;
@@ -174,5 +175,22 @@ void sliderSensitivity(u8 pos){
 	glMesC++;
 }
 
-void (*sliders[14])(u8 pos) = {sliderRed,sliderGreen,sliderBlue,sliderMetadt1x,sliderMetadt1y,sliderMetadt1z,
-sliderMetadt2x,sliderMetadt2y,sliderMetadt2z,sliderMetadt3x,sliderMetadt3y,sliderMetadt3z,sliderFOV,sliderSensitivity};
+void sliderIP1(u8 pos){
+	serverIP.p1 = pos;
+}
+
+void sliderIP2(u8 pos){
+	serverIP.p2 = pos;
+}
+
+void sliderIP3(u8 pos){
+	serverIP.p3 = pos;
+}
+
+void sliderIP4(u8 pos){
+	serverIP.p4 = pos;
+}
+
+void (*sliders[32])(u8 pos) = {sliderRed,sliderGreen,sliderBlue,sliderMetadt1x,sliderMetadt1y,sliderMetadt1z,
+sliderMetadt2x,sliderMetadt2y,sliderMetadt2z,sliderMetadt3x,sliderMetadt3y,sliderMetadt3z,sliderFOV,sliderSensitivity,
+sliderIP1,sliderIP2,sliderIP3,sliderIP4};

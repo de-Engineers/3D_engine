@@ -352,6 +352,18 @@ void levelDelete(char *lname){
 	HeapFree(GetProcessHeap(),0,name);
 }
 
+void mainMenuLoad(){
+	menuSel = 1;
+	buttonCreate((VEC2){-0.059f,-0.33f},1);
+	buttonCreate((VEC2){-0.059f,-0.40f},0);
+	buttonCreate((VEC2){-0.059f,-0.26f},2);
+	buttonCreate((VEC2){-0.059f,-0.19f},3);
+	buttonCreate((VEC2){-0.059f,-0.12f},8);
+	buttonCreate((VEC2){-0.019f,-0.05f},4);
+	buttonCreate((VEC2){-0.059f,-0.05f},5);
+	buttonCreate((VEC2){-0.059f,0.02f},9);
+}
+
 long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	switch(msg){
 	case WM_QUIT:
@@ -470,7 +482,6 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			settings ^= SETTINGS_SMOOTH;
 			break;
 		case VK_F7:
-			networkThread = CreateThread(0,0,networking,0,0,0);
 			break;
 		case VK_F11:
 			settings ^= SETTINGS_UI;
@@ -479,14 +490,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			switch(menuSel){
 			case 0:
 				ShowCursor(1);
-				menuSel = 1;
-				buttonCreate((VEC2){0.05f,-0.33f},1);
-				buttonCreate((VEC2){0.05f,-0.40f},0);
-				buttonCreate((VEC2){0.05f,-0.26f},2);
-				buttonCreate((VEC2){0.05f,-0.19f},3);
-				buttonCreate((VEC2){0.05f,-0.12f},8);
-				buttonCreate((VEC2){-0.028f,-0.05f},4);
-				buttonCreate((VEC2){-0.139f,-0.05f},5);
+				mainMenuLoad();
 				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
 				break;
 			case 4:
@@ -501,38 +505,18 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				menuSel = 1;
 				buttonC = 0;
 				sliderC = 0;
-				buttonCreate((VEC2){0.05f,-0.35f},1);
-				buttonCreate((VEC2){0.05f,-0.42f},0);
-				buttonCreate((VEC2){0.05f,-0.28f},2);
-				buttonCreate((VEC2){0.05f,-0.21f},3);
-				buttonCreate((VEC2){-0.158f,-0.07f},4);
-				buttonCreate((VEC2){-0.052f,-0.07f},5);
-				buttonCreate((VEC2){-0.139f,0.02f},6);
+
 				fileNames.strC = 0;
 				break;
 			case 3:
-				menuSel = 1;
 				buttonC = 0;
-				buttonCreate((VEC2){0.05f,-0.35f},1);
-				buttonCreate((VEC2){0.05f,-0.42f},0);
-				buttonCreate((VEC2){0.05f,-0.28f},2);
-				buttonCreate((VEC2){0.05f,-0.21f},3);				
-				buttonCreate((VEC2){-0.158f,-0.07f},4);
-				buttonCreate((VEC2){-0.052f,-0.07f},5);
-				buttonCreate((VEC2){-0.139f,0.02f},6);
+				mainMenuLoad();
 				ZeroMemory(inputStr,255);
 				break;
 			case 5:
-				menuSel = 1;
 				buttonC = 0;
 				sliderC = 0;
-				buttonCreate((VEC2){ 0.05f,-0.33f },1);
-				buttonCreate((VEC2){ 0.05f,-0.40f },0);
-				buttonCreate((VEC2){ 0.05f,-0.26f },2);
-				buttonCreate((VEC2){ 0.05f,-0.19f },3);
-				buttonCreate((VEC2){ 0.05f,-0.12f },8);
-				buttonCreate((VEC2){ -0.028f,-0.05f },4);
-				buttonCreate((VEC2){ -0.139f,-0.05f },5);
+				mainMenuLoad();
 				break;
 			}
 			break;
@@ -680,7 +664,6 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 }
 WNDCLASS wndclass = {0,proc,0,0,0,0,0,0,name,name};
 void physics(){
-	player->fov.x = 2;
 	for (;;){
 		if(GetKeyState(VK_LBUTTON)&0x80){
 			for(u32 i = 0;i < sliderC;i++){
@@ -690,9 +673,12 @@ void physics(){
 					sliderPos = (mousePos.x-slider[i].pos.x+0.266666667f)*480.0f;
 				}
 			}
-			if((~GetKeyState(VK_LCONTROL))&0x80 && sliderId!=-1){
+			if(sliderId!=-1){
+				sliderValues[sliderId] = sliderPos;
 				sliders[sliderId](sliderPos);
 				sliderId = -1;
+				glMes[glMesC].id = 13;
+				glMesC++;
 			}
 			switch(toolSel){
 			case 7:{
@@ -926,22 +912,6 @@ void main(){
 	HICON hIcon = LoadImageA(0,"textures/bol.ico",IMAGE_ICON,48,48,LR_LOADFROMFILE);
 	SendMessageA(window,WM_SETICON,ICON_SMALL,(long int)hIcon);
 
-	HANDLE h = CreateFileA("config.cfg",GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
-	if(h!=-1){
-		ReadFile(h,&settings,4,0,0);
-		ReadFile(h,&player->fov.y,4,0,0);
-		ReadFile(h,&properties->sensitivity,4,0,0);
-
-		player->fov.x = player->fov.y*16.0f/9.0f;
-	}
-	else{
-		settings = SETTINGS_UI | SETTINGS_LIGHTING | SETTINGS_MOVEMENT;
-		player->fov.x   = 16.0f/9.0f;
-		player->fov.y   = 1.0f;
-		properties->sensitivity = 0.5f;
-	}
-	CloseHandle(h);
-
 	player->flightSpeed = 0.125f;
 
 	properties->lvlSz          = MAPSZ;
@@ -954,11 +924,35 @@ void main(){
 	player->spawn.y = 5.5f;
 	player->spawn.z = 2.8f;
 
-	renderingThread      = CreateThread(0,0,openGL,0,0,0);
+	renderingThread = CreateThread(0,0,openGL,0,0,0);
 	
 	while(!openglINIT){
 		Sleep(1);
 	}
+
+	HANDLE h = CreateFileA("config.cfg",GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+	if(h!=-1){
+		ReadFile(h,&settings,4,0,0);
+		ReadFile(h,&player->fov.y,4,0,0);
+		ReadFile(h,&properties->sensitivity,4,0,0);
+
+		sliderValues[12] = player->fov.y*127.5f;
+		sliderValues[13] = properties->sensitivity*255.0f;
+		glMes[glMesC].id = 10;
+		glMesC++;
+		glMes[glMesC].id = 13;
+		glMesC++;
+
+		player->fov.x = player->fov.y*16.0f/9.0f;
+	}
+	else{
+		settings = SETTINGS_UI | SETTINGS_LIGHTING | SETTINGS_MOVEMENT;
+		player->fov.x   = 16.0f/9.0f;
+		player->fov.y   = 1.0f;
+		properties->sensitivity = 0.5f;
+	}
+
+	CloseHandle(h);
 
 	levelgen();
 

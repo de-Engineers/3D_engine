@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 
 #include "tmgl.h"
+#include "network.h"
 
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_DYNAMIC_DRAW 0x88E8
@@ -224,7 +225,7 @@ void drawUI(){
 		drawVar(0.85f,-0.85f,colorSel.g);
 		drawVar(0.85f,-0.80f,colorSel.b);
 		drawVar(0.85f,-0.75f,colorSel.a);
-		if(settings & 0x40){
+		if(settings & SETTINGS_SUBBLOCK){
 			drawWord("sub block 2",-0.9f,-0.66f,0.0f);
 			drawVar(0.85f,-0.50f,metadt4Sel.r);
 			drawVar(0.85f,-0.45f,metadt4Sel.g);
@@ -269,31 +270,12 @@ void drawUI(){
 		}
 		drawSprite((VEC3){0.927f,-0.603f,-0.2f},(VEC2){0.05f,0.05f},7);
 	}
-	for(u32 i = 0;i < buttonC;i++){
-		VEC2 buttonMiddle = {button[i].pos.x+0.0075f,button[i].pos.y+0.0125f};
-		if(VEC2dist(mousePos,buttonMiddle)<0.03f){
-			buttonId = button[i].id;
-			drawSprite((VEC3){button[i].pos.x,button[i].pos.y,-0.05f},(VEC2){0.015f,0.025f},4);
-			for(;i < buttonC;i++){
-				drawSprite((VEC3){button[i].pos.x,button[i].pos.y,-0.05f},(VEC2){0.015f,0.025f},3);
-			}
-			goto foundButton;
-		}
-		else{
-			drawSprite((VEC3){button[i].pos.x,button[i].pos.y,-0.05f},(VEC2){0.015f,0.025f},3);
-		}
-	}
-	buttonId = -1;
-	foundButton:
-	for(u32 i = 0;i < sliderC;i++){
-		drawSprite((VEC3){slider[i].pos.x,slider[i].pos.y,-0.05f},(VEC2){0.266666667f,0.015f},8+slider[i].id);
-	}
 	switch(menuSel){
 	case 0:
 		drawChar(36,-0.01f,-0.02f,-0.99f,0,0.04f,0.04f);
 		break;
 	case 1:{
-		updateMouse();
+		drawSprite((VEC3){0.0f,0.0f,0.0f},(VEC2){0.5f,0.5f},2);
 		drawWord("settings",-0.45f,0.42f,0.0f);
 		drawWord("video settings",-0.45f,-0.14f,0.0f);
 		drawWord("save world",-0.45f,-0.21f,0.0f);
@@ -301,32 +283,34 @@ void drawUI(){
 		drawWord("create world",-0.45f,-0.35f,0.0f);
 		drawWord("quit",-0.45f,-0.42f,0.0f);
 		drawWord("lightmapsize",-0.45f,-0.07f,-0.0f);
-		drawVar(-0.15f,-0.07f,properties->lmapSzb);
-		drawSprite((VEC3){0.0f,0.0f,0.0f},(VEC2){0.5f,0.5f},2);
+		drawWord("multiplayer",-0.45f,0.0f,0.0f);
+		drawVar(-0.025f,-0.07f,properties->lmapSzb);
+		updateMouse();
 		break;
 		}
 	case 2:{
-		updateMouse();
+		drawSprite((VEC3){0.0f,0.0f,0.0f},(VEC2){0.5f,0.5f},2);
 		drawWord("worlds",-0.11f,0.42f,0.0f);
 		drawWord("load",0.02f,0.35f,0.0f);
 		drawWord("delete",0.19f,0.35f,0.0f);
 		for(int i = 0;i < fileNames.strC;i++){
 			drawWord(fileNames.str[i],-0.45f,0.28f-(float)i/15.0f,0.0f);
 		}
-		drawSprite((VEC3){0.0f,0.0f,0.0f},(VEC2){0.5f,0.5f},2);
+		updateMouse();
 		break;
 		}
 	case 3:{
-		updateMouse();
+		drawSprite((VEC3){0.0f,0.0f,0.0},(VEC2){0.5f,0.5f},2);
 		drawWord("save",-0.11f,0.42f,0.0f);
 		drawWord(inputStr,-0.45f,0.0f,0.0f);
-		drawSprite((VEC3){0.0f,0.0f,0.0},(VEC2){0.5f,0.5f},2);
+		updateMouse();
 		}
 		break;
 	case 4:{
 		updateMouse();
 		break;
 	case 5:
+		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
 		drawWord("video settings",-0.45f,0.42f,0.0f);
 		if(settings & SETTINGS_VSYNC){
 			drawWord("vsync on",-0.45f,0.0f,-0.0f);
@@ -342,10 +326,66 @@ void drawUI(){
 		else{
 			drawWord("fullscreen off",-0.45f,0.21f,0.0f);
 		}
+		updateMouse();
+		break;
+	case 6:{
 		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
+		drawWord("multiplayer",-0.45f,0.42f,0.0f);
+		f32 offset = 0.0f;
+		drawVar(-0.1f,-0.345f,serverIP.p1);
+		if(serverIP.p1 >= 100){
+			offset += 0.06f;
+		}
+		else if(serverIP.p1 >= 10){
+			offset += 0.03f;
+		}
+		drawWord("x",-0.04f+offset,-0.345f,0.0f);
+		drawVar(-0.04f+offset,-0.345f,serverIP.p2);
+		if(serverIP.p2 >= 100){
+			offset += 0.06f;
+		}
+		else if(serverIP.p2 >= 10){
+			offset += 0.03f;
+		}
+		drawWord("x",0.02f+offset,-0.345f,0.0f);
+		drawVar(0.02f+offset,-0.345f,serverIP.p3);
+		if(serverIP.p3 >= 100){
+			offset += 0.06f;
+		}
+		else if(serverIP.p3 >= 10){
+			offset += 0.03f;
+		}
+		drawWord("x",0.08f+offset,-0.345f,0.0f);
+		drawVar(0.08f+offset,-0.345f,serverIP.p4);
+		if(serverIP.p4 >= 100){
+			offset += 0.06f;
+		}
+		else if(serverIP.p4 >= 10){
+			offset += 0.03f;
+		}
 		updateMouse();
 		break;
 	}
+	}
+	}
+	for(u32 i = 0;i < buttonC;i++){
+		VEC2 buttonMiddle = {button[i].pos.x+0.0075f,button[i].pos.y+0.0125f};
+		if(VEC2dist(mousePos,buttonMiddle)<0.03f){
+			buttonId = button[i].id;
+			drawSprite((VEC3){button[i].pos.x,button[i].pos.y,-0.05f},(VEC2){0.015f,0.025f},4);
+			for(;i < buttonC;i++){
+				drawSprite((VEC3){button[i].pos.x,button[i].pos.y,-0.05f},(VEC2){0.015f,0.025f},3);
+			}
+			goto foundButton;
+		}
+		else{
+			drawSprite((VEC3){button[i].pos.x,button[i].pos.y,0.0f},(VEC2){0.015f,0.025f},3);
+		}
+	}
+	buttonId = -1;
+	foundButton:
+	for(u32 i = 0;i < sliderC;i++){
+		drawSprite((VEC3){slider[i].pos.x,slider[i].pos.y,0.0f},(VEC2){0.266666667f,0.015f},8+slider[i].id);
 	}
 
 }

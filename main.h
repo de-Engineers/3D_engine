@@ -323,8 +323,8 @@ extern RGBA metadt4Sel;
 extern RGBA metadt5Sel;
 extern RGBA metadt6Sel;
 extern CVEC3 selarea;
-extern void (*sliders[14])();
-extern void (*buttons[10])();
+extern void (*sliders[32])();
+extern void (*buttons[32])();
 extern u8 menuSel;
 extern STRINGS fileNames;
 extern unsigned char tempVar[2];
@@ -339,6 +339,8 @@ extern u8 touchedSpace;
 extern VEC2 mousePos;
 extern u8 networkSettings;
 extern u8 openglINIT;
+extern u32 sliderValues[32];
+extern HANDLE networkThread;
 
 extern unsigned char *inputStr;
 

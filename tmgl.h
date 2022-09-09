@@ -30,6 +30,7 @@ void (*glUniform4f)(int loc,float v1,float v2,float v3,float v4);
 void (*glUniform3f)(int loc,float v1,float v2,float v3);
 void (*glUniform2f)(int loc,float v1,float v2);
 void (*glUniform1f)(int loc,float v1);
+void (*glUniform1iv)(int loc,int count,const int *value);
 void (*glUniformMatrix3fv)(int loc,int count,unsigned char transpose,const float *value);
 void (*glGenFramebuffers)(int n,unsigned int *ids);
 void (*glBindFramebuffer)(unsigned int target,unsigned int framebuffer);
