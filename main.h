@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <windows.h>
+#include "ivec3.h"
 #include "vec3.h"
 #include "vec2.h"
 
@@ -137,6 +138,14 @@ typedef struct{
 	u16 aniTime;
 }PLAYERDATA;
 
+
+typedef struct{
+	u32 p1;
+	u32 p2;
+	u32 p3;
+	u32 p4;
+}IPADDRESS;
+
 typedef struct{
 	u16 xres;
 	u16 yres;
@@ -249,6 +258,16 @@ typedef struct{
 }RAY;
 
 typedef struct{
+	IVEC3 col;
+	IVEC3 metadt;
+	IVEC3 metadt2;
+	IVEC3 metadt3;
+	u32 fov;
+	u32 sensitivity;
+	IPADDRESS serverIP;
+}SLIDERVALUE;
+
+typedef struct{
 	VEC2 pos;
 	u32 id;
 }BUTTON;
@@ -314,7 +333,7 @@ extern i8 buttonId;
 extern i8 sliderId;
 extern u8 sliderPos;
 extern int tick;
-extern int settings;
+extern u32 settings;
 extern RGBA colorSel;
 extern RGBA metadtSel;
 extern RGBA metadt2Sel;
@@ -323,7 +342,7 @@ extern RGBA metadt4Sel;
 extern RGBA metadt5Sel;
 extern RGBA metadt6Sel;
 extern CVEC3 selarea;
-extern void (*sliders[32])();
+extern void (*sliders[32])(u8 pos);
 extern void (*buttons[32])();
 extern u8 menuSel;
 extern STRINGS fileNames;
@@ -339,7 +358,7 @@ extern u8 touchedSpace;
 extern VEC2 mousePos;
 extern u8 networkSettings;
 extern u8 openglINIT;
-extern u32 sliderValues[32];
+extern SLIDERVALUE sliderValues;
 extern HANDLE networkThread;
 
 extern unsigned char *inputStr;
@@ -372,7 +391,7 @@ void playerWorldCollision();
 void generateSkyBox();
 void playerDeath();
 void networking();
-void spawnPlayer();
+void spawnPlayer(u8 id);
 void cpuGenLight(VEC3 pos, VEC3 color,u64 itt);
 void cpuGenLightAmbientX(VEC3 dir,VEC3 color,u64 itt);
 void cpuGenLightAmbientY(VEC3 dir,VEC3 color,u64 itt);
@@ -381,8 +400,8 @@ void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt);
 RAY rayCreate(VEC3 pos,VEC3 dir);
 
 unsigned int crds2map(int x,int y,int z);
-inline i32 irnd();
-inline f32 rnd();
+i32 irnd();
+f32 rnd();
 CVEC3 map2crds(u32 	map);
 VEC3 getCoords(RAY ray);
 VEC2 rotVEC2(VEC2 p,float rot);

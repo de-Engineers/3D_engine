@@ -141,7 +141,7 @@ long long fps = 1;
 
 u8 openglINIT = 0;
 
-u32 sliderValues[32];
+SLIDERVALUE sliderValues;
 
 f32 quadVertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
@@ -708,7 +708,7 @@ void openGL(){
 					break;
 				case 13:
 					glUseProgram(shaderProgramFont);
-					glUniform1iv(glGetUniformLocation(shaderProgramFont,"sliderValue"),32,sliderValues);
+					glUniform1iv(glGetUniformLocation(shaderProgramFont,"sliderValue"),sizeof(SLIDERVALUE),&sliderValues);
 					break;
 				}
 			}

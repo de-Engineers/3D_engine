@@ -3,6 +3,7 @@
 #include "raytracing.h"
 
 VEC3 rayColor;
+
 typedef union {
     VEC3 Pos;
     VEC3 Dir;
@@ -20,8 +21,8 @@ inline void castLightRay(RAY ray,VEC3 color){
         switch (map[block].id) {
         case 12:{
             VEC3 spos = getSubCoords(ray);
-            VEC3 mtdt = { (float)metadt[block].r / 255.0f,(float)metadt[block].g / 255.0f,(float)metadt[block].id / 255.0f };
-            VEC3 mtdt2 = { (float)metadt2[block].r / 255.0f,(float)metadt2[block].g / 255.0f,(float)metadt2[block].id / 255.0f };
+            VEC3 mtdt = { (float)metadt[block].g / 255.0f,(float)metadt[block].r / 255.0f,(float)metadt[block].id / 255.0f };
+            VEC3 mtdt2 = { (float)metadt2[block].g / 255.0f,(float)metadt2[block].r / 255.0f,(float)metadt2[block].id / 255.0f };
             VEC3 rotdir = ray.dir;
             VEC2 tempv;
             tempv = rotVEC2((VEC2){mtdt.x,mtdt.y},(float)metadt3[block].r / 255.0f * PI);
@@ -51,7 +52,7 @@ inline void castLightRay(RAY ray,VEC3 color){
             tempv = rotVEC2((VEC2){rotdir.y,rotdir.z},(float)metadt3[block].id / 255.0f * PI);
             rotdir.y = tempv.x;
             rotdir.z = tempv.y;
-            f32 d = iBox(VEC3subVEC3R(spos,mtdt),rotdir,(VEC3){metadt2[block].r/255.0f,metadt2[block].g/255.0f,metadt2[block].id/255.0f});
+            f32 d = iBox(VEC3subVEC3R(spos,mtdt),rotdir,(VEC3){metadt2[block].g/255.0f,metadt2[block].r/255.0f,metadt2[block].id/255.0f});
             if(d > 0.0f){
                 VEC3addVEC3(&spos,VEC3mulR(rotdir,d));
                 VEC3 nspos = spos;

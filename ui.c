@@ -331,36 +331,40 @@ void drawUI(){
 	case 6:{
 		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
 		drawWord("multiplayer",-0.45f,0.42f,0.0f);
+		drawWord("ipaddress 1",-0.45f,-0.07f,0.0f);
+		drawWord("ipaddress 2",-0.45f,-0.14f,0.0f);
+		drawWord("ipaddress 3",-0.45f,-0.21f,0.0f);
+		drawWord("ipaddress 4",-0.45f,-0.28f,0.0f);
 		f32 offset = 0.0f;
-		drawVar(-0.1f,-0.345f,serverIP.p1);
-		if(serverIP.p1 >= 100){
+		drawVar(-0.1f,-0.345f,sliderValues.serverIP.p1);
+		if(sliderValues.serverIP.p1 >= 100){
 			offset += 0.06f;
 		}
-		else if(serverIP.p1 >= 10){
+		else if(sliderValues.serverIP.p1 >= 10){
 			offset += 0.03f;
 		}
-		drawWord("x",-0.04f+offset,-0.345f,0.0f);
-		drawVar(-0.04f+offset,-0.345f,serverIP.p2);
-		if(serverIP.p2 >= 100){
+		drawWord("x",-0.038f+offset,-0.345f,0.0f);
+		drawVar(-0.04f+offset,-0.345f,sliderValues.serverIP.p2);
+		if(sliderValues.serverIP.p2 >= 100){
 			offset += 0.06f;
 		}
-		else if(serverIP.p2 >= 10){
+		else if(sliderValues.serverIP.p2 >= 10){
 			offset += 0.03f;
 		}
-		drawWord("x",0.02f+offset,-0.345f,0.0f);
-		drawVar(0.02f+offset,-0.345f,serverIP.p3);
-		if(serverIP.p3 >= 100){
+		drawWord("x",0.022f+offset,-0.345f,0.0f);
+		drawVar(0.02f+offset,-0.345f,sliderValues.serverIP.p3);
+		if(sliderValues.serverIP.p3 >= 100){
 			offset += 0.06f;
 		}
-		else if(serverIP.p3 >= 10){
+		else if(sliderValues.serverIP.p3 >= 10){
 			offset += 0.03f;
 		}
-		drawWord("x",0.08f+offset,-0.345f,0.0f);
-		drawVar(0.08f+offset,-0.345f,serverIP.p4);
-		if(serverIP.p4 >= 100){
+		drawWord("x",0.082f+offset,-0.345f,0.0f);
+		drawVar(0.08f+offset,-0.345f,sliderValues.serverIP.p4);
+		if(sliderValues.serverIP.p4 >= 100){
 			offset += 0.06f;
 		}
-		else if(serverIP.p4 >= 10){
+		else if(sliderValues.serverIP.p4 >= 10){
 			offset += 0.03f;
 		}
 		updateMouse();

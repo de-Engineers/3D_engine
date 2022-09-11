@@ -1,9 +1,18 @@
 #pragma once
 
 typedef struct {
-	int x;
-	int y;
-	int z;
+	union{
+		int x;
+		int r;
+	};
+	union{
+		int y;
+		int g;
+	};
+	union{
+		int z;
+		int b;
+	};
 }IVEC3;
 
 inline int IVEC3mulS(IVEC3 p) {
@@ -34,25 +43,25 @@ inline void IVEC3div(IVEC3 *p,int d) {
 	p->z /= d;
 }
 
-inline void IVEC2addIVEC2(IVEC3 *p,IVEC3 p2) {
+inline void IVEC3addIVEC3(IVEC3 *p,IVEC3 p2) {
 	p->x += p2.x;
 	p->y += p2.y;
 	p->z += p2.z;
 }
 
-inline void IVEC2subIVEC2(IVEC3 *p,IVEC3 p2) {
+inline void IVEC3subIVEC3(IVEC3 *p,IVEC3 p2) {
 	p->x -= p2.x;
 	p->y -= p2.y;
 	p->z -= p2.z;
 }
 
-inline void IVEC2mulIVEC2(IVEC3 *p,IVEC3 p2) {
+inline void IVEC3mulIVEC3(IVEC3 *p,IVEC3 p2) {
 	p->x *= p2.x;
 	p->y *= p2.y;
 	p->z *= p2.z;
 }
 
-inline void IVEC2divIVEC2(IVEC3 *p,IVEC3 p2) {
+inline void IVEC3divIVEC3(IVEC3 *p,IVEC3 p2) {
 	p->x /= p2.x;
 	p->y /= p2.y;
 	p->z /= p2.z;

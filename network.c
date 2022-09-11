@@ -16,7 +16,7 @@ NETWORKPLAYER networkthis;
 
 u32 networkID;
 
-IPADDRESS serverIP;
+IPADDRESS serverIP = {192,168,1,1};
 
 void serverRecv(){
 	u8 packetID = 0;
@@ -28,8 +28,8 @@ void serverRecv(){
 			break;
 		case 1:
 			Sleep(999);
+			spawnPlayer(networkplayerC);
 			networkplayerC++;
-			spawnPlayer();
 			break;
 		}
 	}
@@ -41,7 +41,10 @@ void networking(){
 
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
-	tcpAddress.sin_addr.S_un.S_addr = inet_addr("192.168.2.100	");
+	tcpAddress.sin_addr.S_un.S_un_b.s_b1 = serverIP.p1;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b2 = serverIP.p2;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b3 = serverIP.p3;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b4 = serverIP.p4;
 
 	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress))){}
 

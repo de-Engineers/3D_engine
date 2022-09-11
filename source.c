@@ -481,8 +481,6 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		case VK_F6:
 			settings ^= SETTINGS_SMOOTH;
 			break;
-		case VK_F7:
-			break;
 		case VK_F11:
 			settings ^= SETTINGS_UI;
 			break;
@@ -674,7 +672,6 @@ void physics(){
 				}
 			}
 			if(sliderId!=-1){
-				sliderValues[sliderId] = sliderPos;
 				sliders[sliderId](sliderPos);
 				sliderId = -1;
 				glMes[glMesC].id = 13;
@@ -936,8 +933,8 @@ void main(){
 		ReadFile(h,&player->fov.y,4,0,0);
 		ReadFile(h,&properties->sensitivity,4,0,0);
 
-		sliderValues[12] = player->fov.y*127.5f;
-		sliderValues[13] = properties->sensitivity*255.0f;
+		sliderValues.fov = player->fov.y*127.5f;
+		sliderValues.sensitivity = properties->sensitivity*255.0f;
 		glMes[glMesC].id = 10;
 		glMesC++;
 		glMes[glMesC].id = 13;
