@@ -516,6 +516,11 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				sliderC = 0;
 				mainMenuLoad();
 				break;
+			case 6:
+				buttonC = 0;
+				sliderC = 0;
+				mainMenuLoad();
+				break;
 			}
 			break;
 		case VK_CONTROL:
@@ -658,7 +663,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		break;
 	}
-	return DefWindowProc(hwnd,msg,wParam,lParam);
+	return DefWindowProcA(hwnd,msg,wParam,lParam);
 }
 WNDCLASS wndclass = {0,proc,0,0,0,0,0,0,name,name};
 void physics(){

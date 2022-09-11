@@ -141,7 +141,7 @@ long long fps = 1;
 
 u8 openglINIT = 0;
 
-SLIDERVALUE sliderValues;
+SLIDERVALUE sliderValues = {.serverIP.p1 = 192,.serverIP.p2 = 168,.serverIP.p3 = 1,.serverIP.p4 = 1};
 
 f32 quadVertices[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
@@ -685,15 +685,15 @@ void openGL(){
 					generateSkyBox();
 					break;
 				case 9:
-					wglSwapIntervalEXT(settings&0x200);
+					wglSwapIntervalEXT(settings&SETTINGS_VSYNC);
 					break;
 				case 10:
 					glUseProgram(shaderProgram);
 					glUniform2f(glGetUniformLocation(shaderProgram,"fov"),player->fov.x,player->fov.y);
 					glUseProgram(shaderProgramEditor);
 					glUniform2f(glGetUniformLocation(shaderProgramEditor,"fov"),player->fov.x,player->fov.y);
-					glUseProgram(shaderProgramFont);
-					glUniform2f(glGetUniformLocation(shaderProgramFont,"fov"),player->fov.x*0.5f,player->fov.y*0.5f);
+					glUseProgram(shaderProgramSmooth);
+					glUniform2f(glGetUniformLocation(shaderProgramSmooth,"fov"),player->fov.x,player->fov.y);
 					break;
 				case 11:
 					glUseProgram(shaderProgramFont);

@@ -406,6 +406,7 @@ CVEC3 map2crds(u32 	map);
 VEC3 getCoords(RAY ray);
 VEC2 rotVEC2(VEC2 p,float rot);
 VEC3 getSubCoords(RAY ray);
+void entityDeath(int id);
 
 char *loadFile(char *name);
 
@@ -413,6 +414,9 @@ inline int max3(int val1,int val2,int val3);
 float fract(float p);
 
 i32 getLmapLocation(RAY *ray);
+
+HANDLE physicsThread;
+HANDLE entityThread;
 
 
 

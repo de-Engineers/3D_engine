@@ -1,5 +1,7 @@
+#include <WinSock2.h>
 #include "main.h"
 #include "network.h"
+
 
 #pragma comment(lib,"Ws2_32.lib")
 
@@ -16,8 +18,6 @@ NETWORKPLAYER networkthis;
 
 u32 networkID;
 
-IPADDRESS serverIP = {192,168,1,1};
-
 void serverRecv(){
 	u8 packetID = 0;
 	for(;;){
@@ -27,9 +27,17 @@ void serverRecv(){
 			recv(tcpSock,networkplayer,networkplayerC*sizeof(NETWORKPLAYER),0);
 			break;
 		case 1:
-			Sleep(999);
 			spawnPlayer(networkplayerC);
 			networkplayerC++;
+			break;
+		case 2:
+			networkplayerC--;
+			for(u32 i = 0;i < entityC;i++){
+				if(entity.cpu[i].id==9&&entity.cpu[i].health==networkplayerC){
+					entityDeath(i);
+					break;
+				}
+			}
 			break;
 		}
 	}
@@ -41,15 +49,18 @@ void networking(){
 
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
-	tcpAddress.sin_addr.S_un.S_un_b.s_b1 = serverIP.p1;
-	tcpAddress.sin_addr.S_un.S_un_b.s_b2 = serverIP.p2;
-	tcpAddress.sin_addr.S_un.S_un_b.s_b3 = serverIP.p3;
-	tcpAddress.sin_addr.S_un.S_un_b.s_b4 = serverIP.p4;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b1 = sliderValues.serverIP.p1;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b2 = sliderValues.serverIP.p2;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b3 = sliderValues.serverIP.p3;
+	tcpAddress.sin_addr.S_un.S_un_b.s_b4 = sliderValues.serverIP.p4;
 
 	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress))){}
 
 	networkSettings |= 0x01;
 	printf("connected\n");
+	
+	SuspendThread(physicsThread);
+	SuspendThread(entityThread);
 
 	HeapFree(GetProcessHeap(),0,map);
 	HeapFree(GetProcessHeap(),0,metadt);
@@ -76,17 +87,21 @@ void networking(){
 	metadt5    = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(MAP));
 	metadt6    = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(MAP));
 	lpmap      = HeapAlloc(GetProcessHeap(),8,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP));
+	lmap       = HeapAlloc(GetProcessHeap(),8,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
 
-	recv(tcpSock,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
-	recv(tcpSock,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);	
-	recv(tcpSock,metadt2,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
-	recv(tcpSock,metadt3,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
-	recv(tcpSock,metadt4,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
-	recv(tcpSock,metadt5,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
-	recv(tcpSock,metadt6,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,0);
-	recv(tcpSock,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),0);
-	lmap = HeapAlloc(GetProcessHeap(),8,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
-	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,0);
+	printf("%i\n",lmap);
+
+	recv(tcpSock,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+	recv(tcpSock,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+	recv(tcpSock,metadt2,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+	recv(tcpSock,metadt3,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+	recv(tcpSock,metadt4,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+	recv(tcpSock,metadt5,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);	
+	recv(tcpSock,metadt6,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+	recv(tcpSock,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),MSG_WAITALL);
+	printf("%i\n",lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
+	Sleep(1000);
+	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,MSG_WAITALL);
 	printf("loaded\n");
 	for(u32 i = 0;i < networkplayerC;i++){
 		spawnPlayer(i);
@@ -95,6 +110,8 @@ void networking(){
 	glMesC++;
 	glMes[glMesC].id = 3;
 	glMesC++;
+	ResumeThread(physicsThread);
+	ResumeThread(entityThread);
 	CreateThread(0,0,serverRecv,0,0,0);
 	for(;;){
 		networkthis.pos = player->pos;
