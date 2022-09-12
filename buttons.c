@@ -116,16 +116,19 @@ void videoSettingsButton(){
 
 void multiplayerButton(){
 	buttonC = 0;
-	sliderCreate((VEC2){0.190f,-0.05f},14);
-	sliderCreate((VEC2){0.190f,-0.12f},15);
-	sliderCreate((VEC2){0.190f,-0.19f},16);
-	sliderCreate((VEC2){0.190f,-0.26f},17);
+	sliderCreate((VEC2){0.190f,-0.12f},14);
+	sliderCreate((VEC2){0.190f,-0.19f},15);
+	sliderCreate((VEC2){0.190f,-0.26f},16);
+	sliderCreate((VEC2){0.190f,-0.33f},17);
 	buttonCreate((VEC2){-0.059f,-0.40},10);
 	menuSel = 6;
 }
 
 void serverConnectButton(){
 	networkThread = CreateThread(0,0,networking,0,0,0);
+	buttonC = 0;
+	sliderC = 0;
+	menuSel = 7;
 }
 
 void (*buttons[32])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton,multiplayerButton,serverConnectButton};

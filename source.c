@@ -521,6 +521,14 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				sliderC = 0;
 				mainMenuLoad();
 				break;
+			case 7:
+				TerminateThread(networkThread,0);
+				sliderCreate((VEC2){ 0.190f,-0.12f },14);
+				sliderCreate((VEC2){ 0.190f,-0.19f },15);
+				sliderCreate((VEC2){ 0.190f,-0.26f },16);
+				sliderCreate((VEC2){ 0.190f,-0.33f },17);
+				buttonCreate((VEC2){ -0.059f,-0.40 },10);
+				break;
 			}
 			break;
 		case VK_CONTROL:

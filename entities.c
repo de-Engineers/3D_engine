@@ -752,7 +752,7 @@ void entities(){
 				break;
 			}
 			case 9:
-				entity.gpu[i].pos = networkplayer[entity.cpu[i].health].pos;
+				entity.gpu[i].pos = networkplayer.player[entity.cpu[i].health].pos;
 				break;
 			default:{
 				UVEC3 entityLuminance = {0,0,0};

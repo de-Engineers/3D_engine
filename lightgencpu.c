@@ -19,7 +19,7 @@ inline void castLightRay(RAY ray,VEC3 color){
     while (ray.ix >= 0 && ray.iy >= 0 && ray.iz >= 0 && ray.ix < 64 && ray.iy < 64 && ray.iz < 64) {
         u32 block = crds2map(ray.ix, ray.iy, ray.iz);
         switch (map[block].id) {
-        case 12:{
+        case BLOCK_CUBE:{
             VEC3 spos = getSubCoords(ray);
             VEC3 mtdt = { (float)metadt[block].g / 255.0f,(float)metadt[block].r / 255.0f,(float)metadt[block].id / 255.0f };
             VEC3 mtdt2 = { (float)metadt2[block].g / 255.0f,(float)metadt2[block].r / 255.0f,(float)metadt2[block].id / 255.0f };

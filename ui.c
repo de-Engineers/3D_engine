@@ -331,36 +331,37 @@ void drawUI(){
 	case 6:{
 		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
 		drawWord("multiplayer",-0.45f,0.42f,0.0f);
-		drawWord("ipaddress 1",-0.45f,-0.07f,0.0f);
-		drawWord("ipaddress 2",-0.45f,-0.14f,0.0f);
-		drawWord("ipaddress 3",-0.45f,-0.21f,0.0f);
-		drawWord("ipaddress 4",-0.45f,-0.28f,0.0f);
+		drawWord("ipaddress 1",-0.45f,-0.14f,0.0f);
+		drawWord("ipaddress 2",-0.45f,-0.21f,0.0f);
+		drawWord("ipaddress 3",-0.45f,-0.28f,0.0f);
+		drawWord("ipaddress 4",-0.45f,-0.35f,0.0f);
+		drawWord("connect",-0.45f,-0.42,0.0f);
 		f32 offset = 0.0f;
-		drawVar(-0.1f,-0.345f,sliderValues.serverIP.p1);
+		drawVar(-0.06f,-0.415f,sliderValues.serverIP.p1);
 		if(sliderValues.serverIP.p1 >= 100){
 			offset += 0.06f;
 		}
 		else if(sliderValues.serverIP.p1 >= 10){
 			offset += 0.03f;
 		}
-		drawWord("x",-0.038f+offset,-0.345f,0.0f);
-		drawVar(-0.04f+offset,-0.345f,sliderValues.serverIP.p2);
+		drawWord("x",0.002f+offset,-0.415f,0.0f);
+		drawVar(0.0f+offset,-0.415f,sliderValues.serverIP.p2);
 		if(sliderValues.serverIP.p2 >= 100){
 			offset += 0.06f;
 		}
 		else if(sliderValues.serverIP.p2 >= 10){
 			offset += 0.03f;
 		}
-		drawWord("x",0.022f+offset,-0.345f,0.0f);
-		drawVar(0.02f+offset,-0.345f,sliderValues.serverIP.p3);
+		drawWord("x",0.062f+offset,-0.415f,0.0f);
+		drawVar(0.06f+offset,-0.415f,sliderValues.serverIP.p3);
 		if(sliderValues.serverIP.p3 >= 100){
 			offset += 0.06f;
 		}
 		else if(sliderValues.serverIP.p3 >= 10){
 			offset += 0.03f;
 		}
-		drawWord("x",0.082f+offset,-0.345f,0.0f);
-		drawVar(0.08f+offset,-0.345f,sliderValues.serverIP.p4);
+		drawWord("x",0.122f+offset,-0.415f,0.0f);
+		drawVar(0.12f+offset,-0.415f,sliderValues.serverIP.p4);
 		if(sliderValues.serverIP.p4 >= 100){
 			offset += 0.06f;
 		}
@@ -370,6 +371,49 @@ void drawUI(){
 		updateMouse();
 		break;
 	}
+	case 7:
+		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
+		drawWord("joining server",-0.45f,0.42f,0.0f);
+		switch(connectStatus){
+		case 1:
+			drawWord("connecting",-0.45f,0.35f,0.0f);
+			break;
+		case 2:
+			drawWord("downloading miscelanious data",-0.45f,0.35f,0.0f);
+			break;
+		case 3:
+			drawWord("downloading map",-0.45f,0.35f,0.0f);
+			break;
+		case 4:
+			drawWord("downloading metadatamap1",-0.45f,0.35f,0.0f);
+			break;
+		case 5:
+			drawWord("downloading metadatamap2",-0.45f,0.35f,0.0f);
+			break;
+		case 6:
+			drawWord("downloading metadatamap3",-0.45f,0.35f,0.0f);
+			break;
+		case 7:
+			drawWord("downloading metadatamap4",-0.45f,0.35f,0.0f);
+			break;
+		case 8:
+			drawWord("downloading metadatamap5",-0.45f,0.35f,0.0f);
+			break;
+		case 9:
+			drawWord("downloading metadatamap6",-0.45f,0.35f,0.0f);
+			break;
+		case 10:
+			drawWord("downloading pointermap",-0.45f,0.35f,0.0f);
+			break;
+		case 11:
+			drawWord("downloading lightmap",-0.45f,0.35f,0.0f);
+			break;
+		case 12:
+			drawWord("connected",-0.45f,0.35f,0.0f);
+			break;
+		}
+		updateMouse();
+		break;
 	}
 	}
 	for(u32 i = 0;i < buttonC;i++){

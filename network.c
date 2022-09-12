@@ -12,19 +12,37 @@ SOCKADDR_IN tcpAddress;
 u8 networkSettings;
 
 u8 networkplayerC;
-NETWORKPLAYER networkplayer[8];
+NETWORKDATA networkplayer;
 
 NETWORKPLAYER networkthis;
 
 u32 networkID;
 
+u8 connectStatus;
+
+void lagCompensation(){
+	Sleep(15);
+	for(;;){
+		for(u32 i = 0;i < networkplayerC;i++){
+			VEC3addVEC3(&networkplayer.player[i].pos,networkplayer.lagcomp[i].vel);
+		}
+		Sleep(15);
+	}
+}
+
 void serverRecv(){
 	u8 packetID = 0;
 	for(;;){
+		HANDLE lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
 		recv(tcpSock,&packetID,1,0);
+		TerminateThread(lagCompensationThread,0);
+		for(u32 i = 0;i < networkplayerC;i++){
+			networkplayer.lagcomp[i].vel = VEC3subVEC3R(networkplayer.player[i].pos,networkplayer.lagcomp[i].posBuf);
+			networkplayer.lagcomp[i].posBuf = networkplayer.player[i].pos;
+		}
 		switch(packetID){
 		case 0:
-			recv(tcpSock,networkplayer,networkplayerC*sizeof(NETWORKPLAYER),0);
+			recv(tcpSock,&networkplayer.player,networkplayerC*sizeof(NETWORKPLAYER),0);
 			break;
 		case 1:
 			spawnPlayer(networkplayerC);
@@ -44,6 +62,7 @@ void serverRecv(){
 }
 
 void networking(){
+	connectStatus++;
 	WSAStartup(MAKEWORD(2, 2),&wsadata);
 	tcpSock = socket(AF_INET,SOCK_STREAM,0);
 
@@ -55,7 +74,7 @@ void networking(){
 	tcpAddress.sin_addr.S_un.S_un_b.s_b4 = sliderValues.serverIP.p4;
 
 	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress))){}
-
+	connectStatus++;
 	networkSettings |= 0x01;
 	printf("connected\n");
 	
@@ -90,18 +109,34 @@ void networking(){
 	lmap       = HeapAlloc(GetProcessHeap(),8,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
 
 	printf("%i\n",lmap);
-
+	connectStatus++;
 	recv(tcpSock,map,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+
+	connectStatus++;
 	recv(tcpSock,metadt,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+
+	connectStatus++;
 	recv(tcpSock,metadt2,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+
+	connectStatus++;
 	recv(tcpSock,metadt3,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+
+	connectStatus++;
 	recv(tcpSock,metadt4,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
-	recv(tcpSock,metadt5,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);	
+
+	connectStatus++;
+	recv(tcpSock,metadt5,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+
+	connectStatus++;
 	recv(tcpSock,metadt6,properties->lvlSz*properties->lvlSz*properties->lvlSz*4,MSG_WAITALL);
+
+	connectStatus++;
 	recv(tcpSock,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),MSG_WAITALL);
+	connectStatus++;
 	printf("%i\n",lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
 	Sleep(1000);
 	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,MSG_WAITALL);
+	connectStatus++;
 	printf("loaded\n");
 	for(u32 i = 0;i < networkplayerC;i++){
 		spawnPlayer(i);
