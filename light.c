@@ -657,13 +657,14 @@ void updateLight2(){
 			}
 		}
 	}
+
+	playerspawnC = 0;
 	for(u32 i = 0;i < BLOCKCOUNT;i++){
 		switch(map[i].id){
 		case BLOCK_SPAWN:{
 			CVEC3 spwncrd = map2crds(i);
-			player->spawn.x = (f32)spwncrd.x+0.5f;
-			player->spawn.y = (f32)spwncrd.y+0.5f;
-			player->spawn.z = (f32)spwncrd.z+2.0f;
+			playerspawn[playerspawnC] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.0f};
+			playerspawnC++;
 			break;
 		}
 		case BLOCK_CUBE:

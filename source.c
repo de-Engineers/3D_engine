@@ -77,11 +77,19 @@ HWND window;
 HDC dc;
 MSG Msg;
 
+u8 playerspawnC;
+VEC3 playerspawn[16];
+
 i16 offsetB = -1;
 
 void playerDeath(){
 	player->wounded = 0;
-	player->pos = player->spawn;
+	if(playerspawnC){
+		player->pos = playerspawn[abs(irnd())%(playerspawnC)];
+	}
+	else{
+		player->pos = (VEC3){5.5f,5.5f,2.8f};
+	}
 	player->vel = (VEC3){0.0f,0.0f,0.0f};
 	entityC = 0;
 	for(u32 i = 0;i < turretC;i++){
@@ -310,9 +318,8 @@ void levelLoad(char *lname){
 		switch(map[i].id){
 		case BLOCK_SPAWN:{
 			CVEC3 spwncrd = map2crds(i);
-			player->spawn.x = (f32)spwncrd.x+0.5f;
-			player->spawn.y = (f32)spwncrd.y+0.5f;
-			player->spawn.z = (f32)spwncrd.z+2.25f;
+			playerspawn[playerspawnC] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.25f};
+			playerspawnC++;
 			break;
 		}
 		case BLOCK_CUBE:
@@ -359,9 +366,11 @@ void mainMenuLoad(){
 	buttonCreate((VEC2){-0.059f,-0.26f},2);
 	buttonCreate((VEC2){-0.059f,-0.19f},3);
 	buttonCreate((VEC2){-0.059f,-0.12f},8);
-	buttonCreate((VEC2){-0.019f,-0.05f},4);
-	buttonCreate((VEC2){-0.059f,-0.05f},5);
-	buttonCreate((VEC2){-0.059f,0.02f},9);
+	buttonCreate((VEC2){-0.059f,-0.05f},9);
+	if((settings&SETTINGS_GAMEPLAY)==0){
+		buttonCreate((VEC2){-0.059f,0.02f},5);
+		buttonCreate((VEC2){-0.019f,0.02f},4);
+	}
 }
 
 long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
@@ -630,31 +639,29 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		break;
 		}
 	case WM_LBUTTONDOWN:
-		if(~settings & SETTINGS_GAMEPLAY){
-			switch(menuSel){
-			case 0:
-				tools();
-				break;
-			default:
-				if(buttonId!=-1){
-					if(buttonId<100){
-						buttons[buttonId]();
-					}
-					else if (buttonId < 110){
-						levelLoad(fileNames.str[buttonId-100]);
-					}
-					else{
-						levelDelete(fileNames.str[buttonId-110]);
-						menuSel = 1;
-						buttonC = 0;
-						buttonCreate((VEC2){0.05f,-0.35f},1);
-						buttonCreate((VEC2){0.05f,-0.42f},0);
-						buttonCreate((VEC2){0.05f,-0.28f},2);
-						buttonCreate((VEC2){0.05f,-0.21f},3);
-					}
+		switch(menuSel){
+		case 0:
+			tools();
+			break;
+		default:
+			if(buttonId!=-1){
+				if(buttonId<100){
+					buttons[buttonId]();
 				}
-				break;
+				else if (buttonId < 110){
+					levelLoad(fileNames.str[buttonId-100]);
+				}
+				else{
+					levelDelete(fileNames.str[buttonId-110]);
+					menuSel = 1;
+					buttonC = 0;
+					buttonCreate((VEC2){0.05f,-0.35f},1);
+					buttonCreate((VEC2){0.05f,-0.42f},0);
+					buttonCreate((VEC2){0.05f,-0.28f},2);
+					buttonCreate((VEC2){0.05f,-0.21f},3);
+				}
 			}
+			break;
 		}
 		break;
 	case WM_RBUTTONDOWN:
@@ -930,10 +937,6 @@ void main(){
 	player->hitboxHeight = 1.7f;
 	player->hitboxWantedHeight = 1.7f;
 
-	player->spawn.x = 5.5f;
-	player->spawn.y = 5.5f;
-	player->spawn.z = 2.8f;
-
 	renderingThread = CreateThread(0,0,openGL,0,0,0);
 	
 	while(!openglINIT){
@@ -966,7 +969,12 @@ void main(){
 
 	levelgen();
 
-	player->pos = player->spawn;
+	if(playerspawnC){
+		player->pos = playerspawn[abs(irnd())%(playerspawnC)];
+	}
+	else{
+		player->pos = (VEC3){5.5f,5.5f,2.8f};
+	}
 
 	ShowCursor(0);
 

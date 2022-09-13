@@ -120,8 +120,6 @@ typedef struct{
 	f32 ydir;
 	f32 zdir;
 
-	VEC3 spawn;
-
 	f32 stamina;
 
 	f32 hitboxHeight;
@@ -360,6 +358,8 @@ extern u8 networkSettings;
 extern u8 openglINIT;
 extern SLIDERVALUE sliderValues;
 extern HANDLE networkThread;
+extern u8 playerspawnC;
+extern VEC3 playerspawn[16];
 
 extern unsigned char *inputStr;
 

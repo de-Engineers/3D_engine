@@ -129,6 +129,7 @@ void serverConnectButton(){
 	buttonC = 0;
 	sliderC = 0;
 	menuSel = 7;
+	ShowCursor(0);
 }
 
 void (*buttons[32])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton,multiplayerButton,serverConnectButton};

@@ -125,6 +125,9 @@ void hitboxYup(float x,float y,float z){
 }
 
 void playerWorldCollision(){
+	if(player->pos.z < player->hitboxHeight+0.01f){
+		playerDeath();
+	}
 	if(player->stamina < 1.0f){
 		player->stamina+= 0.045f;
 	}
@@ -379,9 +382,6 @@ void playerWorldCollision(){
 			player->vel.y += -0.25f * player->stamina;
 			player->stamina = 0.0f;
 		}
-	}
-	if(player->pos.z < 1.81f){
-		playerDeath();
 	}
 	if(player->hitboxHeight<player->hitboxWantedHeight && player->vel.z > -0.05f){
 		player->hitboxHeight += player->vel.z;

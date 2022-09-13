@@ -165,7 +165,7 @@ void drawDescription(f32 offset){
 		drawWord("areapos y",offset+0.0235f*1,-0.15f,0.0f);
 		drawWord("areapos z",offset+0.0235f*1,-0.10f,0.0f);
 
-		drawWord("size",0.764f,0.15f,0.0f);
+		drawWord("size",offset+0.0235f*6,0.15f,0.0f);
 		break;
 	case BLOCK_GLASS:
 		drawWord("position x",offset,-0.50f,0.0f);
@@ -282,9 +282,11 @@ void drawUI(){
 		drawWord("load world",-0.45f,-0.28f,0.0f);
 		drawWord("create world",-0.45f,-0.35f,0.0f);
 		drawWord("quit",-0.45f,-0.42f,0.0f);
-		drawWord("lightmapsize",-0.45f,-0.07f,-0.0f);
-		drawWord("multiplayer",-0.45f,0.0f,0.0f);
-		drawVar(-0.025f,-0.07f,properties->lmapSzb);
+		drawWord("multiplayer",-0.45f,-0.07f,0.0f);
+		if((settings&SETTINGS_GAMEPLAY)==0){
+			drawWord("lightmapsize",-0.45f,0.0f,-0.0f);
+			drawVar(-0.025f,0.0f,properties->lmapSzb);
+		}
 		updateMouse();
 		break;
 		}

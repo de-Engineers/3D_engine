@@ -2,7 +2,6 @@
 #include "main.h"
 #include "network.h"
 
-
 #pragma comment(lib,"Ws2_32.lib")
 
 WSADATA wsadata;
@@ -33,9 +32,9 @@ void lagCompensation(){
 void serverRecv(){
 	u8 packetID = 0;
 	for(;;){
-		HANDLE lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
+		//HANDLE lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
 		recv(tcpSock,&packetID,1,0);
-		TerminateThread(lagCompensationThread,0);
+		//TerminateThread(lagCompensationThread,0);
 		for(u32 i = 0;i < networkplayerC;i++){
 			networkplayer.lagcomp[i].vel = VEC3subVEC3R(networkplayer.player[i].pos,networkplayer.lagcomp[i].posBuf);
 			networkplayer.lagcomp[i].posBuf = networkplayer.player[i].pos;
@@ -134,7 +133,28 @@ void networking(){
 	recv(tcpSock,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),MSG_WAITALL);
 	connectStatus++;
 	printf("%i\n",lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
-	Sleep(1000);
+
+	playerspawnC = 0;
+	for(u32 i = 0;i < BLOCKCOUNT;i++){
+		switch(map[i].id){
+		case BLOCK_SPAWN:{
+			CVEC3 spwncrd = map2crds(i);
+			playerspawn[playerspawnC] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.25f};
+			playerspawnC++;
+			break;
+		}
+		}
+	}
+
+	if(playerspawnC){
+		player->pos = playerspawn[abs(irnd())%(playerspawnC)];
+	}
+
+	settings &= ~SETTINGS_MOVEMENT;
+	settings &= ~SETTINGS_LIGHTING;
+	settings |= SETTINGS_GAMEPLAY;
+
+	Sleep(500);
 	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,MSG_WAITALL);
 	connectStatus++;
 	printf("loaded\n");
@@ -145,6 +165,7 @@ void networking(){
 	glMesC++;
 	glMes[glMesC].id = 3;
 	glMesC++;
+	menuSel = 0;
 	ResumeThread(physicsThread);
 	ResumeThread(entityThread);
 	CreateThread(0,0,serverRecv,0,0,0);
