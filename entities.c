@@ -320,7 +320,6 @@ VEC3 PointBoxNormal(VEC3 spherePos,VEC3 boxPos,VEC3 boxSz){
 		}
 		else if(p.y > boxSz.y){
 			if(p.z < 0.0f){
-				ExitProcess(0);
 				VEC2 r = VEC2normalize(VEC2subVEC2R((VEC2){spherePos.y,spherePos.z},(VEC2){boxPos.y,boxPos.z}));
 				return (VEC3){0.0f,r.x,r.y};
 			}
@@ -410,12 +409,13 @@ void SphereMapCollision(IVEC3 ePos,u32 i){
 			for(i32 i4 = -1;i4 < 2;i4++){
 				switch(map[crds2map(ePos.x+i2,ePos.y+i3,ePos.z+i4)].id){
 				case BLOCK_REFLECTIVE:
-				case BLOCK_SOLID:
+				case BLOCK_SOLID:{
 					VEC4 p = PointBoxCollision(entity.gpu[i].pos,(VEC3){ePos.x+i2,ePos.y+i3,ePos.z+i4},(VEC3){1.0f,1.0f,1.0f});
 					if(p.x < entity.gpu[i].rad){
 						entityDeath(i);
 					}
 					break;
+				}
 				}
 			}
 		}
@@ -494,7 +494,7 @@ void entities(){
 					for(i32 i3 = -1;i3 < 2;i3++){
 						for(i32 i4 = -1;i4 < 2;i4++){
 							switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z+i4)].id){
-							case BLOCK_SOLID:
+							case BLOCK_SOLID:{
 								VEC4 p = PointBoxCollision(entity.gpu[i].pos,(VEC3){ss.x+i2+0.5f,ss.y+i3+0.5f,ss.z+i4+0.5f},(VEC3){0.5f,0.5f,0.5f});
 								if(p.x < entity.gpu[i].rad){
 									VEC2 rp = VEC2normalize(VEC2subVEC2R((VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y},(VEC2){player->pos.x,player->pos.y}));
@@ -538,6 +538,7 @@ void entities(){
 									goto end2;
 								}
 								break;
+							}
 							}
 						}
 					}
@@ -631,36 +632,39 @@ void entities(){
 					for(i32 i3 = -1;i3 < 2;i3++){
 						for(i32 i4 = -1;i4 < 2;i4++){
 							switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z+i4)].id){
-							case BLOCK_SOLID:
+							case BLOCK_SOLID:{
 								VEC4 p = PointBoxCollision(entity.gpu[i].pos,(VEC3){ss.x+i2+0.5f,ss.y+i3+0.5f,ss.z+i4+0.5f},(VEC3){0.5f,0.5f,0.5f});
 								if(p.x < entity.gpu[i].rad){
-									VEC3 ps = VEC3subR((VEC3){p.y,p.z,p.w},p.x);
-									ps = VEC3absR(ps);
-									switch(map[crds2map(ss.x,ss.y+i3,ss.z+i4)].id){
-									case BLOCK_SOLID:
-										break;
-									default:
-										axisE |= 0x01;
-										depth[0] = PointBoxNormal(entity.gpu[i].pos,(VEC3){ss.x+i2,ss.y+i3,ss.z+i4},(VEC3){1.0f,1.0f,1.0f});
-										break;
+									VEC3 pnorm = PointBoxNormal(entity.gpu[i].pos,(VEC3){ ss.x+i2,ss.y+i3,ss.z+i4 },(VEC3){ 1.0f,1.0f,1.0f });
+									if(fabsf(p.x) > fabsf(p.y)){
+										if(fabsf(p.x) > fabsf(p.x)){
+											if(fabsf(depth[0].x) < fabsf(pnorm.x)){
+												axisE |= 0x01;
+												depth[0] = pnorm;
+											}
+										}
+										else{
+											if(fabsf(depth[2].z) < fabsf(pnorm.z)){
+												axisE |= 0x04;
+												depth[2] = pnorm;
+											}
+										}
 									}
-									switch(map[crds2map(ss.x+i2,ss.y,ss.z+i4)].id){
-									case BLOCK_SOLID:
-										break;
-									default:
-										axisE |= 0x02;
-										depth[1] = PointBoxNormal(entity.gpu[i].pos,(VEC3){ss.x+i2,ss.y+i3,ss.z+i4},(VEC3){1.0f,1.0f,1.0f});
-										break;
+									else if(fabsf(p.y) > fabsf(p.z)){
+										if(fabsf(depth[1].y) < fabsf(pnorm.y)){
+											axisE |= 0x02;
+											depth[1] = pnorm;
+										}
 									}
-									switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z)].id){
-									case BLOCK_SOLID:
-										break;
-									default:
-										axisE |= 0x04;
-										depth[2] = PointBoxNormal(entity.gpu[i].pos,(VEC3){ss.x+i2,ss.y+i3,ss.z+i4},(VEC3){1.0f,1.0f,1.0f});
-									}						
+									else{
+										if(fabsf(depth[2].z) < fabsf(pnorm.z)){
+											axisE |= 0x04;
+											depth[2] = pnorm;
+										}
+									}					
 								}
 								break;
+							}
 							}
 						}
 					}
@@ -668,17 +672,17 @@ void entities(){
 				if(axisE&0x01){
 					entity.gpu[i].pos.x -= entity.cpu[i].vel.x;
 					entity.cpu[i].vel = VEC3reflect(entity.cpu[i].vel,depth[0]);
-					VEC3mul(&entity.cpu[i].vel,0.96f);
+					entity.cpu[i].vel.x *= 0.8f;
 				}
 				if(axisE&0x02){
 					entity.gpu[i].pos.y -= entity.cpu[i].vel.y;
 					entity.cpu[i].vel = VEC3reflect(entity.cpu[i].vel,depth[1]);
-					VEC3mul(&entity.cpu[i].vel,0.96f);
+					entity.cpu[i].vel.y *= 0.8f;
 				}
 				if(axisE&0x04){
 					entity.gpu[i].pos.z -= entity.cpu[i].vel.z;
 					entity.cpu[i].vel = VEC3reflect(entity.cpu[i].vel,depth[2]);
-					VEC3mul(&entity.cpu[i].vel,0.96f);
+					entity.cpu[i].vel.z *= 0.8f;
 				}
 				entity.cpu[i].vel.z -= 0.015f;
 				for(u32 i2 = i+1;i2 < entityC;i2++){
