@@ -736,12 +736,12 @@ void openGL(){
 				for(u32 i = 0;i < entityC;i++){
 					switch(entity.cpu[i].id){
 					case 4:
-						entity.gpu[i].pos.x = player->pos.x-player->xdir*player->xydir/16.0f;
-						entity.gpu[i].pos.y = player->pos.y-player->ydir*player->xydir/16.0f;
-						entity.gpu[i].pos.z = player->pos.z-player->zdir/16.0f-0.1f;
-						entity.gpu[i].pos2.x = cosf(player->xangle)*cosf(player->yangle)/4.0f;
-						entity.gpu[i].pos2.y = sinf(player->xangle)*cosf(player->yangle)/4.0f;
-						entity.gpu[i].pos2.z = sinf(player->yangle)/4.0f;
+						entity.gpu[i].pos.x = player->pos.x + player->xdir*player->zdir/16.0f;
+						entity.gpu[i].pos.y = player->pos.y + player->ydir*player->zdir/16.0f;
+						entity.gpu[i].pos.z = player->pos.z - player->xydir/16.0f;
+						entity.gpu[i].pos2.x = player->xdir*player->xydir/4.0f/((f32)player->shotCooldown/25.0f+1.0f);
+						entity.gpu[i].pos2.y = player->ydir*player->xydir/4.0f/((f32)player->shotCooldown/25.0f+1.0f);
+						entity.gpu[i].pos2.z = player->zdir/4.0f/((f32)player->shotCooldown/25.0f+1.0f);
 						if(entity.cpu[i].aniTime){
 							entity.cpu[i].aniTime--;
 							switch(entity.cpu[i].aniType){

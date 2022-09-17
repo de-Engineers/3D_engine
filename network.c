@@ -21,6 +21,10 @@ u8 connectStatus;
 
 HANDLE lagCompensationThread;
 
+u8 packetID;
+
+PACKETDATA packetdata;
+
 void lagCompensation(){
 	while(connectStatus){
 		for(u32 i = 0;i < networkplayerC;i++){
@@ -56,6 +60,12 @@ void serverRecv(){
 				}
 			}
 			break;
+		case 3:{
+			PACKETDATA packetDataIn;
+			recv(tcpSock,&packetDataIn,sizeof(PACKETDATA),0);
+			spawnEntityEx(packetDataIn.pos1,packetDataIn.pos2,(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.1f,0.1f});
+			break;
+		}
 		}
 	}
 }
@@ -63,8 +73,6 @@ void serverRecv(){
 void networking(){
 	WSAStartup(MAKEWORD(2, 2),&wsadata);
 	tcpSock = socket(AF_INET,SOCK_STREAM,0);
-
-	setsockopt(tcpSock,IPPROTO_TCP,TCP_NODELAY,1,sizeof(DWORD));
 
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
@@ -168,10 +176,21 @@ void networking(){
 	ResumeThread(physicsThread);
 	ResumeThread(entityThread);
 	CreateThread(0,0,serverRecv,0,0,0);
+
+	player->weaponEquiped = 1;
+	spawnEntityEx((VEC3){player->pos.x+player->xdir,player->pos.y+player->ydir,player->pos.z},(VEC3){0.1f,0.1f,-0.3f},(VEC3){0.0f,0.0f,0.0f},4,(VEC3){0.0f,0.04f,0.0f});
+
 	for(;;){
 		networkthis.pos = player->pos;
 		networkthis.pos.z += 0.2f;
 		networkthis.rot = player->xangle;
+		send(tcpSock,&packetID,1,0);
+		switch(packetID){
+		case 1:
+			send(tcpSock,&packetdata,sizeof(PACKETDATA),0);
+			packetID = 0;
+			break;
+		}
 		send(tcpSock,&networkthis,sizeof(NETWORKPLAYER),0);
 		Sleep(30);
 	}

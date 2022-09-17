@@ -20,6 +20,16 @@ typedef struct{
 	NETWORKPLAYER player[MAXPLAYERS];
 }NETWORKDATA;
 
+typedef struct{
+	VEC3 pos1;
+	VEC3 pos2;
+}PACKETDATA;
+
 extern NETWORKDATA networkplayer;
+
+extern PACKETDATA packetdata;
+
 extern u8 networkplayerC;
 extern u8 connectStatus;
+
+extern u8 packetID;

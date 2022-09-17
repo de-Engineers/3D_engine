@@ -1,8 +1,10 @@
-﻿#include "main.h"
-#include <windows.h>
+﻿#include <windows.h>
 #include <math.h>
 #include <intrin.h>
 #include <stdio.h>
+
+#include "main.h"
+#include "network.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -783,15 +785,7 @@ void physics(){
 					case 1:
 						if(!player->shotCooldown){
 							RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
-							i32 l = getLmapLocation(&ray);
-							if(l!=-1){
-								lmap[l].r /= 2.0f;
-								lmap[l].g /= 2.0f;
-								lmap[l].b /= 2.0f;
-								glMes[glMesC].data1 = l;
-								glMes[glMesC].id = 7;
-								glMesC++;
-							}
+							getLmapLocation(&ray);
 							for(u32 i = 0;i < entityC;i++){
 								if(entity.cpu[i].id==4){
 									spawnEntity((VEC3){player->pos.x,player->pos.y,player->pos.z-0.1f},VEC3mulR((VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f},1.5f),0);
@@ -801,12 +795,15 @@ void physics(){
 									break;
 								}
 							}
-							for(u32 i = 0;i < 5;i++){
-								spawnEntity(getCoords(ray),(VEC3){(rnd()-1.5f)/8.0f,(rnd()-1.5f)/8.0f,(rnd()-1.5f)/8.0f},6);
+							spawnEntityEx(VEC3subVEC3R(player->pos,(VEC3){0.0f,0.0f,0.2f}),VEC3subVEC3R(getCoords(ray),player->pos),(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.2f,0.2f});
+							player->shotCooldown = 50;
+							if(connectStatus){
+								packetID = 1;
+								packetdata.pos1 = player->pos;
+								packetdata.pos2 = VEC3subVEC3R(getCoords(ray),player->pos);
 							}
-							player->shotCooldown = 25;
 						}
-						break;
+						break;	
 					}
 				}
 				if(player->shotCooldown){
@@ -883,7 +880,7 @@ void physics(){
 		}
 		player->vel.z /= 1.003f;
 		tick++;
-		if(properties->lmapSz){
+		if(settings&SETTINGS_LIGHTING){
 			HDR();
 		}
 		Sleep(15);

@@ -142,6 +142,12 @@ void spawnEntityEx(VEC3 pos,VEC3 pos2,VEC3 vel,u8 id,VEC3 color){
 		entity.cpu[entityC].pos = VEC3addVEC3R(pos,(VEC3){0.25f,0.0f,0.0f});
 		entity.gpu[entityC].id = 2;
 		break;
+	case 10:
+		entity.gpu[entityC].rad = 0.05f;
+		entity.gpu[entityC].pos2 = pos2;
+		entity.cpu[entityC].health = 5;
+		entity.gpu[entityC].id = 1;
+		break;
 	}
 	entityC++;
 }
@@ -481,6 +487,7 @@ void entities(){
 				}
 				break;
 			case 2:
+			case 10:
 				if(entity.cpu[i].health){
 					entity.cpu[i].health--;
 				}
