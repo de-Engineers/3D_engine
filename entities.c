@@ -75,18 +75,26 @@ i32 getLmapLocation(RAY *ray){
 void spawnPlayer(u8 id){
 	for(u32 i = 0;i < ENTITYTEXTSZ;i++){
 		for(u32 i2 = 0;i2 < ENTITYTEXTSZ;i2++){
-			u8 b = irnd();
-			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].r = b;
-			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].g = b;
-			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].b = b;
+			u8 b = (irnd() & 0xff) / 2 + 127;
+			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2] = (RGB){b,b,b};
 		}
 	}
+		
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+13*ENTITYTEXTSZ+23] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+13*ENTITYTEXTSZ+25] = (RGB){255,0,0};
+
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+11*ENTITYTEXTSZ+22] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+10*ENTITYTEXTSZ+23] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+10*ENTITYTEXTSZ+24] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+10*ENTITYTEXTSZ+25] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+11*ENTITYTEXTSZ+26] = (RGB){255,0,0};
+
 	entity.gpu[entityC].rad = 0.2f;
-	entity.gpu[entityC].pos2 = (VEC3){0.0f,0.0f,-1.0f};
+	entity.gpu[entityC].pos2 = (VEC3){0.0f,0.0f,-1.8f};
 	entity.gpu[entityC].id = 3;
 	entity.cpu[entityC].id = 9;
-	entity.gpu[entityC].color = (VEC3){0.7f,0.1f,0.1f};
-	entity.cpu[entityC].baseColor = (VEC3){0.7f,0.1f,0.1f};
+	entity.gpu[entityC].color = (VEC3){0.5f,0.5f,0.5f};
+	entity.cpu[entityC].baseColor = (VEC3){0.5f,0.5f,0.5f};
 	entity.cpu[entityC].playerid = id;
 	entity.gpu[entityC].tId = entityC;
 	entityC++;
@@ -432,6 +440,27 @@ void SphereMapCollision(IVEC3 ePos,u32 i){
 	}
 }
 
+void calculateLuminance(u8 id){
+	UVEC3 entityLuminance = {0,0,0};
+	u32 hits = 0;
+	for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
+		for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
+			RAY ray = rayCreate(entity.gpu[id].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
+			rayItterate(&ray);
+			i32 l = getLmapLocation(&ray);
+			if(l != -1){
+				entityLuminance.r += lmap[l].r;
+				entityLuminance.g += lmap[l].g;
+				entityLuminance.b += lmap[l].b;
+				hits++;
+			}
+		}
+	}
+	entity.gpu[id].color.r = (f32)entityLuminance.r/hits*entity.cpu[id].baseColor.r / (brightness+1.0f)*4.0f;
+	entity.gpu[id].color.g = (f32)entityLuminance.g/hits*entity.cpu[id].baseColor.g / (brightness+1.0f)*4.0f;
+	entity.gpu[id].color.b = (f32)entityLuminance.b/hits*entity.cpu[id].baseColor.b / (brightness+1.0f)*4.0f;
+}
+
 void entities(){
 	for(;;){
 		for(u32 i = 0;i < entityC;i++){
@@ -567,24 +596,7 @@ void entities(){
 						playerDeath();
 					}
 				}
-				UVEC3 entityLuminance = {0,0,0};
-				u32 hits = 0;
-				for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
-					for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
-						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
-						rayItterate(&ray);
-						i32 l = getLmapLocation(&ray);
-						if(l != -1){
-							entityLuminance.r += lmap[l].r;
-							entityLuminance.g += lmap[l].g;
-							entityLuminance.b += lmap[l].b;
-							hits++;
-						}
-					}
-				}
-				entity.gpu[i].color.r = (f32)entityLuminance.r/hits*entity.cpu[i].baseColor.r / (brightness+1.0f)*4.0f;
-				entity.gpu[i].color.g = (f32)entityLuminance.g/hits*entity.cpu[i].baseColor.g / (brightness+1.0f)*4.0f;
-				entity.gpu[i].color.b = (f32)entityLuminance.b/hits*entity.cpu[i].baseColor.b / (brightness+1.0f)*4.0f;
+				calculateLuminance(i);
 				break;
 			}
 			case 6:
@@ -745,49 +757,16 @@ void entities(){
 					player->vel.x = temp.x;
 					player->vel.y = temp.y;
 				}
-				UVEC3 entityLuminance = {0,0,0};
-				u32 hits = 0;
-				for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
-					for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
-						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
-						rayItterate(&ray);
-						i32 l = getLmapLocation(&ray);
-						if(l != -1){
-							entityLuminance.r += lmap[l].r;
-							entityLuminance.g += lmap[l].g;
-							entityLuminance.b += lmap[l].b;
-							hits++;
-						}
-					}
-				}
-				entity.gpu[i].color.r = (f32)entityLuminance.r/hits*entity.cpu[i].baseColor.r / (brightness+1.0f)*4.0f;
-				entity.gpu[i].color.g = (f32)entityLuminance.g/hits*entity.cpu[i].baseColor.g / (brightness+1.0f)*4.0f;
-				entity.gpu[i].color.b = (f32)entityLuminance.b/hits*entity.cpu[i].baseColor.b / (brightness+1.0f)*4.0f;
+				calculateLuminance(i);
 				break;
 			}
 			case 9:
 				entity.gpu[i].pos = networkplayer.player[entity.cpu[i].playerid].pos;
-				entity.gpu[i].srot.x = networkplayer.player[entity.cpu[i].playerid].rot;
+				entity.gpu[i].srot.x = -networkplayer.player[entity.cpu[i].playerid].rot;
+				calculateLuminance(i);
 				break;
 			default:{
-				UVEC3 entityLuminance = {0,0,0};
-				u32 hits = 0;
-				for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
-					for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
-						RAY ray = rayCreate(entity.gpu[i].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
-						rayItterate(&ray);
-						i32 l = getLmapLocation(&ray);
-						if(l != -1){
-							entityLuminance.r += lmap[l].r;
-							entityLuminance.g += lmap[l].g;
-							entityLuminance.b += lmap[l].b;
-							hits++;
-						}
-					}
-				}
-				entity.gpu[i].color.r = entityLuminance.r/hits;
-				entity.gpu[i].color.g = entityLuminance.g/hits;
-				entity.gpu[i].color.b = entityLuminance.b/hits;
+				calculateLuminance(i);
 				break;
 			}
 			}

@@ -170,6 +170,7 @@ void networking(){
 	CreateThread(0,0,serverRecv,0,0,0);
 	for(;;){
 		networkthis.pos = player->pos;
+		networkthis.pos.z += 0.2f;
 		networkthis.rot = player->xangle;
 		send(tcpSock,&networkthis,sizeof(NETWORKPLAYER),0);
 		Sleep(30);
