@@ -73,15 +73,25 @@ i32 getLmapLocation(RAY *ray){
 }
 
 void spawnPlayer(u8 id){
+	for(u32 i = 0;i < ENTITYTEXTSZ;i++){
+		for(u32 i2 = 0;i2 < ENTITYTEXTSZ;i2++){
+			u8 b = irnd();
+			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].r = b;
+			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].g = b;
+			entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+i*ENTITYTEXTSZ+i2].b = b;
+		}
+	}
 	entity.gpu[entityC].rad = 0.2f;
 	entity.gpu[entityC].pos2 = (VEC3){0.0f,0.0f,-1.0f};
-	entity.gpu[entityC].id = 2;
+	entity.gpu[entityC].id = 3;
 	entity.cpu[entityC].id = 9;
 	entity.gpu[entityC].color = (VEC3){0.7f,0.1f,0.1f};
 	entity.cpu[entityC].baseColor = (VEC3){0.7f,0.1f,0.1f};
-	entity.cpu[entityC].health = id;
+	entity.cpu[entityC].playerid = id;
 	entity.gpu[entityC].tId = entityC;
 	entityC++;
+	glMes[glMesC].id = 12;
+	glMesC++;
 }
 
 void spawnEntityEx(VEC3 pos,VEC3 pos2,VEC3 vel,u8 id,VEC3 color){
@@ -756,7 +766,8 @@ void entities(){
 				break;
 			}
 			case 9:
-				entity.gpu[i].pos = networkplayer.player[entity.cpu[i].health].pos;
+				entity.gpu[i].pos = networkplayer.player[entity.cpu[i].playerid].pos;
+				entity.gpu[i].srot.x = networkplayer.player[entity.cpu[i].playerid].rot;
 				break;
 			default:{
 				UVEC3 entityLuminance = {0,0,0};
@@ -801,10 +812,3 @@ void entities(){
 		Sleep(15);
 	}
 }
-
-
-
-
-
-
-

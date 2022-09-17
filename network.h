@@ -7,6 +7,7 @@
 
 typedef struct{
 	VEC3 pos;
+	f32 rot;
 }NETWORKPLAYER;
 
 typedef struct{

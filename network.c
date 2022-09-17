@@ -19,9 +19,10 @@ u32 networkID;
 
 u8 connectStatus;
 
+HANDLE lagCompensationThread;
+
 void lagCompensation(){
-	Sleep(15);
-	for(;;){
+	while(connectStatus){
 		for(u32 i = 0;i < networkplayerC;i++){
 			VEC3addVEC3(&networkplayer.player[i].pos,networkplayer.lagcomp[i].vel);
 		}
@@ -31,12 +32,11 @@ void lagCompensation(){
 
 void serverRecv(){
 	u8 packetID = 0;
+	//lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
 	for(;;){
-		//HANDLE lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
 		recv(tcpSock,&packetID,1,0);
-		//TerminateThread(lagCompensationThread,0);
 		for(u32 i = 0;i < networkplayerC;i++){
-			networkplayer.lagcomp[i].vel = VEC3subVEC3R(networkplayer.player[i].pos,networkplayer.lagcomp[i].posBuf);
+			networkplayer.lagcomp[i].vel = VEC3subVEC3R(networkplayer.lagcomp[i].posBuf,networkplayer.player[i].pos);
 			networkplayer.lagcomp[i].posBuf = networkplayer.player[i].pos;
 		}
 		switch(packetID){
@@ -61,9 +61,10 @@ void serverRecv(){
 }
 
 void networking(){
-	connectStatus++;
 	WSAStartup(MAKEWORD(2, 2),&wsadata);
 	tcpSock = socket(AF_INET,SOCK_STREAM,0);
+
+	setsockopt(tcpSock,IPPROTO_TCP,TCP_NODELAY,1,sizeof(DWORD));
 
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
@@ -132,7 +133,6 @@ void networking(){
 	connectStatus++;
 	recv(tcpSock,lpmap,properties->lvlSz*properties->lvlSz*properties->lvlSz*sizeof(LPMAP),MSG_WAITALL);
 	connectStatus++;
-	printf("%i\n",lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB));
 
 	playerspawnC = 0;
 	for(u32 i = 0;i < BLOCKCOUNT;i++){
@@ -154,8 +154,7 @@ void networking(){
 	settings &= ~SETTINGS_LIGHTING;
 	settings |= SETTINGS_GAMEPLAY;
 
-	Sleep(500);
-	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),0,MSG_WAITALL);
+	recv(tcpSock,lmap,lmapC*properties->lmapSz*properties->lmapSz*sizeof(EXRGB),MSG_WAITALL);
 	connectStatus++;
 	printf("loaded\n");
 	for(u32 i = 0;i < networkplayerC;i++){
@@ -171,7 +170,8 @@ void networking(){
 	CreateThread(0,0,serverRecv,0,0,0);
 	for(;;){
 		networkthis.pos = player->pos;
+		networkthis.rot = player->xangle;
 		send(tcpSock,&networkthis,sizeof(NETWORKPLAYER),0);
-		Sleep(15);
+		Sleep(30);
 	}
 }

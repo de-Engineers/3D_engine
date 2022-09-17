@@ -202,7 +202,10 @@ typedef struct{
 	VEC3 vel;
 	u8   id;
 	f32  playerDist;
-	u8   health;
+	union{
+		u8 health;
+		u8 playerid;
+	};
 	VEC3 pos;
 	VEC3 baseColor;
 	u8   aniType;
