@@ -80,14 +80,14 @@ void spawnPlayer(u8 id){
 		}
 	}
 		
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+13*ENTITYTEXTSZ+23] = (RGB){255,0,0};
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+13*ENTITYTEXTSZ+25] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+26*ENTITYTEXTSZ+23] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+26*ENTITYTEXTSZ+25] = (RGB){255,0,0};
 
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+11*ENTITYTEXTSZ+22] = (RGB){255,0,0};
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+10*ENTITYTEXTSZ+23] = (RGB){255,0,0};
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+10*ENTITYTEXTSZ+24] = (RGB){255,0,0};
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+10*ENTITYTEXTSZ+25] = (RGB){255,0,0};
-	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+11*ENTITYTEXTSZ+26] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+24*ENTITYTEXTSZ+22] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+23*ENTITYTEXTSZ+23] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+23*ENTITYTEXTSZ+24] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+23*ENTITYTEXTSZ+25] = (RGB){255,0,0};
+	entityTexture[entityC*ENTITYTEXTSZ*ENTITYTEXTSZ+24*ENTITYTEXTSZ+26] = (RGB){255,0,0};
 
 	entity.gpu[entityC].rad = 0.2f;
 	entity.gpu[entityC].pos2 = (VEC3){0.0f,0.0f,-1.8f};
@@ -487,7 +487,6 @@ void entities(){
 				}
 				break;
 			case 2:
-			case 10:
 				if(entity.cpu[i].health){
 					entity.cpu[i].health--;
 				}
@@ -495,6 +494,26 @@ void entities(){
 					entityDeath(i);
 				}
 				break;
+			case 10:{
+				f32 laserLenght = VEC3length(entity.gpu[i].pos2);
+				VEC3 laserDirNorm = VEC3mulR(VEC3normalize(entity.gpu[i].pos2),0.05f);
+				VEC3 laserPos = entity.gpu[i].pos;
+				for(f32 i2 = 0.0f;i2 < laserLenght;i2+=0.05f){
+					if(laserPos.x < player->pos.x+0.2f && laserPos.x > player->pos.x-0.2f && 
+					laserPos.y < player->pos.y+0.2f && laserPos.y > player->pos.y-0.2f && 
+					laserPos.z < player->pos.z+0.2f && laserPos.z > player->pos.z-0.2f){
+						playerDeath();
+					}
+					VEC3addVEC3(&laserPos,laserDirNorm);
+				}
+				if(entity.cpu[i].health){
+					entity.cpu[i].health--;
+				}
+				else{
+					entityDeath(i);
+				}
+				break;
+			}
 			case 3:{
 				VEC2 r = rotVEC2((VEC2){entity.gpu[i].pos.x-entity.cpu[i].pos.x,entity.gpu[i].pos.y-entity.cpu[i].pos.y},0.017f);
 				entity.gpu[i].pos.x = r.x+entity.cpu[i].pos.x;

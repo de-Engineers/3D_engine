@@ -880,7 +880,7 @@ void physics(){
 		}
 		player->vel.z /= 1.003f;
 		tick++;
-		if(settings&SETTINGS_LIGHTING){
+		if(!(settings&SETTINGS_LIGHTING)){
 			HDR();
 		}
 		Sleep(15);
