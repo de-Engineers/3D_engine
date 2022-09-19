@@ -93,7 +93,10 @@ void playerDeath(){
 		player->pos = (VEC3){5.5f,5.5f,2.8f};
 	}
 	player->vel = (VEC3){0.0f,0.0f,0.0f};
-	entityC = 0;
+	/*
+	if(!connectStatus){
+		entityC = 0;
+	}*/
 	for(u32 i = 0;i < turretC;i++){
 		turret[i].cooldown = 0;
 	}
@@ -784,6 +787,8 @@ void physics(){
 					switch(player->weaponEquiped){
 					case 1:
 						if(!player->shotCooldown){
+							player->recoil.y += 0.1f;
+							player->recoil.x += (rnd()-1.5f)/15.0f;
 							RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
 							getLmapLocation(&ray);
 							for(u32 i = 0;i < entityC;i++){
@@ -795,7 +800,7 @@ void physics(){
 									break;
 								}
 							}
-							spawnEntityEx(VEC3subVEC3R(player->pos,(VEC3){0.0f,0.0f,0.2f}),VEC3subVEC3R(getCoords(ray),player->pos),(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.2f,0.2f});
+							spawnEntityEx(VEC3subVEC3R(player->pos,(VEC3){-player->xdir,-player->ydir,0.2f}),VEC3subVEC3R(getCoords(ray),player->pos),(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.2f,0.2f});
 							player->shotCooldown = 50;
 							if(connectStatus){
 								packetID = 1;
@@ -856,8 +861,13 @@ void physics(){
 			}
 			player->vel.z -= 0.015f;
 
-			VEC3addVEC3(&player->pos,player->vel);
+			player->yangle += player->recoil.y / 4.0f;
+			player->recoil.y *= 0.75f; 
+			player->xangle += player->recoil.x / 4.0f;
+			player->recoil.x *= 0.75f; 
 
+			VEC3addVEC3(&player->pos,player->vel);
+			
 			playerWorldCollision();
 		}
 		if(player->pos.x < 0.0f){

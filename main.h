@@ -109,6 +109,8 @@ typedef struct{
 	f32 xangle;
 	f32 yangle;
 
+	VEC2 recoil;
+
 	VEC3 pos;
 
 	VEC2 fov;

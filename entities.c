@@ -501,7 +501,7 @@ void entities(){
 				for(f32 i2 = 0.0f;i2 < laserLenght;i2+=0.05f){
 					if(laserPos.x < player->pos.x+0.2f && laserPos.x > player->pos.x-0.2f && 
 					laserPos.y < player->pos.y+0.2f && laserPos.y > player->pos.y-0.2f && 
-					laserPos.z < player->pos.z+0.2f && laserPos.z > player->pos.z-0.2f){
+					laserPos.z < player->pos.z+0.2f && laserPos.z > player->pos.z-1.7f){
 						playerDeath();
 					}
 					VEC3addVEC3(&laserPos,laserDirNorm);
