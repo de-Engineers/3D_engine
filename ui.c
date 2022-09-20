@@ -7,6 +7,7 @@
 #include "tmgl.h"
 #include "network.h"
 #include "textbox.h"
+#include "ui.h"
 
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_DYNAMIC_DRAW 0x88E8
@@ -20,6 +21,10 @@ const char *words2[] = {"normal","cube","blockedit","changelight","changepropert
 
 unsigned int totalCar;
 VEC2 mousePos;
+
+CHATMSG chat1;
+CHATMSG chat2;
+CHATMSG chat3;
 
 void drawChar(int c,float x,float y,float z,float id,float xsize,float ysize){
 	xsize /= 1.7777778;
@@ -271,6 +276,20 @@ void drawUI(){
 		}
 		drawSprite((VEC3){0.927f,-0.603f,-0.2f},(VEC2){0.05f,0.05f},7);
 	}
+	else{
+		if(chat1.timer){
+			drawWord(chat1.text,-0.94f,-0.9f,0.0);
+			chat1.timer--;
+		}
+		if(chat2.timer){
+			drawWord(chat2.text,0.0f,0.0f,0.0);
+			chat2.timer--;
+		}
+		if(chat3.timer){
+			drawWord(chat3.text,0.0f,0.0f,0.0);
+			chat3.timer--;
+		}
+	}
 	switch(menuSel){
 	case 0:
 		drawChar(36,-0.01f,-0.02f,-0.99f,0,0.04f,0.04f);
@@ -441,12 +460,12 @@ void drawUI(){
 	}
 	for(u32 i = 0;i < textboxC;i++){
 		drawSprite((VEC3){textbox[i].pos.x,textbox[i].pos.y,0.0f},(VEC2){0.266666667f,0.004f},5);
-		drawSprite((VEC3){textbox[i].pos.x-0.2636666667f,textbox[i].pos.y-0.045f,0.0f},(VEC2){0.0028f,0.05f},5);
+		drawSprite((VEC3){textbox[i].pos.x-0.2646666667f,textbox[i].pos.y-0.044f,0.0f},(VEC2){0.0028f,0.05f},5);
 		drawSprite((VEC3){textbox[i].pos.x,textbox[i].pos.y-0.089f,0.0f},(VEC2){0.266666667f,0.004f},5);
-		drawSprite((VEC3){textbox[i].pos.x+0.2636666667f,textbox[i].pos.y-0.045f,0.0f},(VEC2){0.0028f,0.05f},5);
-		drawWord(textbox[i].text,textbox[i].pos.x-0.2596666667f,textbox[i].pos.y-0.062f,0.0f);
+		drawSprite((VEC3){textbox[i].pos.x+0.2636666667f,textbox[i].pos.y-0.044f,0.0f},(VEC2){0.0028f,0.05f},5);
+		drawWord(textbox[i].text,textbox[i].pos.x-0.2546666667f,textbox[i].pos.y-0.062f,0.0f);
 	}
 	if(textboxSel!=-1 && GetTickCount() & 0x200){
-		drawSprite((VEC3){textbox[textboxSel].pos.x-0.24666667f+0.023f*textbox[textboxSel].textSz,textbox[textboxSel].pos.y-0.045f,0.0f},(VEC2){0.002f,0.03f},5);
+		drawSprite((VEC3){textbox[textboxSel].pos.x-0.24666667f+0.0233f*strlen(textbox[textboxSel].text),textbox[textboxSel].pos.y-0.0425f,0.0f},(VEC2){0.002f,0.03f},5);
 	}
 }

@@ -1,6 +1,8 @@
 #include <WinSock2.h>
+
 #include "main.h"
 #include "network.h"
+#include "ui.h"
 
 #pragma comment(lib,"Ws2_32.lib")
 
@@ -25,6 +27,10 @@ u8 packetID;
 
 PACKETDATA packetdata;
 
+u8 *playerName;
+
+STRINGS networkplayerNames;
+
 void lagCompensation(){
 	while(connectStatus){
 		for(u32 i = 0;i < networkplayerC;i++){
@@ -47,10 +53,17 @@ void serverRecv(){
 		case 0:
 			recv(tcpSock,&networkplayer.player,networkplayerC*sizeof(NETWORKPLAYER),0);
 			break;
-		case 1:
+		case 1:{
+			u8 tID;
+			recv(tcpSock,&tID,1,0);
+			recv(tcpSock,networkplayerNames.str[tID],20,0);
+			memcpy(chat1.text,networkplayerNames.str[tID],20);
+			memcpy(chat1.text+strlen(networkplayerNames.str[tID])," has joined",20);
+			chat1.timer = 800;
 			spawnPlayer(networkplayerC);
 			networkplayerC++;
 			break;
+		}
 		case 2:
 			networkplayerC--;
 			for(u32 i = 0;i < entityC;i++){
@@ -71,6 +84,11 @@ void serverRecv(){
 }
 
 void networking(){
+	networkplayerNames.str = HeapAlloc(GetProcessHeap(),8,sizeof(u8*)*8);
+	for(u32 i = 0;i < MAXPLAYERS;i++){
+		networkplayerNames.str[i] = HeapAlloc(GetProcessHeap(),8,20);
+	}
+
 	WSAStartup(MAKEWORD(2, 2),&wsadata);
 	tcpSock = socket(AF_INET,SOCK_STREAM,0);
 
@@ -83,7 +101,7 @@ void networking(){
 	tcpAddress.sin_addr.S_un.S_un_b.s_b3 = sliderValues.serverIP.p3;
 	tcpAddress.sin_addr.S_un.S_un_b.s_b4 = sliderValues.serverIP.p4;
 
-	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress))){}
+	while(connect(tcpSock,(SOCKADDR*)&tcpAddress,sizeof(tcpAddress)) && connectStatus){Sleep(15);}
 	connectStatus++;
 	networkSettings |= 0x01;
 	printf("connected\n");
@@ -168,6 +186,9 @@ void networking(){
 	connectStatus++;
 	printf("loaded\n");
 	for(u32 i = 0;i < networkplayerC;i++){
+		u8 tID;
+		recv(tcpSock,&tID,1,0);
+		recv(tcpSock,networkplayerNames.str[tID],20,0);
 		spawnPlayer(i);
 	}
 	glMes[glMesC].id = 6;
@@ -181,6 +202,8 @@ void networking(){
 
 	player->weaponEquiped = 1;
 	spawnEntityEx((VEC3){player->pos.x+player->xdir,player->pos.y+player->ydir,player->pos.z},(VEC3){0.1f,0.1f,-0.3f},(VEC3){0.0f,0.0f,0.0f},4,(VEC3){0.0f,0.04f,0.0f});
+
+	send(tcpSock,playerName,20,0);
 
 	for(;;){
 		networkthis.pos = player->pos;

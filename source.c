@@ -6,6 +6,7 @@
 #include "main.h"
 #include "network.h"
 #include "textbox.h"
+#include "ui.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -393,6 +394,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		WriteFile(h,&player->fov.y,4,0,0);
 		WriteFile(h,&properties->sensitivity,4,0,0);
 		WriteFile(h,&sliderValues.serverIP,sizeof(IPADDRESS),0,0);
+		WriteFile(h,playerName,20,0,0);
 		CloseHandle(h);
 		ExitProcess(0);
 	case WM_ACTIVATE:
@@ -426,25 +428,29 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		if(wParam >= 0x30 && wParam <= 0x5a){
 			switch(menuSel){
 			case 3:
-				if(wParam>0x2f&&wParam<0x3a){
-					inputStr[strlen(inputStr)] = wParam-0x33;
+				if(wParam>0x2f&&wParam<0x39){
+					inputStr[strlen(inputStr)] = wParam;
 				}
 				else{
-					inputStr[strlen(inputStr)] = wParam-0x3a;
+					inputStr[strlen(inputStr)] = wParam-0x20;
 				}
 				break;
 			}
-			if(textboxSel!=-1){
+			if(textboxSel!=-1&&strlen(textbox[textboxSel].text) < 20){
 				if(wParam>0x2f&&wParam<0x3a){
-					textbox[textboxSel].text[textbox[textboxSel].textSz] = wParam-0x30;
+					textbox[textboxSel].text[strlen(textbox[textboxSel].text)] = wParam;
 				}
 				else{
-					textbox[textboxSel].text[textbox[textboxSel].textSz] = wParam-0x3a;
+					textbox[textboxSel].text[strlen(textbox[textboxSel].text)] = wParam+0x20;
 				}
-				textbox[textboxSel].textSz++;
 			}
 		}
 		switch(wParam){
+		case VK_SPACE:
+			if(textboxSel!=-1&&strlen(textbox[textboxSel].text) < 20){
+				textbox[textboxSel].text[strlen(textbox[textboxSel].text)] = wParam;
+			}
+			break;
 		case 0x52:
 			if(GetKeyState(VK_LCONTROL)&0x80){
 				do{
@@ -489,9 +495,8 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				inputStr[strlen(inputStr)-1] = 0;
 				break;
 			}
-			if(textboxSel!=-1 && textbox[textboxSel].textSz){
-				textbox[textboxSel].textSz--;
-				textbox[textboxSel].text[textbox[textboxSel].textSz] = 0;
+			if(textboxSel!=-1 && strlen(textbox[textboxSel].text)){
+				textbox[textboxSel].text[strlen(textbox[textboxSel].text)-1] = 0;
 			}
 			break;
 		case VK_F1:
@@ -548,6 +553,13 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				mainMenuLoad();
 				break;
 			case 6:
+				for(u32 i = 0;i < textboxC;i++){
+					if(textbox[i].id==0){
+						strcpy(playerName,textbox[i].text);
+						strset(textbox[i].text,0);
+						break;
+					}
+				}
 				buttonC = 0;
 				sliderC = 0;
 				textboxC = 0;
@@ -555,12 +567,16 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				mainMenuLoad();
 				break;
 			case 7:
-				TerminateThread(networkThread,0);
-				sliderCreate((VEC2){ 0.190f,-0.12f },14);
-				sliderCreate((VEC2){ 0.190f,-0.19f },15);
-				sliderCreate((VEC2){ 0.190f,-0.26f },16);
-				sliderCreate((VEC2){ 0.190f,-0.33f },17);
-				buttonCreate((VEC2){ -0.059f,-0.40 },10);
+				if(connectStatus == 1){
+					connectStatus = 0;
+					sliderCreate((VEC2){ 0.190f,-0.12f },14);
+					sliderCreate((VEC2){ 0.190f,-0.19f },15);
+					sliderCreate((VEC2){ 0.190f,-0.26f },16);
+					sliderCreate((VEC2){ 0.190f,-0.33f },17);
+					buttonCreate((VEC2){ -0.059f,-0.40 },10);
+					menuSel = 6;
+					ShowCursor(1);
+				}
 				break;
 			}
 			break;
@@ -574,18 +590,6 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		if(GetKeyState(VK_NEXT) & 0x80){
 			toolSel--;
-		}
-		if(GetKeyState(VK_ADD) & 0x80 || GetKeyState(0x45) & 0x80){
-			selarea.x = 0;
-			selarea.y = 0;
-			selarea.z = 0;
-			blockSel++;
-		}
-		if(GetKeyState(VK_SUBTRACT) & 0x80 || GetKeyState(0x51) & 0x80){
-			selarea.x = 0;
-			selarea.y = 0;
-			selarea.z = 0;
-			blockSel--;
 		}
 		break;
 	case WM_KEYUP:
@@ -602,12 +606,9 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		if(!menuSel){
 			POINT curp;
 			GetCursorPos(&curp);
-			mousex = ((f32)curp.x - 100 - properties->windowOffsetX) / 80.0f;
-			mousey = ((f32)curp.y - 100 - properties->windowOffsetY) / 80.0f;
-			SetCursorPos(100+properties->windowOffsetX,100+properties->windowOffsetY);
-			if(mousex > 0.5f || mousey > 0.5f){
-				break;
-			}
+			mousex = ((f32)curp.x - properties->xres/2 - properties->windowOffsetX) / 80.0f;
+			mousey = ((f32)curp.y - properties->yres/2 - properties->windowOffsetY) / 80.0f;
+			SetCursorPos(properties->xres/2 +properties->windowOffsetX,properties->yres/2 +properties->windowOffsetY);
 			player->xangle += mousex * properties->sensitivity;
 			player->yangle -= mousey * properties->sensitivity;
 			if(player->yangle < -1.6f){
@@ -670,7 +671,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		default:
 			for(u32 i = 0;i < textboxC;i++){
 				if(mousePos.x > textbox[i].pos.x - 0.2666666667f && mousePos.x < textbox[i].pos.x + 0.26666667f
-					&& mousePos.y > textbox[i].pos.y - 0.045f && mousePos.y < textbox[i].pos.y + 0.045f){
+					&& mousePos.y > textbox[i].pos.y - 0.09f && mousePos.y < textbox[i].pos.y){
 					textboxSel = textbox[i].id;
 					goto foundTextbox;
 				}
@@ -821,15 +822,6 @@ void physics(){
 							player->recoil.x += (rnd()-1.5f)/15.0f;
 							RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
 							getLmapLocation(&ray);
-							for(u32 i = 0;i < entityC;i++){
-								if(entity.cpu[i].id==4){
-									spawnEntity((VEC3){player->pos.x,player->pos.y,player->pos.z-0.1f},VEC3mulR((VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f},1.5f),0);
-									VEC3mul(&entity.gpu[i].color,10.0f);
-									entity.cpu[i].aniTime = 11;
-									entity.cpu[i].aniType = 2;
-									break;
-								}
-							}
 							spawnEntityEx(VEC3subVEC3R(player->pos,(VEC3){-player->xdir,-player->ydir,0.2f}),VEC3subVEC3R(getCoords(ray),player->pos),(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.2f,0.2f});
 							player->shotCooldown = 50;
 							if(connectStatus){
@@ -838,7 +830,7 @@ void physics(){
 								packetdata.pos2 = VEC3subVEC3R(getCoords(ray),player->pos);
 							}
 						}
-						break;	
+						break;
 					}
 				}
 				if(player->shotCooldown){
@@ -952,7 +944,11 @@ void main(){
 	turret     = HeapAlloc(GetProcessHeap(),8,sizeof(TURRET) * 1024);
 	star       = HeapAlloc(GetProcessHeap(),8,sizeof(STAR)*3);
 	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
+	playerName = HeapAlloc(GetProcessHeap(),8,20);
 
+	chat1.text = HeapAlloc(GetProcessHeap(),8,40);
+	chat2.text = HeapAlloc(GetProcessHeap(),8,40);
+	chat3.text = HeapAlloc(GetProcessHeap(),8,40);
 
 	skyboxTexture = HeapAlloc(GetProcessHeap(),8,skyboxSz*skyboxSz*sizeof(RGB));
 
@@ -989,7 +985,8 @@ void main(){
 		ReadFile(h,&settings,4,0,0);
 		ReadFile(h,&player->fov.y,4,0,0);
 		ReadFile(h,&properties->sensitivity,4,0,0);
-		ReadFile(h,&sliderValues.serverIP,4,0,0);
+		ReadFile(h,&sliderValues.serverIP,sizeof(IPADDRESS),0,0);
+		ReadFile(h,playerName,20,0,0);
 
 		sliderValues.fov = player->fov.y*127.5f;
 		sliderValues.sensitivity = properties->sensitivity*255.0f;
@@ -1029,12 +1026,8 @@ void main(){
 	ittmapThread         = CreateThread(0,0,ittmap,0,0,0);
 	godraysThread        = CreateThread(0,0,genGodraysMap,0,0,0);
 
-	for(;;){
-		while(PeekMessageA(&Msg,window,0,0,0)){
-			GetMessageA(&Msg,window,0,0);
-			TranslateMessage(&Msg);
-			DispatchMessageW(&Msg);
-		}
-		Sleep(1);
+	while(GetMessageA(&Msg,window,0,0)>0){
+		TranslateMessage(&Msg);
+		DispatchMessageW(&Msg);
 	}
 }
