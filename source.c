@@ -5,6 +5,7 @@
 
 #include "main.h"
 #include "network.h"
+#include "textbox.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -391,6 +392,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		WriteFile(h,&settings,4,0,0);
 		WriteFile(h,&player->fov.y,4,0,0);
 		WriteFile(h,&properties->sensitivity,4,0,0);
+		WriteFile(h,&sliderValues.serverIP,sizeof(IPADDRESS),0,0);
 		CloseHandle(h);
 		ExitProcess(0);
 	case WM_ACTIVATE:
@@ -421,15 +423,26 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		break;
 	case WM_KEYDOWN:
-		switch(menuSel){
-		case 3:
-			if(wParam>0x2f&&wParam<0x3a){
-				inputStr[strlen(inputStr)] = wParam-0x33;
+		if(wParam >= 0x30 && wParam <= 0x5a){
+			switch(menuSel){
+			case 3:
+				if(wParam>0x2f&&wParam<0x3a){
+					inputStr[strlen(inputStr)] = wParam-0x33;
+				}
+				else{
+					inputStr[strlen(inputStr)] = wParam-0x3a;
+				}
+				break;
 			}
-			else if(wParam>0x40&&wParam<0x60){
-				inputStr[strlen(inputStr)] = wParam-0x3a;
+			if(textboxSel!=-1){
+				if(wParam>0x2f&&wParam<0x3a){
+					textbox[textboxSel].text[textbox[textboxSel].textSz] = wParam-0x30;
+				}
+				else{
+					textbox[textboxSel].text[textbox[textboxSel].textSz] = wParam-0x3a;
+				}
+				textbox[textboxSel].textSz++;
 			}
-			break;
 		}
 		switch(wParam){
 		case 0x52:
@@ -475,6 +488,10 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case 3:
 				inputStr[strlen(inputStr)-1] = 0;
 				break;
+			}
+			if(textboxSel!=-1 && textbox[textboxSel].textSz){
+				textbox[textboxSel].textSz--;
+				textbox[textboxSel].text[textbox[textboxSel].textSz] = 0;
 			}
 			break;
 		case VK_F1:
@@ -533,6 +550,8 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case 6:
 				buttonC = 0;
 				sliderC = 0;
+				textboxC = 0;
+				textboxSel = -1;
 				mainMenuLoad();
 				break;
 			case 7:
@@ -649,6 +668,15 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			tools();
 			break;
 		default:
+			for(u32 i = 0;i < textboxC;i++){
+				if(mousePos.x > textbox[i].pos.x - 0.2666666667f && mousePos.x < textbox[i].pos.x + 0.26666667f
+					&& mousePos.y > textbox[i].pos.y - 0.045f && mousePos.y < textbox[i].pos.y + 0.045f){
+					textboxSel = textbox[i].id;
+					goto foundTextbox;
+				}
+			}
+			textboxSel = -1;
+		foundTextbox:
 			if(buttonId!=-1){
 				if(buttonId<100){
 					buttons[buttonId]();
@@ -723,55 +751,57 @@ void physics(){
 	 	player->ydir  = sinf(player->xangle);
 	 	player->zdir  = sinf(player->yangle);
 		if(settings & SETTINGS_MOVEMENT){
-			int amp = 1;
-			if(GetKeyState(VK_CONTROL) & 0x80){
-				amp = 3;
-			}
-			if (GetKeyState(0x57) & 0x80){
-				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->pos.x += player->xdir * player->flightSpeed * amp * 0.7071f;
-					player->pos.y += player->ydir * player->flightSpeed * amp * 0.7071f;
+			if(menuSel == 0){
+				int amp = 1;
+				if(GetKeyState(VK_CONTROL) & 0x80){
+					amp = 3;
 				}
-				else{
-					player->pos.x += player->xdir * player->flightSpeed * amp;
-					player->pos.y += player->ydir * player->flightSpeed * amp;
+				if (GetKeyState(0x57) & 0x80){
+					if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
+						player->pos.x += player->xdir * player->flightSpeed * amp * 0.7071f;
+						player->pos.y += player->ydir * player->flightSpeed * amp * 0.7071f;
+					}
+					else{
+						player->pos.x += player->xdir * player->flightSpeed * amp;
+						player->pos.y += player->ydir * player->flightSpeed * amp;
+					}
 				}
-			}
-			if (GetKeyState(0x53) & 0x80){
-				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->pos.x -= player->xdir * player->flightSpeed * amp * 0.7071f;
-					player->pos.y -= player->ydir * player->flightSpeed * amp * 0.7071f;
+				if (GetKeyState(0x53) & 0x80){
+					if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
+						player->pos.x -= player->xdir * player->flightSpeed * amp * 0.7071f;
+						player->pos.y -= player->ydir * player->flightSpeed * amp * 0.7071f;
+					}
+					else{
+						player->pos.x -= player->xdir * player->flightSpeed * amp;
+						player->pos.y -= player->ydir * player->flightSpeed * amp;
+					}
 				}
-				else{
-					player->pos.x -= player->xdir * player->flightSpeed * amp;
-					player->pos.y -= player->ydir * player->flightSpeed * amp;
+				if (GetKeyState(0x44) & 0x80){
+					if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
+						player->pos.x += cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+						player->pos.y += sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+					}
+					else{
+						player->pos.x += cosf(player->xangle + PI_05) * player->flightSpeed * amp;
+						player->pos.y += sinf(player->xangle + PI_05) * player->flightSpeed * amp;
+					}
 				}
-			}
-			if (GetKeyState(0x44) & 0x80){
-				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->pos.x += cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
-					player->pos.y += sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+				if (GetKeyState(0x41) & 0x80){
+					if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
+						player->pos.x -= cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+						player->pos.y -= sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
+					}
+					else{
+						player->pos.x -= cosf(player->xangle + PI_05) * player->flightSpeed * amp;
+						player->pos.y -= sinf(player->xangle + PI_05) * player->flightSpeed * amp;
+					}
 				}
-				else{
-					player->pos.x += cosf(player->xangle + PI_05) * player->flightSpeed * amp;
-					player->pos.y += sinf(player->xangle + PI_05) * player->flightSpeed * amp;
+				if (GetKeyState(VK_SPACE) & 0x80){
+					player->pos.z += player->flightSpeed * amp;
+				} 
+				if (GetKeyState(VK_LSHIFT) & 0x80){
+					player->pos.z -= player->flightSpeed * amp;
 				}
-			}
-			if (GetKeyState(0x41) & 0x80){
-				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->pos.x -= cosf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
-					player->pos.y -= sinf(player->xangle + PI_05) * player->flightSpeed * amp * 0.7071f;
-				}
-				else{
-					player->pos.x -= cosf(player->xangle + PI_05) * player->flightSpeed * amp;
-					player->pos.y -= sinf(player->xangle + PI_05) * player->flightSpeed * amp;
-				}
-			}
-			if (GetKeyState(VK_SPACE) & 0x80){
-				player->pos.z += player->flightSpeed * amp;
-			} 
-			if (GetKeyState(VK_LSHIFT) & 0x80){
-				player->pos.z -= player->flightSpeed * amp;
 			}
 		}
 		else{
@@ -815,48 +845,50 @@ void physics(){
 					player->shotCooldown--;
 				}
 			}
-			float amp = 1.0f;
-			if(player->hitboxHeight<1.7f){
-				amp = 0.33f;
-			}
-			if(GetKeyState(0x57) & 0x80){
-				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->vel.x += player->xdir / 120 * amp * 0.7071f;
-					player->vel.y += player->ydir / 120 * amp * 0.7071f;
+			if(menuSel==0){
+				float amp = 1.0f;
+				if(player->hitboxHeight<1.7f){
+					amp = 0.33f;
 				}
-				else{
-					player->vel.x += player->xdir / 120 * amp;
-					player->vel.y += player->ydir / 120 * amp;
+				if(GetKeyState(0x57) & 0x80){
+					if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
+						player->vel.x += player->xdir / 120 * amp * 0.7071f;
+						player->vel.y += player->ydir / 120 * amp * 0.7071f;
+					}
+					else{
+						player->vel.x += player->xdir / 120 * amp;
+						player->vel.y += player->ydir / 120 * amp;
+					}
 				}
-			}
-			if(GetKeyState(0x53) & 0x80){
-				if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-					player->vel.x -= player->xdir / 120 * amp * 0.7071f;
-					player->vel.y -= player->ydir / 120 * amp * 0.7071f;
+				if(GetKeyState(0x53) & 0x80){
+					if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
+						player->vel.x -= player->xdir / 120 * amp * 0.7071f;
+						player->vel.y -= player->ydir / 120 * amp * 0.7071f;
+					}
+					else{
+						player->vel.x -= player->xdir / 120 * amp;
+						player->vel.y -= player->ydir / 120 * amp;
+					} 
 				}
-				else{
-					player->vel.x -= player->xdir / 120 * amp;
-					player->vel.y -= player->ydir / 120 * amp;
-				} 
-			}
-			if(GetKeyState(0x44) & 0x80){
-				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->vel.x += cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-					player->vel.y += sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+				if(GetKeyState(0x44) & 0x80){
+					if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
+						player->vel.x += cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+						player->vel.y += sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+					}
+					else{
+						player->vel.x += cosf(player->xangle + PI_05) / 120 * amp;
+						player->vel.y += sinf(player->xangle + PI_05) / 120 * amp;
+					}
 				}
-				else{
-					player->vel.x += cosf(player->xangle + PI_05) / 120 * amp;
-					player->vel.y += sinf(player->xangle + PI_05) / 120 * amp;
-				}
-			}
-			if(GetKeyState(0x41) & 0x80){
-				if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-					player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-					player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-				}
-				else{
-					player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp;
-					player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp;
+				if(GetKeyState(0x41) & 0x80){
+					if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
+						player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+						player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+					}
+					else{
+						player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp;
+						player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp;
+					}
 				}
 			}
 			player->vel.z -= 0.015f;
@@ -919,6 +951,8 @@ void main(){
 	godraymap  = HeapAlloc(GetProcessHeap(),8,godraySz*godraySz*sizeof(RGBA));
 	turret     = HeapAlloc(GetProcessHeap(),8,sizeof(TURRET) * 1024);
 	star       = HeapAlloc(GetProcessHeap(),8,sizeof(STAR)*3);
+	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
+
 
 	skyboxTexture = HeapAlloc(GetProcessHeap(),8,skyboxSz*skyboxSz*sizeof(RGB));
 
@@ -955,9 +989,11 @@ void main(){
 		ReadFile(h,&settings,4,0,0);
 		ReadFile(h,&player->fov.y,4,0,0);
 		ReadFile(h,&properties->sensitivity,4,0,0);
+		ReadFile(h,&sliderValues.serverIP,4,0,0);
 
 		sliderValues.fov = player->fov.y*127.5f;
 		sliderValues.sensitivity = properties->sensitivity*255.0f;
+
 		glMes[glMesC].id = 10;
 		glMesC++;
 		glMes[glMesC].id = 13;

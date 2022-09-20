@@ -3,6 +3,7 @@
 #include <intrin.h>
 
 #include "main.h"
+#include "textbox.h"
 
 i8 buttonId = -1;
 
@@ -121,6 +122,7 @@ void multiplayerButton(){
 	sliderCreate((VEC2){0.190f,-0.26f},16);
 	sliderCreate((VEC2){0.190f,-0.33f},17);
 	buttonCreate((VEC2){-0.059f,-0.40},10);
+	textboxCreate((VEC2){0.190f,0.02f},0);
 	menuSel = 6;
 }
 

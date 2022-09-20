@@ -74,6 +74,8 @@ void networking(){
 	WSAStartup(MAKEWORD(2, 2),&wsadata);
 	tcpSock = socket(AF_INET,SOCK_STREAM,0);
 
+	connectStatus++;
+
 	tcpAddress.sin_family = AF_INET;
 	tcpAddress.sin_port   = htons(7778);
 	tcpAddress.sin_addr.S_un.S_un_b.s_b1 = sliderValues.serverIP.p1;

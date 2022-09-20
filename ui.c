@@ -6,6 +6,7 @@
 
 #include "tmgl.h"
 #include "network.h"
+#include "textbox.h"
 
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_DYNAMIC_DRAW 0x88E8
@@ -333,6 +334,7 @@ void drawUI(){
 	case 6:{
 		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
 		drawWord("multiplayer",-0.45f,0.42f,0.0f);
+		drawWord("name",-0.45f,-0.04f,0.0f);
 		drawWord("ipaddress 1",-0.45f,-0.14f,0.0f);
 		drawWord("ipaddress 2",-0.45f,-0.21f,0.0f);
 		drawWord("ipaddress 3",-0.45f,-0.28f,0.0f);
@@ -437,5 +439,14 @@ void drawUI(){
 	for(u32 i = 0;i < sliderC;i++){
 		drawSprite((VEC3){slider[i].pos.x,slider[i].pos.y,0.0f},(VEC2){0.266666667f,0.015f},8+slider[i].id);
 	}
-
+	for(u32 i = 0;i < textboxC;i++){
+		drawSprite((VEC3){textbox[i].pos.x,textbox[i].pos.y,0.0f},(VEC2){0.266666667f,0.004f},5);
+		drawSprite((VEC3){textbox[i].pos.x-0.2636666667f,textbox[i].pos.y-0.045f,0.0f},(VEC2){0.0028f,0.05f},5);
+		drawSprite((VEC3){textbox[i].pos.x,textbox[i].pos.y-0.089f,0.0f},(VEC2){0.266666667f,0.004f},5);
+		drawSprite((VEC3){textbox[i].pos.x+0.2636666667f,textbox[i].pos.y-0.045f,0.0f},(VEC2){0.0028f,0.05f},5);
+		drawWord(textbox[i].text,textbox[i].pos.x-0.2596666667f,textbox[i].pos.y-0.062f,0.0f);
+	}
+	if(textboxSel!=-1 && GetTickCount() & 0x200){
+		drawSprite((VEC3){textbox[textboxSel].pos.x-0.24666667f+0.023f*textbox[textboxSel].textSz,textbox[textboxSel].pos.y-0.045f,0.0f},(VEC2){0.002f,0.03f},5);
+	}
 }
