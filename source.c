@@ -476,11 +476,6 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		case VK_RETURN:
 			switch(menuSel){
-			case 0:
-				if(connectStatus){
-					menuSel = 9;
-				}
-				break;
 			case 3:
 				for(int i = 0;i < strlen(inputStr);i++){
 					if(inputStr[i]<10){
@@ -770,7 +765,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 WNDCLASS wndclass = {0,proc,0,0,0,0,0,0,name,name};
 void physics(){
 	for (;;){
-		if(menuSel==0&&(GetKeyState(VK_LBUTTON)&0x80)){
+		if(GetKeyState(VK_LBUTTON)&0x80){
 			for(u32 i = 0;i < sliderC;i++){
 				if(mousePos.x > slider[i].pos.x - 0.266666667f && mousePos.x < slider[i].pos.x + 0.26666667f
 					&& mousePos.y > slider[i].pos.y - 0.015f && mousePos.y < slider[i].pos.y + 0.015f){

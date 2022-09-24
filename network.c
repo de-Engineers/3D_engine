@@ -67,8 +67,8 @@ void serverRecv(){
 		case 2:
 			printf("error\n");
 			networkplayerC--;
-			for(u32 i = 0;i < entityC;i++){
-				if(entity.cpu[i].id==9&&entity.cpu[i].health==networkplayerC){
+			for(u32 i = 0;i < entityC;i++)
+				if(entity.cpu[i].id==9&&entity.cpu[i].health==networkplayerC){{
 					entityDeath(i);
 					break;
 				}
@@ -87,7 +87,10 @@ void serverRecv(){
 			u8 sendID;
 			recv(tcpSock,&sendID,1,0);
 			strcpy(chat[0].text,networkplayerNames.str[sendID]);
+			printf("%i\n",strlen(networkplayerNames.str[sendID]));
 			recv(tcpSock,chat[0].text+strlen(networkplayerNames.str[sendID])+1,20,0);
+			chat[0].text[strlen(networkplayerNames.str[sendID])] = ' ';
+			chat[0].timer = 1200;
 			break;
 		}
 		}
