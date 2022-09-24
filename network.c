@@ -87,7 +87,6 @@ void serverRecv(){
 			u8 sendID;
 			recv(tcpSock,&sendID,1,0);
 			strcpy(chat[0].text,networkplayerNames.str[sendID]);
-			printf("%i\n",strlen(networkplayerNames.str[sendID]));
 			recv(tcpSock,chat[0].text+strlen(networkplayerNames.str[sendID])+1,20,0);
 			chat[0].text[strlen(networkplayerNames.str[sendID])] = ' ';
 			chat[0].timer = 1200;
@@ -223,6 +222,7 @@ void networking(){
 		networkthis.pos = player->pos;
 		networkthis.pos.z += 0.2f;
 		networkthis.rot = player->xangle;
+		networkthis.vel = player->vel;
 		send(tcpSock,&packetID,1,0);
 		switch(packetID){
 		case 1:

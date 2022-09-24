@@ -408,6 +408,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		case 0x54:
 			menuSel = 9;
 			ShowCursor(1);
+			textboxSel = textboxC;
 			textboxCreate((VEC2){-0.69f,0.8f},2);
 			buttonCreate((VEC2){-0.37f,0.76f},12);
 			break;
@@ -502,6 +503,21 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 								chat[i2].timer = chat[i2-1].timer;
 							}
 							executeCommand(textbox[i].text);
+							strcpy(chat[0].text,textbox[i].text);
+							strset(textbox[i].text,0);
+						}
+					}
+				}
+				break;
+			case 9:
+				for(u32 i = 0;i < textboxC;i++){
+					if(textbox[i].id == 2){
+						if(textbox[i].text[0]){
+							for(u32 i2 = CHATSZ-1;i2 > 0;i2--){
+								memcpy(chat[i2].text,chat[i2-1].text,40);
+								chat[i2].timer = chat[i2-1].timer;
+							}
+							chat[0].timer = 1200;
 							strcpy(chat[0].text,textbox[i].text);
 							strset(textbox[i].text,0);
 						}
@@ -627,6 +643,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		case VK_OEM_3:
 			menuSel = 8;
 			ShowCursor(1);
+			textboxSel = textboxC;
 			textboxCreate((VEC2){-0.69f,0.8f},1);
 			buttonCreate((VEC2){-0.37f,0.76f},11);
 			break;
