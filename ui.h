@@ -1,10 +1,10 @@
 #pragma once;
 
+#define CHATSZ 5
+
 typedef struct{
 	u8 *text;
 	u16 timer;
 }CHATMSG;
 
-extern CHATMSG chat1;
-extern CHATMSG chat2;
-extern CHATMSG chat3;
+extern CHATMSG chat[CHATSZ];

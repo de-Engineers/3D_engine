@@ -33,3 +33,5 @@ extern u8 networkplayerC;
 extern u8 connectStatus;
 
 extern u8 packetID;
+
+extern u8 *playerName;

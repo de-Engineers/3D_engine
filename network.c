@@ -51,20 +51,21 @@ void serverRecv(){
 		}
 		switch(packetID){
 		case 0:
-			recv(tcpSock,&networkplayer.player,networkplayerC*sizeof(NETWORKPLAYER),0);
+			recv(tcpSock,networkplayer.player,networkplayerC*sizeof(NETWORKPLAYER),0);
 			break;
 		case 1:{
 			u8 tID;
 			recv(tcpSock,&tID,1,0);
 			recv(tcpSock,networkplayerNames.str[tID],20,0);
-			memcpy(chat1.text,networkplayerNames.str[tID],20);
-			memcpy(chat1.text+strlen(networkplayerNames.str[tID])," has joined",20);
-			chat1.timer = 800;
+			memcpy(chat[0].text,networkplayerNames.str[tID],20);
+			memcpy(chat[0].text+strlen(networkplayerNames.str[tID])," has joined",20);
+			chat[0].timer = 800;
 			spawnPlayer(networkplayerC);
 			networkplayerC++;
 			break;
 		}
 		case 2:
+			printf("error\n");
 			networkplayerC--;
 			for(u32 i = 0;i < entityC;i++){
 				if(entity.cpu[i].id==9&&entity.cpu[i].health==networkplayerC){
@@ -77,6 +78,16 @@ void serverRecv(){
 			PACKETDATA packetDataIn;
 			recv(tcpSock,&packetDataIn,sizeof(PACKETDATA),0);
 			spawnEntityEx(packetDataIn.pos1,packetDataIn.pos2,(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.1f,0.1f});
+			break;
+		case 4:
+			for(u32 i2 = CHATSZ-1;i2 > 0;i2--){
+				memcpy(chat[i2].text,chat[i2-1].text,40);
+				chat[i2].timer = chat[i2-1].timer;
+			}
+			u8 sendID;
+			recv(tcpSock,&sendID,1,0);
+			strcpy(chat[0].text,networkplayerNames.str[sendID]);
+			recv(tcpSock,chat[0].text+strlen(networkplayerNames.str[sendID])+1,20,0);
 			break;
 		}
 		}
@@ -213,6 +224,10 @@ void networking(){
 		switch(packetID){
 		case 1:
 			send(tcpSock,&packetdata,sizeof(PACKETDATA),0);
+			packetID = 0;
+			break;
+		case 2:
+			send(tcpSock,chat[0].text,20,0);
 			packetID = 0;
 			break;
 		}

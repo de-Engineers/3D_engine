@@ -133,7 +133,7 @@ typedef struct{
 	u16 shotCooldown;
 	u8  weaponEquiped;
 
-	u8  wounded;
+	u8  health;
 	u8  aniType;
 	u16 aniTime;
 }PLAYERDATA;
@@ -401,6 +401,10 @@ void cpuGenLight(VEC3 pos, VEC3 color,u64 itt);
 void cpuGenLightAmbientX(VEC3 dir,VEC3 color,u64 itt);
 void cpuGenLightAmbientY(VEC3 dir,VEC3 color,u64 itt);
 void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt);
+
+void closeEngine();
+
+void setBlock(u32 block);
 
 RAY rayCreate(VEC3 pos,VEC3 dir);
 

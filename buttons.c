@@ -4,6 +4,10 @@
 
 #include "main.h"
 #include "textbox.h"
+#include "network.h"
+#include "ui.h"
+#include "console.h"
+#include "levelgen.h"
 
 i8 buttonId = -1;
 
@@ -20,31 +24,11 @@ void buttonCreate(VEC2 pos,unsigned char id){
 }
 
 void quitButton(){
-	levelSave("level");
-	ExitProcess(0);	
+	closeEngine();
 }
 
 void genNewWorldButton(){
-	memset(map,0,properties->lvlSz*properties->lvlSz*properties->lvlSz*4);
-	for(int i = 0;i < properties->lvlSz*properties->lvlSz;i++){
-		map[i].id = 28;
-		map[i].r = 190;
-		map[i].g = 190;
-		map[i].b = 190;
-	}
-	for(int i = properties->lvlSz*properties->lvlSz*4;i < properties->lvlSz*properties->lvlSz*properties->lvlSz;i++){
-		map[i].r = 128;
-		map[i].g = 128;
-		map[i].b = 128;
-		map[i].id = 0;
-	}
-	map[crds2map(32,32,7)].r  = 25;
-	map[crds2map(32,32,7)].g  = 25;
-	map[crds2map(32,32,7)].b  = 25;
-	map[crds2map(32,32,7)].id = 6;
-	metadt[crds2map(32,32,7)].b = 255;
-	glMes[glMesC].id = 3;
-	glMesC++;
+	generateEmptyWorld();
 }
 
 void EnumLevelsButton(){
@@ -90,7 +74,6 @@ void vsyncButton(){
 }
 
 void fullscreenButton(){
-	settings &= ~SETTINGS_FULLSCREEN;
 	glMes[glMesC].id = 9;
 	glMesC++;
 	settings ^= SETTINGS_FULLSCREEN;
@@ -127,11 +110,55 @@ void multiplayerButton(){
 }
 
 void serverConnectButton(){
+	for(u32 i = 0;i < textboxC;i++){
+		if(textbox[i].id == 0){
+			strcpy(playerName,textbox[i].text);
+			strset(textbox[i].text,0);
+			break;
+		}
+	}
 	networkThread = CreateThread(0,0,networking,0,0,0);
 	buttonC = 0;
 	sliderC = 0;
 	menuSel = 7;
+	textboxC = 0;
+	textboxSel = -1;
 	ShowCursor(0);
 }
 
-void (*buttons[32])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton,multiplayerButton,serverConnectButton};
+void consoleEnterButton(){
+	for(u32 i = 0;i < textboxC;i++){
+		if(textbox[i].id == 1){
+			if(textbox[i].text[0]){
+				for(u32 i2 = CHATSZ-1;i2 > 0;i2--){
+					memcpy(chat[i2].text,chat[i2-1].text,40);
+					chat[i2].timer = chat[i2-1].timer;
+				}
+				executeCommand(textbox[i].text);
+				strcpy(chat[0].text,textbox[i].text);
+				strset(textbox[i].text,0);
+			}
+			break;
+		}
+	}
+}
+
+void chatEnterButton(){
+	for(u32 i = 0;i < textboxC;i++){
+		if(textbox[i].id == 2){
+			if(textbox[i].text[0]){
+				for(u32 i2 = CHATSZ-1;i2 > 0;i2--){
+					memcpy(chat[i2].text,chat[i2-1].text,40);
+					chat[i2].timer = chat[i2-1].timer;
+				}
+				chat[0].timer = 600;
+				strcpy(chat[0].text,textbox[i].text);
+				strset(textbox[i].text,0);
+				packetID = 2;
+			}
+			break;
+		}
+	}
+}
+
+void (*buttons[32])() = {quitButton,genNewWorldButton,EnumLevelsButton,saveLevelButton,decLightMap,incLightMap,vsyncButton,fullscreenButton,videoSettingsButton,multiplayerButton,serverConnectButton,consoleEnterButton,chatEnterButton};

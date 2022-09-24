@@ -186,45 +186,6 @@ char *loadFile(char *name){
 }
 
 void GPUtextureUpload(){
-	if(lmapC > properties->tex3DSzLimit*3){
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0, GL_RGB, GL_UNSIGNED_SHORT, lmap);
-		glActiveTexture(GL_TEXTURE17);
-		glBindTexture(GL_TEXTURE_3D, lmapText2);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
-		glActiveTexture(GL_TEXTURE18);
-		glBindTexture(GL_TEXTURE_3D, lmapText3);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * 2 * properties->lmapSz * properties->lmapSz);
-		glActiveTexture(GL_TEXTURE19);
-		glBindTexture(GL_TEXTURE_3D, lmapText4);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit * 3, 0, GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit*3*properties->lmapSz * properties->lmapSz);
-	}
-	else if(lmapC > properties->tex3DSzLimit * 2){
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT,lmap);
-		glActiveTexture(GL_TEXTURE17);
-		glBindTexture(GL_TEXTURE_3D, lmapText2);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT,lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
-		glActiveTexture(GL_TEXTURE18);
-		glBindTexture(GL_TEXTURE_3D, lmapText3);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit*2,0,GL_RGB, GL_UNSIGNED_SHORT,lmap+properties->tex3DSzLimit*2*properties->lmapSz*properties->lmapSz);
-	}
-	else if(lmapC > properties->tex3DSzLimit){
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT, lmap);
-		glActiveTexture(GL_TEXTURE17);
-		glBindTexture(GL_TEXTURE_3D, lmapText2);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC - properties->tex3DSzLimit,0,GL_RGB, GL_UNSIGNED_SHORT, lmap + properties->tex3DSzLimit * properties->lmapSz * properties->lmapSz);
-	}
-	else{
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_3D, lmapText);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16, properties->lmapSz,properties->lmapSz,lmapC,0,GL_RGB,GL_UNSIGNED_SHORT,lmap);
-	}
-
 	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,lpmapText);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
@@ -297,7 +258,7 @@ void GPUtextureUpload(){
 
 void updateShaderVariables(u32 program){
 	glUseProgram(program);
-	glUniform1i(glGetUniformLocation(program,"wounded"),player->wounded);
+	glUniform1i(glGetUniformLocation(program,"health"),100-player->health);
 	glUniform2f(glGetUniformLocation(program,"angle"),player->xangle,player->yangle);
 	glUniform4f(glGetUniformLocation(program,"dir"),player->xdir,player->ydir, player->zdir,player->xydir);
 	glUniform1i(glGetUniformLocation(program,"tick"),tick);

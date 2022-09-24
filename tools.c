@@ -70,6 +70,47 @@ inline RAY rayCreate(VEC3 pos,VEC3 dir){
 	return ray;
 }
 
+void setBlock(u32 block){
+	lpmap[block].p1 = 0;
+	lpmap[block].p2 = 0;
+	lpmap[block].p3 = 0;
+								
+	map[block].id = blockSel;
+	map[block].r  = colorSel.r;
+	map[block].g  = colorSel.g;
+	map[block].b  = colorSel.b;
+
+	metadt[block].r = metadtSel.r;
+	metadt[block].g = metadtSel.g;
+	metadt[block].b = metadtSel.b;
+	metadt[block].id = metadtSel.a;
+
+	metadt2[block].r = metadt2Sel.r;
+	metadt2[block].g = metadt2Sel.g;
+	metadt2[block].b = metadt2Sel.b;
+	metadt2[block].id = metadt2Sel.a;
+
+	metadt3[block].r = metadt3Sel.r;
+	metadt3[block].g = metadt3Sel.g;
+	metadt3[block].b = metadt3Sel.b;
+	metadt3[block].id = metadt3Sel.a;
+
+	metadt4[block].r  = metadt4Sel.r;
+	metadt4[block].g  = metadt4Sel.g;
+	metadt4[block].b  = metadt4Sel.b;
+	metadt4[block].id = metadt4Sel.a;
+
+	metadt5[block].r  = metadt5Sel.r;
+	metadt5[block].g  = metadt5Sel.g;
+	metadt5[block].b  = metadt5Sel.b;
+	metadt5[block].id = metadt5Sel.a;
+
+	metadt6[block].r  = metadt6Sel.r;
+	metadt6[block].g  = metadt6Sel.g;
+	metadt6[block].b  = metadt6Sel.b;
+	metadt6[block].id = metadt6Sel.a;
+}
+
 void tools(){
 	switch(toolSel){
 	case 0:{
@@ -81,7 +122,6 @@ void tools(){
 					ShowCursor(1);
 					SetCursorPos(properties->xres/2,properties->yres/2);
 					menuSel = 4;
-					editBlockSel = block;
 					blockSel = map[block].id;
 					colorSel.r = map[block].r;
 					colorSel.g = map[block].g;
@@ -110,6 +150,7 @@ void tools(){
 					metadt6Sel.g = metadt6[block].g;
 					metadt6Sel.b = metadt6[block].b;
 					metadt6Sel.a = metadt6[block].id;
+					editBlockSel = block;
 					sliderCreate((VEC2){0.59f,-0.875f},0);
 					sliderCreate((VEC2){0.59f,-0.825f},1);
 					sliderCreate((VEC2){0.59f,-0.775f},2);
@@ -136,50 +177,43 @@ void tools(){
 					case 0:
 						if(ray.dir.x < 0.0f){
 							ray.pos.x+=1.0f;
-							updateBlock(block + 1,blockSel);
+							setBlock(block + 1);
 						}
 						else{
 							ray.pos.x-=1.0f;
-							updateBlock(block - 1,blockSel);
+							setBlock(block - 1);
 						}
 						break;
 					case 1:
 						if(ray.dir.y < 0.0f){
 							ray.pos.y+=1.0f;
-							updateBlock(block + properties->lvlSz,blockSel);
+							setBlock(block + properties->lvlSz);
 						}
 						else{
 							ray.pos.y-=1.0f;
-							updateBlock(block - properties->lvlSz,blockSel);
+							setBlock(block - properties->lvlSz);
 						}
 						break;
 					case 2:
 						if(ray.dir.z < 0.0f){
 							ray.pos.z+=1.0f;
-							updateBlock(block + properties->lvlSz * properties->lvlSz,blockSel);
+							setBlock(block + properties->lvlSz * properties->lvlSz);
 						}
 						else{
 							ray.pos.z-=1.0f;
-							updateBlock(block - properties->lvlSz * properties->lvlSz,blockSel);
+							setBlock(block - properties->lvlSz * properties->lvlSz);
 						}
 						break;
 					}
-					switch(blockSel){
-					case 67:
-						toolSel = 4;
-						selarea.x = ray.pos.x;
-						selarea.y = ray.pos.y;
-						selarea.z = ray.pos.z;
-						break;
-					}
+					glMes[glMesC].id = 3;
+					glMesC++;
 					break;
 				}
 				rayItterate(&ray);
 			}
 		}
 		break;
-		}
-		break;
+	}
 	case 1:{
 		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
@@ -212,45 +246,7 @@ void tools(){
 					for(int i = selarea.x;i <= x;i++){
 						for(int i2 = selarea.y;i2 <= y;i2++){
 							for(int i3 = selarea.z;i3 <= z;i3++){
-								int block = (i + i2 * properties->lvlSz + i3 * properties->lvlSz * properties->lvlSz);
-								lpmap[block].p1 = 0;
-								lpmap[block].p2 = 0;
-								lpmap[block].p3 = 0;
-								
-								map[block].id = blockSel;
-								map[block].r  = colorSel.r;
-								map[block].g  = colorSel.g;
-								map[block].b  = colorSel.b;
-
-								metadt[block].r = metadtSel.r;
-								metadt[block].g = metadtSel.g;
-								metadt[block].b = metadtSel.b;
-								metadt[block].id = metadtSel.a;
-
-								metadt2[block].r = metadt2Sel.r;
-								metadt2[block].g = metadt2Sel.g;
-								metadt2[block].b = metadt2Sel.b;
-								metadt2[block].id = metadt2Sel.a;
-
-								metadt3[block].r = metadt3Sel.r;
-								metadt3[block].g = metadt3Sel.g;
-								metadt3[block].b = metadt3Sel.b;
-								metadt3[block].id = metadt3Sel.a;
-
-								metadt4[block].r  = metadt4Sel.r;
-								metadt4[block].g  = metadt4Sel.g;
-								metadt4[block].b  = metadt4Sel.b;
-								metadt4[block].id = metadt4Sel.a;
-
-								metadt5[block].r  = metadt5Sel.r;
-								metadt5[block].g  = metadt5Sel.g;
-								metadt5[block].b  = metadt5Sel.b;
-								metadt5[block].id = metadt5Sel.a;
-
-								metadt6[block].r  = metadt6Sel.r;
-								metadt6[block].g  = metadt6Sel.g;
-								metadt6[block].b  = metadt6Sel.b;
-								metadt6[block].id = metadt6Sel.a;
+								setBlock(i + i2 * properties->lvlSz + i3 * properties->lvlSz * properties->lvlSz);
 							}
 						}
 					}
@@ -300,45 +296,7 @@ void tools(){
 							for(int i3 = selarea.z;i3 <= z;i3++){
 								int block = (i + i2 * properties->lvlSz + i3 * properties->lvlSz * properties->lvlSz);
 								if(rnd() > 1.0f+(f32)metadtSel.r/255.0f){
-									lpmap[block].p1 = 1;
-									lpmap[block].p2 = 1;
-									lpmap[block].p3 = 1;
-								
-									map[block].id = blockSel;
-									map[block].r  = colorSel.r;
-									map[block].g  = colorSel.g;
-									map[block].b  = colorSel.b;
-
-
-									metadt[block].r = metadtSel.r;
-									metadt[block].g = metadtSel.g;
-									metadt[block].b = metadtSel.b;
-									metadt[block].id = metadtSel.a;
-
-									metadt2[block].r = metadt2Sel.r;
-									metadt2[block].g = metadt2Sel.g;
-									metadt2[block].b = metadt2Sel.b;
-									metadt2[block].id = metadt2Sel.a;
-
-									metadt3[block].r = metadt3Sel.r;
-									metadt3[block].g = metadt3Sel.g;
-									metadt3[block].b = metadt3Sel.b;
-									metadt3[block].id = metadt3Sel.a;
-
-									metadt4[block].r  = metadt4Sel.r;
-									metadt4[block].g  = metadt4Sel.g;
-									metadt4[block].b  = metadt4Sel.b;
-									metadt4[block].id = metadt4Sel.a;
-
-									metadt5[block].r  = metadt5Sel.r;
-									metadt5[block].g  = metadt5Sel.g;
-									metadt5[block].b  = metadt5Sel.b;
-									metadt5[block].id = metadt5Sel.a;
-
-									metadt6[block].r  = metadt6Sel.r;
-									metadt6[block].g  = metadt6Sel.g;
-									metadt6[block].b  = metadt6Sel.b;
-									metadt6[block].id = metadt6Sel.a;
+									setBlock(block);
 								}
 								else{
 									lpmap[block].p1 = 1;

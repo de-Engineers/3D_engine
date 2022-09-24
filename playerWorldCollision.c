@@ -195,11 +195,12 @@ void playerWorldCollision(){
 		}
 		if(settings & SETTINGS_GAMEPLAY){
 			if(player->vel.z < -0.3f){
-				if(!player->wounded){
-					player->wounded = 1;
-				}
-				else{
+				u16 fallDamage = (-player->vel.z-0.3f)*150.0f;
+				if(fallDamage > player->health){
 					playerDeath();
+				}	
+				else{
+					player->health -= fallDamage;
 				}
 				switch(metadt6[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].r){
 				case 0:
@@ -239,7 +240,7 @@ void playerWorldCollision(){
 				break;
 			}
 		}
-		if(GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
+		if(GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.2f * player->stamina;
 			player->vel.x *= 1.7f * player->stamina;
 			player->vel.y *= 1.7f * player->stamina;
@@ -281,7 +282,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x04 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
+		if(touchStatus == 0x04 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.x += 0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -314,7 +315,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x08 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
+		if(touchStatus == 0x08 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.x += -0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -347,7 +348,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x10 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
+		if(touchStatus == 0x10 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.y += 0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -377,7 +378,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x20 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0){
+		if(touchStatus == 0x20 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.y += -0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -412,7 +413,7 @@ void playerWorldCollision(){
 		player->vel.y /= 1.12f;
 		break;
 	}
-	if(GetKeyState(VK_SPACE)&0x80){
+	if(GetKeyState(VK_SPACE)&0x80 && menuSel == 0){
 		touchedSpace = 1;
 	}
 	touchStatus = 0;

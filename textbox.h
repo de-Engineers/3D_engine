@@ -6,8 +6,7 @@
 typedef struct{
 	VEC2 pos;
 	u8 id;
-	u8 textSz;
-	u8 text[255];
+	u8 text[20];
 }TEXTBOX;
 
 extern u8 textboxC;

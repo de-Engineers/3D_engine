@@ -7,6 +7,7 @@
 #include "network.h"
 #include "textbox.h"
 #include "ui.h"
+#include "console.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -87,7 +88,7 @@ VEC3 playerspawn[16];
 i16 offsetB = -1;
 
 void playerDeath(){
-	player->wounded = 0;
+	player->health = 100;
 	if(playerspawnC){
 		player->pos = playerspawn[abs(irnd())%(playerspawnC)];
 	}
@@ -170,8 +171,6 @@ inline int max3(int val1,int val2,int val3){
 	}
 }
 
-
-
 VEC3 getCoords(RAY ray){
 	VEC2 wall;
     switch(ray.sid){
@@ -203,50 +202,6 @@ VEC3 getCoords(RAY ray){
 			return (VEC3){wall.x,wall.y,ray.iz+1.0f};
 		}
 	}
-}
-
-void updateBlock(int pos,int val){
-	lpmap[pos].p1 = 0;
-	lpmap[pos].p2 = 0;
-	lpmap[pos].p3 = 0;
-
-	map[pos].id = val;
-	map[pos].r = colorSel.r;
-	map[pos].g = colorSel.g;
-	map[pos].b = colorSel.b;
-
-	metadt[pos].id = metadtSel.a;
-	metadt[pos].r  = metadtSel.r;
-	metadt[pos].g  = metadtSel.g;
-	metadt[pos].b  = metadtSel.b;
-
-	metadt2[pos].id = metadt2Sel.a;
-	metadt2[pos].r  = metadt2Sel.r;
-	metadt2[pos].g  = metadt2Sel.g;
-	metadt2[pos].b  = metadt2Sel.b;
-
-	metadt3[pos].id = metadt3Sel.a;
-	metadt3[pos].r  = metadt3Sel.r;
-	metadt3[pos].g  = metadt3Sel.g;
-	metadt3[pos].b  = metadt3Sel.b;
-
-	metadt4[pos].id = metadt4Sel.a;
-	metadt4[pos].r  = metadt4Sel.r;
-	metadt4[pos].g  = metadt4Sel.g;
-	metadt4[pos].b  = metadt4Sel.b;
-
-	metadt5[pos].id = metadt5Sel.a;
-	metadt5[pos].r  = metadt5Sel.r;
-	metadt5[pos].g  = metadt5Sel.g;
-	metadt5[pos].b  = metadt5Sel.b;
-
-	metadt6[pos].id = metadt6Sel.a;
-	metadt6[pos].r  = metadt6Sel.r;
-	metadt6[pos].g  = metadt6Sel.g;
-	metadt6[pos].b  = metadt6Sel.b;
-
-	glMes[glMesC].id = 3;
-	glMesC++;
 }
 
 void updateBlockLight(int pos){
@@ -380,23 +335,27 @@ void mainMenuLoad(){
 	}
 }
 
+void closeEngine(){
+	if(~settings&SETTINGS_GAMEPLAY&&~networkSettings&SETTINGS_MOVEMENT){
+		levelSave("level");
+	}
+	settings &= ~SETTINGS_PAUZE;
+	HANDLE h = CreateFileA("config.cfg",GENERIC_WRITE,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
+	WriteFile(h,&settings,4,0,0);
+	WriteFile(h,&player->fov.y,4,0,0);
+	WriteFile(h,&properties->sensitivity,4,0,0);
+	WriteFile(h,&sliderValues.serverIP,sizeof(IPADDRESS),0,0);
+	WriteFile(h,playerName,20,0,0);
+	CloseHandle(h);
+	ExitProcess(0);
+}
+
 long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	switch(msg){
 	case WM_QUIT:
 	case WM_CLOSE:
 	case WM_DESTROY:
-		if(~settings&SETTINGS_GAMEPLAY&&~networkSettings&SETTINGS_MOVEMENT){
-			levelSave("level");
-		}
-		settings &= ~SETTINGS_PAUZE;
-		HANDLE h = CreateFileA("config.cfg",GENERIC_WRITE,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
-		WriteFile(h,&settings,4,0,0);
-		WriteFile(h,&player->fov.y,4,0,0);
-		WriteFile(h,&properties->sensitivity,4,0,0);
-		WriteFile(h,&sliderValues.serverIP,sizeof(IPADDRESS),0,0);
-		WriteFile(h,playerName,20,0,0);
-		CloseHandle(h);
-		ExitProcess(0);
+		closeEngine();
 	case WM_ACTIVATE:
 		switch(wParam){
 		case WA_INACTIVE:
@@ -436,7 +395,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				}
 				break;
 			}
-			if(textboxSel!=-1&&strlen(textbox[textboxSel].text) < 20){
+			if(textboxSel!=-1&& strlen(textbox[textboxSel].text) < 20){
 				if(wParam>0x2f&&wParam<0x3a){
 					textbox[textboxSel].text[strlen(textbox[textboxSel].text)] = wParam;
 				}
@@ -446,6 +405,48 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			}
 		}
 		switch(wParam){
+		case 0x54:
+			menuSel = 9;
+			ShowCursor(1);
+			textboxCreate((VEC2){-0.69f,0.8f},2);
+			buttonCreate((VEC2){-0.37f,0.76f},12);
+			break;
+		case VK_ADD:
+			blockSel++;
+			break;
+		case VK_SUBTRACT:
+			blockSel--;
+			break;
+		case VK_UP:
+			if(chatLineSel < CHATSZ){
+				switch(menuSel){
+				case 8:
+					chatLineSel++;
+					for(u32 i = 0;i < textboxSel;i++){
+						if(textbox[i].id == 1){
+							memcpy(textbox[i].text,chat[chatLineSel].text,20);
+							break;
+						}
+					}
+					break;
+				}
+			}
+			break;
+		case VK_DOWN:
+			if(chatLineSel > 0){
+				switch(menuSel){
+				case 8:
+					chatLineSel--;
+					for(u32 i = 0;i < textboxSel;i++){
+						if(textbox[i].id == 1){
+							memcpy(textbox[i].text,chat[chatLineSel].text,20);
+							break;
+						}
+					}
+					break;
+				}
+			}
+			break;
 		case VK_SPACE:
 			if(textboxSel!=-1&&strlen(textbox[textboxSel].text) < 20){
 				textbox[textboxSel].text[strlen(textbox[textboxSel].text)] = wParam;
@@ -468,8 +469,18 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				colorSel.b = irnd();
 			}
 			break;
+		case VK_OEM_PERIOD:
+			if(textboxSel!=-1&& strlen(textbox[textboxSel].text) < 20){
+				textbox[textboxSel].text[strlen(textbox[textboxSel].text)] = '.';
+			}
+			break;
 		case VK_RETURN:
 			switch(menuSel){
+			case 0:
+				if(connectStatus){
+					menuSel = 9;
+				}
+				break;
 			case 3:
 				for(int i = 0;i < strlen(inputStr);i++){
 					if(inputStr[i]<10){
@@ -486,6 +497,21 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				buttonCreate((VEC2){0.05f,-0.42f},0);
 				buttonCreate((VEC2){0.05f,-0.28f},2);
 				buttonCreate((VEC2){0.05f,-0.21f},3);
+				break;
+			case 8:
+				for(u32 i = 0;i < textboxC;i++){
+					if(textbox[i].id == 1){
+						if(textbox[i].text[0]){
+							for(u32 i2 = CHATSZ-1;i2 > 0;i2--){
+								memcpy(chat[i2].text,chat[i2-1].text,40);
+								chat[i2].timer = chat[i2-1].timer;
+							}
+							executeCommand(textbox[i].text);
+							strcpy(chat[0].text,textbox[i].text);
+							strset(textbox[i].text,0);
+						}
+					}
+				}
 				break;
 			}
 			break;
@@ -528,6 +554,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
 				break;
 			case 4:
+				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
 			case 1:
 				sliderId = -1;
 				sliderC = 0;
@@ -556,7 +583,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				for(u32 i = 0;i < textboxC;i++){
 					if(textbox[i].id==0){
 						strcpy(playerName,textbox[i].text);
-						strset(textbox[i].text,0);
+						_strset(textbox[i].text,0);
 						break;
 					}
 				}
@@ -578,18 +605,42 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					ShowCursor(1);
 				}
 				break;
+			case 8:
+				menuSel = 0;
+				buttonC = 0;
+				textboxC = 0;
+				textboxSel = -1;
+				chatLineSel = -1;
+				ShowCursor(0);
+				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
+				break;
+			case 9:
+				menuSel = 0;
+				buttonC = 0;
+				textboxC = 0;
+				textboxSel = -1;
+				chatLineSel = -1;
+				ShowCursor(0);
+				SetCursorPos(properties->xres/2+properties->windowOffsetX,properties->yres/2+properties->windowOffsetY);
+				break;
 			}
 			break;
 		case VK_CONTROL:
 			player->hitboxWantedHeight = 0.7f;
 			player->stamina = 0.0f;
 			break;
-		}
-		if(GetKeyState(VK_PRIOR) & 0x80){
+		case VK_OEM_3:
+			menuSel = 8;
+			ShowCursor(1);
+			textboxCreate((VEC2){-0.69f,0.8f},1);
+			buttonCreate((VEC2){-0.37f,0.76f},11);
+			break;
+		case VK_PRIOR:
 			toolSel++;
-		}
-		if(GetKeyState(VK_NEXT) & 0x80){
+			break;
+		case VK_NEXT:
 			toolSel--;
+			break;
 		}
 		break;
 	case WM_KEYUP:
@@ -666,13 +717,15 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_LBUTTONDOWN:
 		switch(menuSel){
 		case 0:
-			tools();
+			if(!connectStatus){
+				tools();
+			}
 			break;
 		default:
 			for(u32 i = 0;i < textboxC;i++){
 				if(mousePos.x > textbox[i].pos.x - 0.2666666667f && mousePos.x < textbox[i].pos.x + 0.26666667f
 					&& mousePos.y > textbox[i].pos.y - 0.09f && mousePos.y < textbox[i].pos.y){
-					textboxSel = textbox[i].id;
+					textboxSel = i;
 					goto foundTextbox;
 				}
 			}
@@ -717,7 +770,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 WNDCLASS wndclass = {0,proc,0,0,0,0,0,0,name,name};
 void physics(){
 	for (;;){
-		if(GetKeyState(VK_LBUTTON)&0x80){
+		if(menuSel==0&&(GetKeyState(VK_LBUTTON)&0x80)){
 			for(u32 i = 0;i < sliderC;i++){
 				if(mousePos.x > slider[i].pos.x - 0.266666667f && mousePos.x < slider[i].pos.x + 0.26666667f
 					&& mousePos.y > slider[i].pos.y - 0.015f && mousePos.y < slider[i].pos.y + 0.015f){
@@ -814,7 +867,7 @@ void physics(){
 						break;
 					}
 				}
-				if(GetKeyState(VK_LBUTTON)&0x80){
+				if(GetKeyState(VK_LBUTTON)&0x80&&(menuSel==0)){
 					switch(player->weaponEquiped){
 					case 1:
 						if(!player->shotCooldown){
@@ -822,6 +875,15 @@ void physics(){
 							player->recoil.x += (rnd()-1.5f)/15.0f;
 							RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
 							getLmapLocation(&ray);
+							for(u32 i = 0;i < entityC;i++){
+								if(entity.cpu[i].id==4){
+									spawnEntity((VEC3){player->pos.x,player->pos.y,player->pos.z-0.1f},VEC3mulR((VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f},1.5f),0);
+									VEC3mul(&entity.gpu[i].color,10.0f);
+									entity.cpu[i].aniTime = 11;
+									entity.cpu[i].aniType = 2;
+									break;
+								}
+							}
 							spawnEntityEx(VEC3subVEC3R(player->pos,(VEC3){-player->xdir,-player->ydir,0.2f}),VEC3subVEC3R(getCoords(ray),player->pos),(VEC3){0.0f,0.0f,0.0f},10,(VEC3){0.5f,0.2f,0.2f});
 							player->shotCooldown = 50;
 							if(connectStatus){
@@ -830,7 +892,7 @@ void physics(){
 								packetdata.pos2 = VEC3subVEC3R(getCoords(ray),player->pos);
 							}
 						}
-						break;
+						break;	
 					}
 				}
 				if(player->shotCooldown){
@@ -946,9 +1008,9 @@ void main(){
 	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
 	playerName = HeapAlloc(GetProcessHeap(),8,20);
 
-	chat1.text = HeapAlloc(GetProcessHeap(),8,40);
-	chat2.text = HeapAlloc(GetProcessHeap(),8,40);
-	chat3.text = HeapAlloc(GetProcessHeap(),8,40);
+	for(u32 i = 0;i < CHATSZ;i++){
+		chat[i].text = HeapAlloc(GetProcessHeap(),8,40);
+	}
 
 	skyboxTexture = HeapAlloc(GetProcessHeap(),8,skyboxSz*skyboxSz*sizeof(RGB));
 
@@ -973,6 +1035,7 @@ void main(){
 
 	player->hitboxHeight = 1.7f;
 	player->hitboxWantedHeight = 1.7f;
+	player->health = 100;
 
 	renderingThread = CreateThread(0,0,openGL,0,0,0);
 	

@@ -22,9 +22,7 @@ const char *words2[] = {"normal","cube","blockedit","changelight","changepropert
 unsigned int totalCar;
 VEC2 mousePos;
 
-CHATMSG chat1;
-CHATMSG chat2;
-CHATMSG chat3;
+CHATMSG chat[CHATSZ];
 
 void drawChar(int c,float x,float y,float z,float id,float xsize,float ysize){
 	xsize /= 1.7777778;
@@ -139,6 +137,9 @@ void drawWord(u8 *str,f32 x,f32 y,f32 id){
 		if(str[i] > 0x2f && str[i] < 0x3a){
 			drawChar(str[i] - 0x30,x+i*0.0235f,y,-0.1f,id,0.04f,0.04f);
 		}
+		else if(str[i] == '.'){
+			drawChar(str[i]+0x20,x+i*0.0235f,y,-0.1f,id,0.04f,0.04f);
+		}
 		else{
 			drawChar(str[i] - 87,x+i*0.0235f,y,-0.1f,id,0.04f,0.04f);
 		}
@@ -210,7 +211,7 @@ void updateMouse(){
 }
 
 void drawUI(){
-	if(~settings & SETTINGS_GAMEPLAY){
+	if(~settings & SETTINGS_GAMEPLAY && (menuSel == 0 || menuSel == 4)){
 		drawChar(33,-0.9f,0.9f,-0.99f,0,0.04f,0.04f);
 		drawVar(-0.9f,0.9f,player->pos.x);
 		drawChar(34,-0.75,0.9,-0.99f,0,0.04f,0.04f);
@@ -277,17 +278,23 @@ void drawUI(){
 		drawSprite((VEC3){0.927f,-0.603f,-0.2f},(VEC2){0.05f,0.05f},7);
 	}
 	else{
-		if(chat1.timer){
-			drawWord(chat1.text,-0.94f,-0.9f,0.0);
-			chat1.timer--;
-		}
-		if(chat2.timer){
-			drawWord(chat2.text,0.0f,0.0f,0.0);
-			chat2.timer--;
-		}
-		if(chat3.timer){
-			drawWord(chat3.text,0.0f,0.0f,0.0);
-			chat3.timer--;
+		switch(menuSel){
+		case 8:
+			for(u32 i = 0;i < 5;i++){
+				if(chat[i].timer){
+					chat[i].timer--;
+				}
+				drawWord(chat[i].text,-0.94f,-0.9f+0.07f*i,0.0);
+			}
+			break;
+		default:
+			for(u32 i = 0;i < 5;i++){
+				if(chat[i].timer){
+					drawWord(chat[i].text,-0.94f,-0.9f+0.07f*i,0.0);
+					chat[i].timer--;
+				}
+			}
+			break;
 		}
 	}
 	switch(menuSel){
@@ -437,6 +444,16 @@ void drawUI(){
 		}
 		updateMouse();
 		break;
+	case 8:
+		drawSprite((VEC3){-0.65f,0.81f,0.0f },(VEC2){ 0.33f,0.16f },2);
+		drawWord("console",-0.94f,0.9f,0.0);
+		updateMouse();
+		break;
+	case 9:
+		drawSprite((VEC3){-0.65f,0.81f,0.0f},(VEC2){ 0.33f,0.16f },2);
+		drawWord("chat",-0.94f,0.9f,0.0);
+		updateMouse();
+		break;
 	}
 	}
 	for(u32 i = 0;i < buttonC;i++){
@@ -465,7 +482,7 @@ void drawUI(){
 		drawSprite((VEC3){textbox[i].pos.x+0.2636666667f,textbox[i].pos.y-0.044f,0.0f},(VEC2){0.0028f,0.05f},5);
 		drawWord(textbox[i].text,textbox[i].pos.x-0.2546666667f,textbox[i].pos.y-0.062f,0.0f);
 	}
-	if(textboxSel!=-1 && GetTickCount() & 0x200){
+	if(GetTickCount() & 0x200 && textboxSel != -1){
 		drawSprite((VEC3){textbox[textboxSel].pos.x-0.24666667f+0.0233f*strlen(textbox[textboxSel].text),textbox[textboxSel].pos.y-0.0425f,0.0f},(VEC2){0.002f,0.03f},5);
 	}
 }
