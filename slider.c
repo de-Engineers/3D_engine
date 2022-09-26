@@ -85,6 +85,20 @@ void sliderMetadt1z(u8 pos){
 	glMesC++;
 }
 
+void sliderMetadt1w(u8 pos){
+	if(settings & 0x40){
+		metadt4Sel.b = pos;
+		metadt4[editBlockSel].b= metadt4Sel.b;
+	}
+	else{
+		metadtSel.b = pos;
+		metadt[editBlockSel].b = metadtSel.b;
+	}
+	sliderValues.metadt.w = pos;
+	glMes[glMesC].id = 3;
+	glMesC++;
+}
+
 void sliderMetadt2x(u8 pos){
 	if(settings & 0x40){
 		metadt5Sel.r = pos;
@@ -123,6 +137,20 @@ void sliderMetadt2z(u8 pos){
 		metadt2[editBlockSel].id= metadt2Sel.a;
 	}
 	sliderValues.metadt2.z = pos;
+	glMes[glMesC].id = 3;
+	glMesC++;
+}
+
+void sliderMetadt2w(u8 pos){
+	if(settings & 0x40){
+		metadt5Sel.b = pos;
+		metadt5[editBlockSel].b = metadt5Sel.b;
+	}
+	else{
+		metadt2Sel.b = pos;
+		metadt2[editBlockSel].b = metadt2Sel.b;
+	}
+	sliderValues.metadt2.w = pos;
 	glMes[glMesC].id = 3;
 	glMesC++;
 }
@@ -169,6 +197,20 @@ void sliderMetadt3z(u8 pos){
 	glMesC++;
 }
 
+void sliderMetadt3w(u8 pos){
+	if(settings & 0x40){
+		metadt6Sel.b = pos;
+		metadt6[editBlockSel].b = metadt6Sel.b;
+	}
+	else{
+		metadt3Sel.b = pos;
+		metadt3[editBlockSel].b = metadt3Sel.b;
+	}
+	sliderValues.metadt3.w = pos;
+	glMes[glMesC].id = 3;
+	glMesC++;
+}
+
 void sliderFOV(u8 pos){
 	player->fov.y = (f32)pos/127.5f;
 	player->fov.x = (f32)pos/127.5f*16.0f/9.0f;
@@ -200,6 +242,6 @@ void sliderIP4(u8 pos){
 	sliderValues.serverIP.p4 = pos;
 }
 
-void (*sliders[32])(u8 pos) = {sliderRed,sliderGreen,sliderBlue,sliderMetadt1x,sliderMetadt1y,sliderMetadt1z,
-sliderMetadt2x,sliderMetadt2y,sliderMetadt2z,sliderMetadt3x,sliderMetadt3y,sliderMetadt3z,sliderFOV,sliderSensitivity,
-sliderIP1,sliderIP2,sliderIP3,sliderIP4};
+void (*sliders[32])(u8 pos) = {sliderRed,sliderGreen,sliderBlue,sliderMetadt1x,sliderMetadt1y,sliderMetadt1z,sliderMetadt1w,
+sliderMetadt2x,sliderMetadt2y,sliderMetadt2z,sliderMetadt2w,sliderMetadt3x,sliderMetadt3y,sliderMetadt3z,sliderMetadt3w,sliderFOV,
+sliderSensitivity,sliderIP1,sliderIP2,sliderIP3,sliderIP4};

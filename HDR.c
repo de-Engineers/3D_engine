@@ -58,7 +58,7 @@ VEC3 getSubCoords(RAY ray){
 
 void HDR(){
 	u32 polBrightness = 0;
-	u16 hits = 0;
+	u32 hits = 0;
 	for(f32 i = player->xangle - 0.5f;i < player->xangle + 0.5f;i+=0.05f){
 		for(f32 i2 = player->yangle - 0.5f;i2 < player->yangle + 0.5f;i2+=0.05f){
 			RAY ray = rayCreate(player->pos,(VEC3){cosf(i)*cosf(i2),sinf(i)*cosf(i2),sinf(i2)});

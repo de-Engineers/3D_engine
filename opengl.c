@@ -673,7 +673,6 @@ void openGL(){
 					break;
 				}
 			}
-			sprite = 0;
 			glUseProgram(shaderProgramFont);
 			glUniform3f(glGetUniformLocation(shaderProgramFont,"color"),(float)colorSel.r/255.0f,(float)colorSel.g/255.0f,(float)colorSel.b/255.0f);
 			if(settings & 0x04){

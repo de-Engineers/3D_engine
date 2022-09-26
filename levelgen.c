@@ -1,7 +1,6 @@
 ﻿#include <windows.h>
 #include <intrin.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <shlwapi.h>
 
 #include "main.h"

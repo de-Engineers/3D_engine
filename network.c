@@ -34,21 +34,17 @@ STRINGS networkplayerNames;
 void lagCompensation(){
 	while(connectStatus){
 		for(u32 i = 0;i < networkplayerC;i++){
-			VEC3addVEC3(&networkplayer.player[i].pos,networkplayer.lagcomp[i].vel);
+			VEC3addVEC3(&networkplayer.player[i].pos,VEC3divR(networkplayer.player[i].vel,15.0f));
 		}
-		Sleep(15);
+		Sleep(1);
 	}
 }
 
 void serverRecv(){
 	u8 packetID = 0;
-	//lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
+	lagCompensationThread = CreateThread(0,0,lagCompensation,0,0,0);
 	for(;;){
 		recv(tcpSock,&packetID,1,0);
-		for(u32 i = 0;i < networkplayerC;i++){
-			networkplayer.lagcomp[i].vel = VEC3subVEC3R(networkplayer.lagcomp[i].posBuf,networkplayer.player[i].pos);
-			networkplayer.lagcomp[i].posBuf = networkplayer.player[i].pos;
-		}
 		switch(packetID){
 		case 0:
 			recv(tcpSock,networkplayer.player,networkplayerC*sizeof(NETWORKPLAYER),0);

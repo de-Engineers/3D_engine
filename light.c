@@ -668,10 +668,12 @@ void updateLight2(){
 			break;
 		}
 		case BLOCK_CUBE:
-			if(metadt4[i].r){
+			if(metadt4[i].b&&metadt4[i].b!=1){
 				CVEC3 crd = map2crds(i);
 				turret[turretC].pos = (VEC3){(f32)crd.x+0.5f,(f32)crd.y+0.5f,(f32)crd.z+0.5f};
-				turret[turretC].id  = metadt4[i].r-1;
+				turret[turretC].id  = metadt4[i].b-2;
+				turret[turretC].power = metadt4[i].g;
+				turret[turretC].totalCooldown = metadt4[i].id+1;
 				turretC++;
 			}
 		}

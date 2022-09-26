@@ -154,15 +154,21 @@ void tools(){
 					sliderCreate((VEC2){0.59f,-0.875f},0);
 					sliderCreate((VEC2){0.59f,-0.825f},1);
 					sliderCreate((VEC2){0.59f,-0.775f},2);
+
 					sliderCreate((VEC2){0.59f,-0.475f},3);
 					sliderCreate((VEC2){0.59f,-0.425f},4);
 					sliderCreate((VEC2){0.59f,-0.375f},5);
-					sliderCreate((VEC2){0.59f,-0.175f},6);
-					sliderCreate((VEC2){0.59f,-0.125f},7);
-					sliderCreate((VEC2){0.59f,-0.075f},8);
-					sliderCreate((VEC2){0.59f, 0.125f},9);
-					sliderCreate((VEC2){0.59f, 0.175f},10);
-					sliderCreate((VEC2){0.59f, 0.225f},11);
+					sliderCreate((VEC2){0.59f,-0.325f},6);
+
+					sliderCreate((VEC2){0.59f,-0.175f},7);
+					sliderCreate((VEC2){0.59f,-0.125f},8);
+					sliderCreate((VEC2){0.59f,-0.075f},9);
+					sliderCreate((VEC2){0.59f,-0.025f},10);
+
+					sliderCreate((VEC2){0.59f, 0.125f},11);
+					sliderCreate((VEC2){0.59f, 0.175f},12);
+					sliderCreate((VEC2){0.59f, 0.225f},13);
+					sliderCreate((VEC2){0.59f, 0.275f},14);
 					break;
 				}
 				rayItterate(&ray);

@@ -72,6 +72,13 @@ typedef float              f32;
 typedef double             f64;
 
 typedef struct{
+	u32 x;
+	u32 y;
+	u32 z;
+	u32 w;
+}IVEC4;
+
+typedef struct{
 	u8 id;
 	u8 r;
 	u8 g;
@@ -262,9 +269,9 @@ typedef struct{
 
 typedef struct{
 	IVEC3 col;
-	IVEC3 metadt;
-	IVEC3 metadt2;
-	IVEC3 metadt3;
+	IVEC4 metadt;
+	IVEC4 metadt2;
+	IVEC4 metadt3;
 	u32 fov;
 	u32 sensitivity;
 	IPADDRESS serverIP;

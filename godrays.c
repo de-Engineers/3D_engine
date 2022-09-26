@@ -2,13 +2,6 @@
 
 RGBA *godraymap;
 
-typedef struct{
-	u64 r;
-	u64 g;
-	u64 b;
-	u64 a;
-}IVEC4;
-
 void genGodraysMap(){
 	/*
 	for(;;){
