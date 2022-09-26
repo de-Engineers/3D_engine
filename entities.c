@@ -4,6 +4,7 @@
 #include "network.h"
 
 #include "ivec3.h"
+#include "raytracing.h"
 
 #define LUMINANCESAMPLECOUNT 16
 
@@ -386,16 +387,12 @@ void entities(){
 				}
 				break;
 			case 10:{
-				f32 laserLenght = VEC3length(entity.gpu[i].pos2);
-				VEC3 laserDirNorm = VEC3mulR(VEC3normalize(entity.gpu[i].pos2),0.05f);
-				VEC3 laserPos = entity.gpu[i].pos;
-				for(f32 i2 = 0.0f;i2 < laserLenght;i2+=0.05f){
-					if(laserPos.x < player->pos.x+0.2f && laserPos.x > player->pos.x-0.2f && 
-					laserPos.y < player->pos.y+0.2f && laserPos.y > player->pos.y-0.2f && 
-					laserPos.z < player->pos.z+0.2f && laserPos.z > player->pos.z-1.7f){
+				if(entity.cpu[i].health == 5){
+					VEC3 laserDirNorm = VEC3normalize(entity.gpu[i].pos2);
+					f32 d = iCylinder(player->pos,laserDirNorm,(VEC3){0.0f,0.0f,-1.7f},0.2f);
+					if(d > 0.0f && d < VEC3dist(player->pos,entity.gpu[i].pos)){
 						playerDeath();
 					}
-					VEC3addVEC3(&laserPos,laserDirNorm);
 				}
 				if(entity.cpu[i].health){
 					entity.cpu[i].health--;

@@ -8,6 +8,7 @@
 #include "textbox.h"
 #include "ui.h"
 #include "console.h"
+#include "blockmove.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -285,10 +286,10 @@ void levelLoad(char *lname){
 			break;
 		}
 		case BLOCK_CUBE:
-			if(metadt4[i].r){
+			if(metadt4[i].b&&metadt4[i].b!=1){
 				CVEC3 crd = map2crds(i);
 				turret[turretC].pos = (VEC3){(f32)crd.x+0.5f,(f32)crd.y+0.5f,(f32)crd.z+0.5f};
-				turret[turretC].id  = metadt4[i].r-1;
+				turret[turretC].id  = metadt4[i].b-2;
 				turret[turretC].power = metadt4[i].g;
 				turret[turretC].totalCooldown = metadt4[i].id+1;
 				turretC++;
@@ -504,7 +505,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 							}
 							executeCommand(textbox[i].text);
 							strcpy(chat[0].text,textbox[i].text);
-							strset(textbox[i].text,0);
+							_strset(textbox[i].text,0);
 						}
 					}
 				}
@@ -519,7 +520,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 							}
 							chat[0].timer = 1200;
 							strcpy(chat[0].text,textbox[i].text);
-							strset(textbox[i].text,0);
+							_strset(textbox[i].text,0);
 						}
 					}
 				}
@@ -607,10 +608,10 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			case 7:
 				if(connectStatus == 1){
 					connectStatus = 0;
-					sliderCreate((VEC2){ 0.190f,-0.12f },14);
-					sliderCreate((VEC2){ 0.190f,-0.19f },15);
-					sliderCreate((VEC2){ 0.190f,-0.26f },16);
-					sliderCreate((VEC2){ 0.190f,-0.33f },17);
+					sliderCreate((VEC2){ 0.190f,-0.12f },17);
+					sliderCreate((VEC2){ 0.190f,-0.19f },18);
+					sliderCreate((VEC2){ 0.190f,-0.26f },19);
+					sliderCreate((VEC2){ 0.190f,-0.33f },20);
 					buttonCreate((VEC2){ -0.059f,-0.40 },10);
 					menuSel = 6;
 					ShowCursor(1);
@@ -729,7 +730,25 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_LBUTTONDOWN:
 		switch(menuSel){
 		case 0:
-			if(!connectStatus){
+			if(settings & SETTINGS_GAMEPLAY){
+				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+				while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
+					u32 block = crds2map(ray.ix,ray.iy,ray.iz);
+					switch(map[block].id){
+					case BLOCK_CUBE:
+						if(metadt4[block].b==1){
+							createMoveBlock(block);
+							goto end;
+						}
+						break;
+					}
+					rayItterate(&ray);
+					continue;
+				end:
+					break;
+				}
+			}
+			else{
 				tools();
 			}
 			break;
@@ -988,7 +1007,7 @@ void physics(){
 		}
 		player->vel.z /= 1.003f;
 		tick++;
-		if(!(settings&SETTINGS_LIGHTING)){
+		if(!(settings&SETTINGS_LIGHTING)&&lmapC!=0){
 			HDR();
 		}
 		Sleep(15);
@@ -1019,6 +1038,7 @@ void main(){
 	star       = HeapAlloc(GetProcessHeap(),8,sizeof(STAR)*3);
 	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
 	playerName = HeapAlloc(GetProcessHeap(),8,20);
+	blockmove  = HeapAlloc(GetProcessHeap(),8,sizeof(BLOCKMOVE)*64);
 
 	for(u32 i = 0;i < CHATSZ;i++){
 		chat[i].text = HeapAlloc(GetProcessHeap(),8,40);

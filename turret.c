@@ -1,5 +1,6 @@
 ﻿#include <math.h>
 #include <stdio.h>
+
 #include "main.h"
 
 u32 turretC;
@@ -15,6 +16,7 @@ CVEC3 map2crds(u32 map){
 
 void ittmap(){
 	for(;;){
+		moveBlocks();
 		if(settings & 0x100){
 			for(u32 i = 0;i < turretC;i++){
 				switch(turret[i].id){

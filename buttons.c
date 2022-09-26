@@ -94,16 +94,16 @@ void videoSettingsButton(){
 	menuSel = 5;
 	buttonCreate((VEC2){ -0.059f,0.24f },7);
 	buttonCreate((VEC2){ -0.059f,0.02f },6);
-	sliderCreate((VEC2){ 0.190f,0.09f },12);
-	sliderCreate((VEC2){ 0.190f,0.16f },13);
+	sliderCreate((VEC2){ 0.190f,0.09f },15);
+	sliderCreate((VEC2){ 0.190f,0.16f },16);
 }
 
 void multiplayerButton(){
 	buttonC = 0;
-	sliderCreate((VEC2){0.190f,-0.12f},14);
-	sliderCreate((VEC2){0.190f,-0.19f},15);
-	sliderCreate((VEC2){0.190f,-0.26f},16);
-	sliderCreate((VEC2){0.190f,-0.33f},17);
+	sliderCreate((VEC2){0.190f,-0.12f},17);
+	sliderCreate((VEC2){0.190f,-0.19f},18);
+	sliderCreate((VEC2){0.190f,-0.26f},19);
+	sliderCreate((VEC2){0.190f,-0.33f},20);
 	buttonCreate((VEC2){-0.059f,-0.40},10);
 	textboxCreate((VEC2){0.190f,0.02f},0);
 	menuSel = 6;
@@ -113,7 +113,7 @@ void serverConnectButton(){
 	for(u32 i = 0;i < textboxC;i++){
 		if(textbox[i].id == 0){
 			strcpy(playerName,textbox[i].text);
-			strset(textbox[i].text,0);
+			_strset(textbox[i].text,0);
 			break;
 		}
 	}
@@ -136,7 +136,7 @@ void consoleEnterButton(){
 				}
 				executeCommand(textbox[i].text);
 				strcpy(chat[0].text,textbox[i].text);
-				strset(textbox[i].text,0);
+				_strset(textbox[i].text,0);
 			}
 			break;
 		}
@@ -153,7 +153,7 @@ void chatEnterButton(){
 				}
 				chat[0].timer = 600;
 				strcpy(chat[0].text,textbox[i].text);
-				strset(textbox[i].text,0);
+				_strset(textbox[i].text,0);
 				packetID = 2;
 			}
 			break;
