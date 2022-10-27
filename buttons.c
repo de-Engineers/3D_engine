@@ -47,8 +47,8 @@ void EnumLevelsButton(){
 			fileNames.str = HeapReAlloc(GetProcessHeap(),8,fileNames.str,sizeof(char*)*(fileNames.strC+1));
 			fileNames.str[fileNames.strC] = HeapAlloc(GetProcessHeap(),8,strlen(windt.cFileName)+1);
 			memcpy(fileNames.str[fileNames.strC],windt.cFileName,strlen(windt.cFileName)-4);
-			buttonCreate((VEC2){0.05f,0.28f-(float)fileNames.strC/14.0f},100+fileNames.strC);
-			buttonCreate((VEC2){0.25f,0.28f-(float)fileNames.strC/14.0f},110+fileNames.strC);
+			buttonCreate((VEC2){0.05f,0.28f-(f32)fileNames.strC/14.0f},100+fileNames.strC);
+			buttonCreate((VEC2){0.25f,0.28f-(f32)fileNames.strC/14.0f},110+fileNames.strC);
 			fileNames.strC++;
 		}
 	}

@@ -21,56 +21,56 @@ inline void castLightRay(RAY ray,VEC3 color){
         switch (map[block].id) {
         case BLOCK_CUBE:{
             VEC3 spos = getSubCoords(ray);
-            VEC3 mtdt = { (float)metadt[block].g / 255.0f,(float)metadt[block].r / 255.0f,(float)metadt[block].id / 255.0f };
-            VEC3 mtdt2 = { (float)metadt2[block].g / 255.0f,(float)metadt2[block].r / 255.0f,(float)metadt2[block].id / 255.0f };
+            VEC3 mtdt = { (f32)metadt[block].g / 255.0f,(f32)metadt[block].r / 255.0f,(f32)metadt[block].id / 255.0f };
+            VEC3 mtdt2 = { (f32)metadt2[block].g / 255.0f,(f32)metadt2[block].r / 255.0f,(f32)metadt2[block].id / 255.0f };
             VEC3 rotdir = ray.dir;
             VEC2 tempv;
-            tempv = rotVEC2((VEC2){mtdt.x,mtdt.y},(float)metadt3[block].r / 255.0f * PI);
+            tempv = rotVEC2((VEC2){mtdt.x,mtdt.y},(f32)metadt3[block].r / 255.0f * PI);
             mtdt.x = tempv.x;
             mtdt.y = tempv.y;
-            tempv = rotVEC2((VEC2){mtdt.x,mtdt.z},(float)metadt3[block].g / 255.0f * PI);
+            tempv = rotVEC2((VEC2){mtdt.x,mtdt.z},(f32)metadt3[block].g / 255.0f * PI);
             mtdt.x = tempv.x;
             mtdt.z = tempv.y;
-            tempv = rotVEC2((VEC2){mtdt.y,mtdt.z},(float)metadt3[block].id / 255.0f * PI);
+            tempv = rotVEC2((VEC2){mtdt.y,mtdt.z},(f32)metadt3[block].id / 255.0f * PI);
             mtdt.y = tempv.x;
             mtdt.z = tempv.y;
-            tempv = rotVEC2((VEC2){spos.x,spos.y},(float)metadt3[block].r / 255.0f * PI);
+            tempv = rotVEC2((VEC2){spos.x,spos.y},(f32)metadt3[block].r / 255.0f * PI);
             spos.x = tempv.x;
             spos.y = tempv.y;
-            tempv = rotVEC2((VEC2){spos.x,spos.z},(float)metadt3[block].g / 255.0f * PI);
+            tempv = rotVEC2((VEC2){spos.x,spos.z},(f32)metadt3[block].g / 255.0f * PI);
             spos.x = tempv.x;
             spos.z = tempv.y;
-            tempv = rotVEC2((VEC2){spos.y,spos.z},(float)metadt3[block].id / 255.0f * PI);
+            tempv = rotVEC2((VEC2){spos.y,spos.z},(f32)metadt3[block].id / 255.0f * PI);
             spos.y = tempv.x;
             spos.z = tempv.y;
-            tempv = rotVEC2((VEC2){rotdir.x,rotdir.y},(float)metadt3[block].r / 255.0f * PI);
+            tempv = rotVEC2((VEC2){rotdir.x,rotdir.y},(f32)metadt3[block].r / 255.0f * PI);
             rotdir.x = tempv.x;
             rotdir.y = tempv.y;
-            tempv = rotVEC2((VEC2){rotdir.x,rotdir.z},(float)metadt3[block].g / 255.0f * PI);
+            tempv = rotVEC2((VEC2){rotdir.x,rotdir.z},(f32)metadt3[block].g / 255.0f * PI);
             rotdir.x = tempv.x;
             rotdir.z = tempv.y;
-            tempv = rotVEC2((VEC2){rotdir.y,rotdir.z},(float)metadt3[block].id / 255.0f * PI);
+            tempv = rotVEC2((VEC2){rotdir.y,rotdir.z},(f32)metadt3[block].id / 255.0f * PI);
             rotdir.y = tempv.x;
             rotdir.z = tempv.y;
             f32 d = iBox(VEC3subVEC3R(spos,mtdt),rotdir,(VEC3){metadt2[block].g/255.0f,metadt2[block].r/255.0f,metadt2[block].id/255.0f});
             if(d > 0.0f){
                 VEC3addVEC3(&spos,VEC3mulR(rotdir,d));
                 VEC3 nspos = spos;
-                tempv = rotVEC2((VEC2){nspos.y,nspos.z}, -(float)metadt3[block].r / 255.0f * PI);
+                tempv = rotVEC2((VEC2){nspos.y,nspos.z}, -(f32)metadt3[block].r / 255.0f * PI);
                 nspos.y = tempv.x;
                 nspos.z = tempv.y;
-                tempv = rotVEC2((VEC2){nspos.x,nspos.z}, -(float)metadt3[block].g / 255.0f * PI);
+                tempv = rotVEC2((VEC2){nspos.x,nspos.z}, -(f32)metadt3[block].g / 255.0f * PI);
                 nspos.x = tempv.x;
                 nspos.z = tempv.y;
-                tempv = rotVEC2((VEC2){nspos.x,nspos.y}, -(float)metadt3[block].id / 255.0f * PI);
+                tempv = rotVEC2((VEC2){nspos.x,nspos.y}, -(f32)metadt3[block].id / 255.0f * PI);
                 nspos.x = tempv.x;
                 nspos.y = tempv.y;
                 if (nspos.x >= 0.0f && nspos.y >= 0.0f && nspos.z >= 0.0f && nspos.x <= 1.0f && nspos.y <= 1.0f && nspos.z <= 1.0f) {
-                    color.r *= (float)map[block].r / 256.0f;
-                    color.g *= (float)map[block].g / 256.0f;
-                    color.b *= (float)map[block].b / 256.0f;
+                    color.r *= (f32)map[block].r / 256.0f;
+                    color.g *= (f32)map[block].g / 256.0f;
+                    color.b *= (f32)map[block].b / 256.0f;
                     if (spos.x > mtdt.x - mtdt2.x - 0.0001f && spos.x < mtdt.x - mtdt2.x + 0.0001f) {
-                        float mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0;
+                        f32 mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0;
                         u32 xt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -83,7 +83,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                         }
                     }
                     if (spos.y > mtdt.y - mtdt2.y - 0.0001f && spos.y < mtdt.y - mtdt2.y + 0.0001f) {
-                        float mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0;
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -96,7 +96,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                         }
                     }
                     if (spos.z > mtdt.z - mtdt2.z - 0.0001f && spos.z < mtdt.z - mtdt2.z + 0.0001f) {
-                        float mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0;
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -109,7 +109,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                         }
                     }
                     if (spos.x > mtdt.x + mtdt2.x - 0.0001f && spos.x < mtdt.x + mtdt2.x + 0.0001f) {
-                        float mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0;
+                        f32 mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0;
                         u32 xt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -122,7 +122,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                         }
                     }
                     if (spos.y > mtdt.y + mtdt2.y - 0.0001f && spos.y < mtdt.y + mtdt2.y + 0.0001f) {
-                        float mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0;
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -135,7 +135,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                         }
                     }
                     if (spos.z > mtdt.z + mtdt2.z - 0.0001f && spos.z < mtdt.z + mtdt2.z + 0.0001f) {
-                        float mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0;
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -147,13 +147,13 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f,(rnd() - 1.0f) });
                         }
                     }
-                    tempv = rotVEC2((VEC2){dir.x,dir.y}, (float) { metadt3[block].r } / 255.0 * PI);
+                    tempv = rotVEC2((VEC2){dir.x,dir.y}, (f32) { metadt3[block].r } / 255.0 * PI);
                     dir.x = tempv.x;
                     dir.y = tempv.y;
-                    tempv = rotVEC2((VEC2){dir.x,dir.z}, (float) { metadt3[block].g } / 255.0 * PI);
+                    tempv = rotVEC2((VEC2){dir.x,dir.z}, (f32) { metadt3[block].g } / 255.0 * PI);
                     dir.x = tempv.x;
                     dir.z = tempv.y;
-                    tempv = rotVEC2((VEC2){dir.y,dir.z}, (float) { metadt3[block].id } / 255.0 * PI);
+                    tempv = rotVEC2((VEC2){dir.y,dir.z}, (f32) { metadt3[block].id } / 255.0 * PI);
                     dir.y = tempv.x;
                     dir.z = tempv.y;
                     ray = rayCreate(VEC3addVEC3R((VEC3){ray.ix,ray.iy,ray.iz },nspos), VEC3normalize(dir));

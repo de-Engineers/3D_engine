@@ -1,9 +1,8 @@
-﻿#include "main.h"
-#include <math.h>
+﻿#include <math.h>
 #include <intrin.h>
 #include <stdio.h>
-#include <GL/gl.h>
 
+#include "main.h"
 #include "tmgl.h"
 #include "network.h"
 #include "textbox.h"
@@ -24,49 +23,49 @@ VEC2 mousePos;
 
 CHATMSG chat[CHATSZ];
 
-void drawChar(int c,float x,float y,float z,float id,float xsize,float ysize){
+void drawChar(int c,f32 x,f32 y,f32 z,f32 id,f32 xsize,f32 ysize){
 	xsize /= 1.7777778;
 	quad[totalCar * 36 + 36]    = x + xsize;
 	quad[totalCar * 36 + 36+1]  = y;
 	quad[totalCar * 36 + 36+2]  = z;
-	quad[totalCar * 36 + 36+3]  = 0.1f + (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+4]  = 0.25f + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+3]  = 0.1f + (f32)(c % 10) / 10;
+	quad[totalCar * 36 + 36+4]  = 0.25f + (f32)(c / 10) / 4;
 	quad[totalCar * 36 + 36+5]  = id;
 	quad[totalCar * 36 + 36+6]  = x;
 	quad[totalCar * 36 + 36+7]  = y;
 	quad[totalCar * 36 + 36+8]  = z;
-	quad[totalCar * 36 + 36+9] = (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+10] = 0.25f + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+9] = (f32)(c % 10) / 10;
+	quad[totalCar * 36 + 36+10] = 0.25f + (f32)(c / 10) / 4;
 	quad[totalCar * 36 + 36+11] = id;
 	quad[totalCar * 36 + 36+12] = x + xsize;
 	quad[totalCar * 36 + 36+13] = y + ysize;
 	quad[totalCar * 36 + 36+14] = z;
-	quad[totalCar * 36 + 36+15] = 0.1f + (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+16] = 0.0f + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+15] = 0.1f + (f32)(c % 10) / 10;
+	quad[totalCar * 36 + 36+16] = 0.0f + (f32)(c / 10) / 4;
 	quad[totalCar * 36 + 36+17] = id;
 	quad[totalCar * 36 + 36+18] = x;
 	quad[totalCar * 36 + 36+19] = y + ysize;
 	quad[totalCar * 36 + 36+20] = z;
-	quad[totalCar * 36 + 36+21] = (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+22] = 0.0 + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+21] = (f32)(c % 10) / 10;
+	quad[totalCar * 36 + 36+22] = 0.0 + (f32)(c / 10) / 4;
 	quad[totalCar * 36 + 36+23] = id;
 	quad[totalCar * 36 + 36+24] = x;
 	quad[totalCar * 36 + 36+25] = y;
 	quad[totalCar * 36 + 36+26] = z;
-	quad[totalCar * 36 + 36+27] = (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+28] = 0.25f + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+27] = (f32)(c % 10) / 10;
+	quad[totalCar * 36 + 36+28] = 0.25f + (f32)(c / 10) / 4;
 	quad[totalCar * 36 + 36+29] = id;
 	quad[totalCar * 36 + 36+30] = x + xsize;
 	quad[totalCar * 36 + 36+31] = y + ysize;
 	quad[totalCar * 36 + 36+32] = z;
-	quad[totalCar * 36 + 36+33] = 0.1f + (float)(c % 10) / 10;
-	quad[totalCar * 36 + 36+34] = 0.0f + (float)(c / 10) / 4;
+	quad[totalCar * 36 + 36+33] = 0.1f + (f32)(c % 10) / 10;
+	quad[totalCar * 36 + 36+34] = 0.0f + (f32)(c / 10) / 4;
 	quad[totalCar * 36 + 36+35] = id;
-	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(float),quad,GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(f32),quad,GL_DYNAMIC_DRAW);
 	totalCar++;
 }
 
-void drawSprite(VEC3 pos,VEC2 size,float id){
+void drawSprite(VEC3 pos,VEC2 size,f32 id){
 	quad[totalCar * 36 + 36]    = pos.x + size.x;
 	quad[totalCar * 36 + 36+1]  = pos.y - size.y;
 	quad[totalCar * 36 + 36+2]  = pos.z;
@@ -103,7 +102,7 @@ void drawSprite(VEC3 pos,VEC2 size,float id){
 	quad[totalCar * 36 + 36+33] = 1.0f;
 	quad[totalCar * 36 + 36+34] = 1.0f;
 	quad[totalCar * 36 + 36+35] = id;
-	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(float),quad,GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,(totalCar * 36 + 36) * sizeof(f32),quad,GL_DYNAMIC_DRAW);
 	totalCar++;
 }
 
@@ -206,8 +205,8 @@ void updateMouse(){
 	POINT p;
 	GetCursorPos(&p);
 	ScreenToClient(window,&p);
-	mousePos.x = (float)p.x/properties->xres*2.0f-1.0f;
-	mousePos.y = -((float)p.y/properties->yres*2.0f-1.0f);
+	mousePos.x = (f32)p.x/properties->xres*2.0f-1.0f;
+	mousePos.y = -((f32)p.y/properties->yres*2.0f-1.0f);
 }
 
 void drawUI(){
@@ -323,7 +322,7 @@ void drawUI(){
 		drawWord("load",0.02f,0.35f,0.0f);
 		drawWord("delete",0.19f,0.35f,0.0f);
 		for(int i = 0;i < fileNames.strC;i++){
-			drawWord(fileNames.str[i],-0.45f,0.28f-(float)i/15.0f,0.0f);
+			drawWord(fileNames.str[i],-0.45f,0.28f-(f32)i/15.0f,0.0f);
 		}
 		updateMouse();
 		break;
@@ -335,7 +334,7 @@ void drawUI(){
 		updateMouse();
 		}
 		break;
-	case 4:{
+	case 4:
 		updateMouse();
 		break;
 	case 5:
@@ -358,7 +357,7 @@ void drawUI(){
 		updateMouse();
 		break;
 	case 6:{
-		drawSprite((VEC3){ 0.0f,0.0f,0.0f },(VEC2){ 0.5f,0.5f },2);
+		drawSprite((VEC3){0.0f,0.0f,0.0f},(VEC2){0.5f,0.5f},2);
 		drawWord("multiplayer",-0.45f,0.42f,0.0f);
 		drawWord("name",-0.45f,-0.04f,0.0f);
 		drawWord("ipaddress 1",-0.45f,-0.14f,0.0f);
@@ -446,15 +445,14 @@ void drawUI(){
 		break;
 	case 8:
 		drawSprite((VEC3){-0.65f,0.81f,0.0f },(VEC2){ 0.33f,0.16f },2);
-		drawWord("console",-0.94f,0.9f,0.0);
+		drawWord("console",-0.94f,0.9f,0.0f);
 		updateMouse();
 		break;
 	case 9:
 		drawSprite((VEC3){-0.65f,0.81f,0.0f},(VEC2){ 0.33f,0.16f },2);
-		drawWord("chat",-0.94f,0.9f,0.0);
+		drawWord("chat",-0.94f,0.9f,0.0f);
 		updateMouse();
 		break;
-	}
 	}
 	for(u32 i = 0;i < buttonC;i++){
 		VEC2 buttonMiddle = {button[i].pos.x+0.0075f,button[i].pos.y+0.0125f};
@@ -482,7 +480,7 @@ void drawUI(){
 		drawSprite((VEC3){textbox[i].pos.x+0.2636666667f,textbox[i].pos.y-0.044f,0.0f},(VEC2){0.0028f,0.05f},5);
 		drawWord(textbox[i].text,textbox[i].pos.x-0.2546666667f,textbox[i].pos.y-0.062f,0.0f);
 	}
-	if(GetTickCount() & 0x200 && textboxSel != -1){
+	if((GetTickCount64() & 0x200) && textboxSel != -1){
 		drawSprite((VEC3){textbox[textboxSel].pos.x-0.24666667f+0.0233f*strlen(textbox[textboxSel].text),textbox[textboxSel].pos.y-0.0425f,0.0f},(VEC2){0.002f,0.03f},5);
 	}
 }

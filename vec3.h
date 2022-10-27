@@ -208,6 +208,10 @@ inline VEC3 VEC3maxR(VEC3 p,float p2){
 	return p;
 }
 
+inline float VEC3max(VEC3 p){
+	return fmaxf(p.x,fmaxf(p.y,p.z));
+}
+
 inline VEC3 VEC3fractR(VEC3 p){
 	return (VEC3){p.x-(int)p.x,p.y-(int)p.y,p.z-(int)p.z};
 }

@@ -8,30 +8,6 @@ u32 editBlockSel;
 
 i16 pixelCrdB = -1;
 
-inline i32 hash(i32 x) {
-	x += (x << 10);
-	x ^= (x >> 6);
-	x += (x << 3);
-	x ^= (x >> 11);
-	x += (x << 15);
-	return x;
-}
-
-inline f32 rnd() {
-	union p {
-		float f;
-		i32 u;
-	}r;
-	r.u = hash(__rdtsc());
-	r.u &= 0x007fffff;
-	r.u |= 0x3f800000;
-	return r.f;
-}
-
-inline i32 irnd(){
-	return hash(__rdtsc());
-}
-
 inline RAY rayCreate(VEC3 pos,VEC3 dir){
 	RAY ray;
 
@@ -399,7 +375,6 @@ void tools(){
 	case 6:{
 		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			rayItterate(&ray);
 			int block = crds2map(ray.ix,ray.iy,ray.iz);
 			if(map[block].id!=BLOCK_AIR){
 				if(settings & SETTINGS_SUBBLOCK){
@@ -418,6 +393,7 @@ void tools(){
 				glMesC++;
 				break;
 			}
+			rayItterate(&ray);
 		}
 		break;
 		}

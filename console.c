@@ -64,6 +64,15 @@ void executeCommand(u8 *cmd){
 			CreateThread(0,0,updateLight2,0,0,0);
 		}
 		break;
+	case 10:
+		if(!memcmp(cmd,"textrndcol",10)){
+			for(u32 i = 0;i < lmapC;i++){
+				lmap[i] = (EXRGB){irnd(),irnd(),irnd()};
+			}
+			glMes[glMesC].id = 6;
+			glMesC++;
+		}
+		break;
 	case 11:
 		if(!memcmp(cmd,"sensitivity",11)){
 			properties->sensitivity = strtof(cmd+12,0);

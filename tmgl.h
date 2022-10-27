@@ -3,7 +3,7 @@
 unsigned int (*glCreateProgram)();
 unsigned int (*glCreateShader)(unsigned int shader);
 unsigned int (*wglSwapIntervalEXT)(unsigned int satus);
-unsigned int (*wglChoosePixelFormatARB)(HDC hdc,const int *piAttribIList,const float *pfAttribFList,unsigned int nMaxFormats,int *piFormats,unsigned int *nNumFormats);
+unsigned int (*wglChoosePixelFormatARB)(HDC hdc,const int *piAttribIList,const f32 *pfAttribFList,unsigned int nMaxFormats,int *piFormats,unsigned int *nNumFormats);
 
 int (*glGetUniformLocation)(unsigned int program,const char *name);
 int (*glCheckFramebufferStatus)(unsigned int target);
@@ -26,12 +26,12 @@ void (*glTexImage3D)(unsigned int target,int level,int intlevel,int width,int he
 void (*glUniform3i)(int loc,int v1,int v2,int v3);
 void (*glUniform2i)(int loc,int v1,int v2);
 void (*glUniform1i)(int loc,int v1);
-void (*glUniform4f)(int loc,float v1,float v2,float v3,float v4);
-void (*glUniform3f)(int loc,float v1,float v2,float v3);
-void (*glUniform2f)(int loc,float v1,float v2);
-void (*glUniform1f)(int loc,float v1);
+void (*glUniform4f)(int loc,f32 v1,f32 v2,f32 v3,f32 v4);
+void (*glUniform3f)(int loc,f32 v1,f32 v2,f32 v3);
+void (*glUniform2f)(int loc,f32 v1,f32 v2);
+void (*glUniform1f)(int loc,f32 v1);
 void (*glUniform1iv)(int loc,int count,const int *value);
-void (*glUniformMatrix3fv)(int loc,int count,unsigned char transpose,const float *value);
+void (*glUniformMatrix3fv)(int loc,int count,unsigned char transpose,const f32 *value);
 void (*glGenFramebuffers)(int n,unsigned int *ids);
 void (*glBindFramebuffer)(unsigned int target,unsigned int framebuffer);
 void (*glFramebufferTexture)(unsigned int target,unsigned int attachment,unsigned int texture,int level);

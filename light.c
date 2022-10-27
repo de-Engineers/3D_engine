@@ -42,32 +42,8 @@ cl_mem clMetadt6;
 
 int clPlatformC;
 
-inline i32 hash(i32 x) {
-	x += (x << 10);
-	x ^= (x >> 6);
-	x += (x << 3);
-	x ^= (x >> 11);
-	x += (x << 15);
-	return x;
-}
-
-inline f32 rnd(){
-	union p {
-		float f;
-		i32 u;
-	}r;
-	r.u = hash(__rdtsc());
-	r.u &= 0x007fffff;
-	r.u |= 0x3f800000;
-	return r.f;
-}
-
-inline i32 irnd(){
-	return hash(__rdtsc());
-}
-
-float fract(float p){
-	return p - (i32)p;
+f32 fract(f32 p){
+	return p - floorf(p);
 }
 
 void initOpenCL(){

@@ -12,9 +12,9 @@ f32 stepSoundCooldown;
 
 u8 touchedSpace;
 
-void blockDetection(float x,float y,float z,int axis){
-	int block = crds2map(x,y,z);
-	VEC3 spos = VEC3fractR((VEC3){x,y,z});
+void blockDetection(VEC3 bpos,int axis){
+	int block = crds2map(bpos.x,bpos.y,bpos.z);
+	VEC3 spos = VEC3fractR(bpos);
 	switch(map[block].id){
 	case BLOCK_CUBE:
 	case BLOCK_GLASS:
@@ -31,9 +31,9 @@ void blockDetection(float x,float y,float z,int axis){
 		if(spos.x > (f32)metadt[block].id/255.0f - (f32)metadt2[block].id/255.0f && spos.x < (f32)metadt[block].id/255.0f + (f32)metadt2[block].id/255.0f &&
 			spos.y > (f32)metadt[block].r/255.0f - (f32)metadt2[block].r/255.0f && spos.y < (f32)metadt[block].r/255.0f + (f32)metadt2[block].r/255.0f && 
 			spos.z > (f32)metadt[block].g/255.0f - (f32)metadt2[block].g/255.0f - 0.02f && spos.z < (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + 0.02f){
-			if(metadt3[block].r == 0 && metadt3[block].id == 0 && metadt3[block].g == 0 && (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z > player->pos.z - player->hitboxHeight && 
-				(f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z < player->pos.z - player->hitboxHeight + 0.5f){
-				player->pos.z += (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)z - player->pos.z + player->hitboxHeight + 0.1f;
+			if(metadt3[block].r == 0 && metadt3[block].id == 0 && metadt3[block].g == 0 && (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)bpos.z > player->pos.z - player->hitboxHeight && 
+				(f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)bpos.z < player->pos.z - player->hitboxHeight + 0.5f){
+				player->pos.z += (f32)metadt[block].g/255.0f + (f32)metadt2[block].g/255.0f + (u32)bpos.z - player->pos.z + player->hitboxHeight + 0.1f;
 				player->vel.z = 0.0f;
 			}
 			else{
@@ -53,7 +53,7 @@ void blockDetection(float x,float y,float z,int axis){
 	case BLOCK_CLIP:
 	case BLOCK_REFLECTIVE:
 	case BLOCK_SOLID:
-		if(spos.z > 0.5f && z > player->pos.z-player->hitboxHeight && z < player->pos.z-player->hitboxHeight+0.5f){
+		if(spos.z > 0.5f && bpos.z > player->pos.z-player->hitboxHeight && bpos.z < player->pos.z-player->hitboxHeight+0.5f){
 			switch(map[block+properties->lvlSz*properties->lvlSz].id){
 			case BLOCK_CLIP:
 			case BLOCK_SOLID:
@@ -67,7 +67,7 @@ void blockDetection(float x,float y,float z,int axis){
 					touchStatus |= axis;
 					break;
 				default:
-					player->pos.z += player->pos.z - z - player->hitboxHeight + 0.52f;
+					player->pos.z += player->pos.z - bpos.z - player->hitboxHeight + 0.52f;
 					player->vel.z = 0.0f;
 					break;
 				}
@@ -82,46 +82,46 @@ void blockDetection(float x,float y,float z,int axis){
 	}
 }
 
-void hitboxZdown(float x,float y,float z){
-	x -= player->vel.x;
-	y -= player->vel.y;
-	z += player->vel.z;
-	blockDetection(x,y,z,1);
+void hitboxZdown(VEC3 bpos){
+	bpos.x -= player->vel.x;
+	bpos.y -= player->vel.y;
+	bpos.z += player->vel.z;
+	blockDetection(bpos,1);
 }
 
-void hitboxZup(float x,float y,float z){
-	x -= player->vel.x;
-	y -= player->vel.y;
-	z += player->vel.z;
-	blockDetection(x,y,z,2);
+void hitboxZup(VEC3 bpos){
+	bpos.x -= player->vel.x;
+	bpos.y -= player->vel.y;
+	bpos.z += player->vel.z;
+	blockDetection(bpos,2);
 }
 
-void hitboxXdown(float x,float y,float z){
-	x += player->vel.x;
-	y -= player->vel.y;
-	z -= player->vel.z;
-	blockDetection(x,y,z,4);
+void hitboxXdown(VEC3 bpos){
+	bpos.x += player->vel.x;
+	bpos.y -= player->vel.y;
+	bpos.z -= player->vel.z;
+	blockDetection(bpos,4);
 }
 
-void hitboxXup(float x,float y,float z){
-	x += player->vel.x;
-	y -= player->vel.y;
-	z -= player->vel.z;
-	blockDetection(x,y,z,8);
+void hitboxXup(VEC3 bpos){
+	bpos.x += player->vel.x;
+	bpos.y -= player->vel.y;
+	bpos.z -= player->vel.z;
+	blockDetection(bpos,8);
 }
 
-void hitboxYdown(float x,float y,float z){
-	y += player->vel.y;
-	x -= player->vel.x;
-	z -= player->vel.z;
-	blockDetection(x,y,z,16);
+void hitboxYdown(VEC3 bpos){
+	bpos.y += player->vel.y;
+	bpos.x -= player->vel.x;
+	bpos.z -= player->vel.z;
+	blockDetection(bpos,16);
 }
 
-void hitboxYup(float x,float y,float z){
-	y += player->vel.y;
-	x -= player->vel.x;
-	z -= player->vel.z;
-	blockDetection(x,y,z,32);
+void hitboxYup(VEC3 bpos){
+	bpos.y += player->vel.y;
+	bpos.x -= player->vel.x;
+	bpos.z -= player->vel.z;
+	blockDetection(bpos,32);
 }
 
 void playerWorldCollision(){
@@ -135,46 +135,46 @@ void playerWorldCollision(){
 		player->stamina = 1.0f;
 	}
 	if(player->vel.z < 0.0f){
-		for(float i = -0.2f;i <= 0.2f;i+=0.1f){
-			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxZdown(player->pos.x + i, player->pos.y + i2, player->pos.z - player->hitboxHeight);
+		for(f32 i = -0.2f;i <= 0.2f;i+=0.1f){
+			for(f32 i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
+				hitboxZdown((VEC3){player->pos.x + i, player->pos.y + i2, player->pos.z - player->hitboxHeight});
 			}
 		}
 	}
 	else{
-		for(float i = -0.2f;i <= 0.2f;i+=0.1f){
-			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxZup(player->pos.x + i, player->pos.y + i2, player->pos.z + 0.1f);
+		for(f32 i = -0.2f;i <= 0.2f;i+=0.1f){
+			for(f32 i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
+				hitboxZup((VEC3){player->pos.x + i, player->pos.y + i2, player->pos.z + 0.1f});
 			}
 		}
 	}
 	if(player->vel.x < 0.0f){
-		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
-			for(float i2 = -0.2;i2 <= 0.2;i2+=0.05){
-				hitboxXdown(player->pos.x - 0.2f, player->pos.y + i2, player->pos.z + i);
+		for(f32 i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
+			for(f32 i2 = -0.2;i2 <= 0.2;i2+=0.05){
+				hitboxXdown((VEC3){player->pos.x - 0.2f, player->pos.y + i2, player->pos.z + i});
 			}
 		}
 
 	}
 	else{
-		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
-			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxXup(player->pos.x + 0.2f, player->pos.y + i2, player->pos.z + i);
+		for(f32 i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
+			for(f32 i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
+				hitboxXup((VEC3){player->pos.x + 0.2f, player->pos.y + i2, player->pos.z + i});
 			}
 		}
 	}
 	if(player->vel.y < 0.0f){
-		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
-			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxYdown(player->pos.x + i2, player->pos.y - 0.2f, player->pos.z + i);
+		for(f32 i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
+			for(f32 i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
+				hitboxYdown((VEC3){player->pos.x + i2, player->pos.y - 0.2f, player->pos.z + i});
 			}
 		}
 
 	}
 	else{
-		for(float i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
-			for(float i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
-				hitboxYup(player->pos.x + i2, player->pos.y + 0.2f, player->pos.z + i);
+		for(f32 i = -player->hitboxHeight;i <= 0.1f;i+=0.1f){
+			for(f32 i2 = -0.2f;i2 <= 0.2f;i2+=0.05f){
+				hitboxYup((VEC3){player->pos.x + i2, player->pos.y + 0.2f, player->pos.z + i});
 			}
 		}
 	}
@@ -240,7 +240,7 @@ void playerWorldCollision(){
 				break;
 			}
 		}
-		if(GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
+		if((GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.2f * player->stamina;
 			player->vel.x *= 1.7f * player->stamina;
 			player->vel.y *= 1.7f * player->stamina;
@@ -282,7 +282,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x04 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
+		if(touchStatus == 0x04 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.x += 0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -315,7 +315,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x08 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
+		if(touchStatus == 0x08 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.x += -0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -348,7 +348,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x10 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
+		if(touchStatus == 0x10 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.y += 0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -378,7 +378,7 @@ void playerWorldCollision(){
 			effect = 0;
 			break;
 		}
-		if(touchStatus == 0x20 && GetKeyState(VK_SPACE) & 0x80 && touchedSpace == 0 && menuSel == 0){
+		if(touchStatus == 0x20 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
 			player->vel.z += 0.25f * player->stamina;
 			player->vel.y += -0.25f * player->stamina;
 			player->stamina = 0.0f;
@@ -413,7 +413,7 @@ void playerWorldCollision(){
 		player->vel.y /= 1.12f;
 		break;
 	}
-	if(GetKeyState(VK_SPACE)&0x80 && menuSel == 0){
+	if((GetKeyState(VK_SPACE)&0x80) && menuSel == 0){
 		touchedSpace = 1;
 	}
 	touchStatus = 0;

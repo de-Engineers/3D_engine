@@ -11,18 +11,9 @@ RGB *skyboxTexture;
 STAR *star;
 u8 starC;
 
-inline i32 hash(i32 x) {
-	x += (x << 10);
-	x ^= (x >> 6);
-	x += (x << 3);
-	x ^= (x >> 11);
-	x += (x << 15);
-	return x;
-}
-
-inline f32 rndS(VEC2 seed) {
+f32 rndS(VEC2 seed) {
 	union p {
-		float f;
+		f32 f;
 		i32 u;
 	}r;
 	r.u = hash(hash((u32)seed.x)^(u32)seed.y);

@@ -159,7 +159,7 @@ PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,PFD_TYPE_RGBA,
 0,0,0,0,32,0,0,PFD_MAIN_PLANE,
 0,0,0,0	};
 
-float quad[8192]  = {1.0,1.0 ,0.999,1.0,0.0,1.0,
+f32 quad[8192]  = {1.0,1.0 ,0.999,1.0,0.0,1.0,
 					-1.0,1.0 ,0.999,1.0,0.0,1.0,
 					1.0,-1.0 ,0.999,1.0,0.0,1.0,
 					-1.0,-1.0,0.999,1.0,0.0,1.0,
@@ -389,9 +389,9 @@ void openGL(){
 
 	glCreateBuffers(1,&quadVBO);
 	glBindBuffer(GL_ARRAY_BUFFER,quadVBO);
-	glBufferData(GL_ARRAY_BUFFER,36 * sizeof(float),quad,GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,36 * sizeof(f32),quad,GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, 0, 4 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, 0, 4 * sizeof(f32), (void*)0);
 
 	glUseProgram(shaderProgramPost);
 	glUniform1i(glGetUniformLocation(shaderProgramPost,"screenTexture"),18);
@@ -491,16 +491,16 @@ void openGL(){
 
 	glCreateBuffers(1,&VBO);
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
-	glBufferData(GL_ARRAY_BUFFER,36 * sizeof(float),quad,GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,36 * sizeof(f32),quad,GL_DYNAMIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0,3,GL_FLOAT,0,6 * sizeof(float),(void*)0);
+	glVertexAttribPointer(0,3,GL_FLOAT,0,6 * sizeof(f32),(void*)0);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1,2,GL_FLOAT,0,6 * sizeof(float),(void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1,2,GL_FLOAT,0,6 * sizeof(f32),(void*)(3 * sizeof(f32)));
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2,1,GL_FLOAT,0,6 * sizeof(float),(void*)(5 * sizeof(float)));
+	glVertexAttribPointer(2,1,GL_FLOAT,0,6 * sizeof(f32),(void*)(5 * sizeof(f32)));
 
 	glUseProgram(shaderProgram);
 
@@ -674,7 +674,7 @@ void openGL(){
 				}
 			}
 			glUseProgram(shaderProgramFont);
-			glUniform3f(glGetUniformLocation(shaderProgramFont,"color"),(float)colorSel.r/255.0f,(float)colorSel.g/255.0f,(float)colorSel.b/255.0f);
+			glUniform3f(glGetUniformLocation(shaderProgramFont,"color"),(f32)colorSel.r/255.0f,(f32)colorSel.g/255.0f,(f32)colorSel.b/255.0f);
 			if(settings & 0x04){
 				glUseProgram(shaderProgramEditor);
 				glUniform2f(glGetUniformLocation(shaderProgramEditor,"angle"),player->xangle,player->yangle);

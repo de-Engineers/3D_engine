@@ -245,12 +245,12 @@ typedef struct{
 	u32 data4;
 	u32 data5;
 	u32 data6;
-	float fdata1;
-	float fdata2;
-	float fdata3;
-	float fdata4;
-	float fdata5;
-	float fdata6;
+	f32 fdata1;
+	f32 fdata2;
+	f32 fdata3;
+	f32 fdata4;
+	f32 fdata5;
+	f32 fdata6;
 }OPENGLMESSAGE;
 
 typedef struct{
@@ -357,8 +357,7 @@ extern void (*buttons[32])();
 extern u8 menuSel;
 extern STRINGS fileNames;
 extern unsigned char tempVar[2];
-extern float quad[8192];
-extern unsigned int totalCar;
+extern f32 quad[8192];
 extern unsigned int totalCar;
 extern unsigned int lmapC;
 extern long long fps;
@@ -380,22 +379,18 @@ void sliderCreate(VEC2 pos,u8 id);
 
 
 void openGL();
-void openCLmain();
 void levelgen();
 void entities();
 void rayItterate(RAY *ray);
 void initSound();
 void tools();
 void ittmap();
-void updateCamera();
 void updateLight2();
-void levelSave();
 void levelLoad(char *name);
 void drawUI();
-void drawSprite(VEC3 pos,VEC2 size,float id);
+void drawSprite(VEC3 pos,VEC2 size,f32 id);
 void initOpenCL();
 void HDR();
-void updateBlock(int pos,int val);
 void spawnEntity(VEC3 pos,VEC3 vel,u8 id);
 void spawnEntityEx(VEC3 pos,VEC3 pos2,VEC3 vel,u8 id,VEC3 color);
 void genGodraysMap();
@@ -420,16 +415,14 @@ i32 irnd();
 f32 rnd();
 CVEC3 map2crds(u32 	map);
 VEC3 getCoords(RAY ray);
-VEC2 rotVEC2(VEC2 p,float rot);
+VEC2 rotVEC2(VEC2 p,f32 rot);
 VEC3 getSubCoords(RAY ray);
 void entityDeath(int id);
 
 char *loadFile(char *name);
 
-inline int max3(int val1,int val2,int val3);
-float fract(float p);
-
 i32 getLmapLocation(RAY *ray);
+f32 fract(f32 p);
 
 HANDLE physicsThread;
 HANDLE entityThread;

@@ -1,8 +1,8 @@
-﻿#include "main.h"
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <math.h>
-#include "network.h"
 
+#include "main.h"
+#include "network.h"
 #include "ivec3.h"
 #include "raytracing.h"
 
@@ -13,13 +13,6 @@ u32 entityC;
 ENTITY entity;
 
 RGB *entityTexture;
-
-typedef struct{
-	f32 x;
-	f32 y;
-	f32 z;
-	f32 w;
-}VEC4;
 
 i32 getLmapLocation(RAY *ray){
 	while(ray->ix >= 0 && ray->iy >= 0 && ray->iz >= 0 && ray->ix < properties->lvlSz && ray->iy < properties->lvlSz && ray->iz < properties->lvlSz){
@@ -197,24 +190,7 @@ void spawnEntity(VEC3 pos,VEC3 vel,u8 id){
 	glMesC++;
 }
 
-max3f(float val1,float val2,float val3){
-	if(val1 > val2){
-		if(val1 > val3){
-			return val1;
-		}
-		else{
-			return val3;
-		}
-	}
-	else if(val2 > val3){
-		return val2;
-	}
-	else{
-		return val3;
-	}
-}
-
-VEC2 rotVEC2(VEC2 p,float rot){
+VEC2 rotVEC2(VEC2 p,f32 rot){
     VEC2 r;
     r.x = cosf(rot) * p.x - sinf(rot) * p.y;
     r.y = sinf(rot) * p.x + cosf(rot) * p.y;
@@ -278,27 +254,7 @@ typedef struct{
 }UVEC3;
 
 void SphereMapCollision(IVEC3 ePos,u32 i){
-	if(ePos.x < 0){
-		entityDeath(i);
-		return;
-	}
-	if(ePos.y < 0){
-		entityDeath(i);
-		return;
-	}
-	if(ePos.z < 0){
-		entityDeath(i);
-		return;
-	}
-	if(ePos.x > properties->lvlSz - 1){
-		entityDeath(i);
-		return;
-	}
-	if(ePos.y > properties->lvlSz - 1){
-		entityDeath(i);
-		return;
-	}
-	if(ePos.z > properties->lvlSz - 1){
+	if(ePos.x < 0 || ePos.y < 0 || ePos.z < 0 || ePos.x >= properties->lvlSz || ePos.y >= properties->lvlSz || ePos.z >= properties->lvlSz){
 		entityDeath(i);
 		return;
 	}
@@ -386,22 +342,6 @@ void entities(){
 					entityDeath(i);
 				}
 				break;
-			case 10:{
-				if(entity.cpu[i].health == 5){
-					VEC3 laserDirNorm = VEC3normalize(entity.gpu[i].pos2);
-					f32 d = iCylinder(player->pos,laserDirNorm,(VEC3){0.0f,0.0f,-1.7f},0.2f);
-					if(d > 0.0f && d < VEC3dist(player->pos,entity.gpu[i].pos)){
-						playerDeath();
-					}
-				}
-				if(entity.cpu[i].health){
-					entity.cpu[i].health--;
-				}
-				else{
-					entityDeath(i);
-				}
-				break;
-			}
 			case 3:{
 				VEC2 r = rotVEC2((VEC2){entity.gpu[i].pos.x-entity.cpu[i].pos.x,entity.gpu[i].pos.y-entity.cpu[i].pos.y},0.017f);
 				entity.gpu[i].pos.x = r.x+entity.cpu[i].pos.x;
@@ -680,6 +620,23 @@ void entities(){
 				entity.gpu[i].srot.x = -networkplayer.player[entity.cpu[i].playerid].rot;
 				calculateLuminance(i);
 				break;
+			case 10:{
+				if(entity.cpu[i].health == 5){
+					ExitProcess(0);
+					VEC3 laserDirNorm = VEC3normalize(entity.gpu[i].pos2);
+					f32 d = iCylinder(player->pos,laserDirNorm,(VEC3){0.0f,0.0f,-1.7f},0.2f);
+					if(d > 0.0f && d < VEC3dist(player->pos,entity.gpu[i].pos)){
+						playerDeath();
+					}
+				}
+				if(entity.cpu[i].health){
+					entity.cpu[i].health--;
+				}
+				else{
+					entityDeath(i);
+				}
+				break;
+			}
 			default:{
 				calculateLuminance(i);
 				break;

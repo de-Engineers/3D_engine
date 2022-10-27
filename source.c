@@ -9,6 +9,7 @@
 #include "ui.h"
 #include "console.h"
 #include "blockmove.h"
+#include "vec4.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -62,8 +63,8 @@ RGBA metadt6Sel;
 unsigned char blockSel = 1;
 unsigned char toolSel;	
 
-float mousex;
-float mousey;
+f32 mousex;
+f32 mousey;
 
 BITMAPINFO bmi = { sizeof(BITMAPINFOHEADER),resx,resy,1,32,BI_RGB };	
 
@@ -106,7 +107,7 @@ void playerDeath(){
 	}
 }
 
-inline i32 hash(i32 x) {
+i32 hash(i32 x) {
 	x += (x << 10);
 	x ^= (x >> 6);
 	x += (x << 3);
@@ -115,9 +116,9 @@ inline i32 hash(i32 x) {
 	return x;
 }
 
-inline f32 rnd() {
+f32 rnd() {
 	union p {
-		float f;
+		f32 f;
 		i32 u;
 	}r;
 	r.u = hash(__rdtsc());
@@ -126,7 +127,7 @@ inline f32 rnd() {
 	return r.f;
 }
 
-inline i32 irnd(){
+i32 irnd(){
 	return hash(__rdtsc());
 }
 
@@ -153,23 +154,6 @@ void rayItterate(RAY *ray){
 		ray->side.z += ray->delta.z;
 		ray->sid = 2;
     }
-}
-
-inline int max3(int val1,int val2,int val3){
-	if(val1 > val2){
-		if(val1 > val3){
-			return val1;
-		}
-		else{
-			return val3;
-		}
-	}
-	else if(val2 > val3){
-		return val2;
-	}
-	else{
-		return val3;
-	}
 }
 
 VEC3 getCoords(RAY ray){
@@ -683,14 +667,25 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			}
 		}
 		break;
-	case WM_MBUTTONDOWN:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
-			if(map[block].id!=1){
-				switch(toolSel){
-				case 7:
-				default:
+	case WM_MBUTTONDOWN:
+		switch(toolSel){
+		case 7:{
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			i32 lmapLoc = getLmapLocation(&ray);
+			if(lmapLoc!=-1){
+				VEC3 bcolor = {bmap[lmapLoc].r,bmap[lmapLoc].g,bmap[lmapLoc].b};
+				VEC3 lcolor = {lmap[lmapLoc].r,lmap[lmapLoc].g,lmap[lmapLoc].b};
+				f32 mcol = fmaxf(VEC3max(lcolor),VEC3max(bcolor));
+				VEC3 color = VEC3mulR(VEC3divVEC3R(lcolor,bcolor),255.0f);
+				colorSel = (RGBA){color.r,color.g,color.b};
+			}
+			break;
+		}
+		default:{
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
+				u32 block = crds2map(ray.ix,ray.iy,ray.iz);
+				if(map[block].id!=1){
 					blockSel   = map[block].id;
 					colorSel.r = map[block].r;
 					colorSel.g = map[block].g;
@@ -721,12 +716,12 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					metadt6Sel.a = metadt6[block].id;
 					break;
 				}
-				break;
+				rayItterate(&ray);
 			}
-			rayItterate(&ray);
+			}
+			break;
 		}
 		break;
-		}
 	case WM_LBUTTONDOWN:
 		switch(menuSel){
 		case 0:
@@ -737,6 +732,11 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					switch(map[block].id){
 					case BLOCK_CUBE:
 						if(metadt4[block].b==1){
+							for(u32 i = 0;i < blockmoveC;i++){
+								if(block == blockmove[i].block){
+									goto end;
+								}
+							}
 							createMoveBlock(block);
 							goto end;
 						}
@@ -783,15 +783,21 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		break;
 	case WM_RBUTTONDOWN:
-		if(~settings & SETTINGS_GAMEPLAY){
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-				int block = crds2map(ray.ix,ray.iy,ray.iz);
-				if(map[block].id!=1){
-					deleteBlock(block);
-					break;
+		if(settings & ~SETTINGS_GAMEPLAY){
+			switch(toolSel){
+			case 0:	
+			case 1:{
+				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+				while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
+					int block = crds2map(ray.ix,ray.iy,ray.iz);
+					if(map[block].id!=1){
+						deleteBlock(block);
+						break;
+					}
+					rayItterate(&ray);
 				}
-				rayItterate(&ray);
+				break;
+			}
 			}
 		}
 		break;
@@ -931,7 +937,7 @@ void physics(){
 				}
 			}
 			if(menuSel==0){
-				float amp = 1.0f;
+				f32 amp = 1.0f;
 				if(player->hitboxHeight<1.7f){
 					amp = 0.33f;
 				}
