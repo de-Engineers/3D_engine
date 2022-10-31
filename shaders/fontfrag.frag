@@ -5,6 +5,7 @@ in float ID;
 
 out vec4 FragColor;
 
+uniform int sliderValue[32];
 uniform vec2 fov;
 uniform sampler2D font;
 uniform ivec2 reso;
@@ -96,8 +97,8 @@ void main(){
 		discard;
 	}
 	case 5:
-		discard;
-		FragColor = vec4(0.4,0.7,0.5,1.0) * distance(TexCoord,vec2(0.5));
+		FragColor.a = 1.0;
+		FragColor.rgb = vec3(0.7,0.1,0.1);
 		break;
 	case 6:{
 		float d = distance(TexCoord,vec2(0.5));
@@ -114,151 +115,10 @@ void main(){
 		}
 		discard;
 	}
-	case 8:
+	default:
 		slider();
-		if(TexCoord.x > float(colorSel.r)/255.0-0.01 && TexCoord.x < float(colorSel.r)/255.0+0.01){
+		if(TexCoord.x > sliderValue[int(ID-8)]/255.0-0.01 && TexCoord.x < sliderValue[int(ID-8)]/255.0+0.01){
 			FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-		}
-		return;
-	case 9:
-		slider();
-		if(TexCoord.x > float(colorSel.g)/255.0-0.01 && TexCoord.x < float(colorSel.g)/255.0+0.01){
-			FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-		}
-		return;
-	case 10:
-		slider();
-		if(TexCoord.x > float(colorSel.b)/255.0-0.01 && TexCoord.x < float(colorSel.b)/255.0+0.01){
-			FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-		}
-		return;
-	case 11:
-		slider();
-		if((setting / 0x40) % 2==1){
-			if(TexCoord.x > float(metadt4.r)/255.0-0.01 && TexCoord.x < float(metadt4.r)/255.0+0.01){
-				FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt1.r)/255.0-0.01 && TexCoord.x < float(metadt1.r)/255.0+0.01){
-				FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-			}
-		}
-		return;
-	case 12:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt4.g)/255.0-0.01 && TexCoord.x < float(metadt4.g)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt1.g)/255.0-0.01 && TexCoord.x < float(metadt1.g)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-			}
-		}
-		return;
-	case 13:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt4.b)/255.0-0.01 && TexCoord.x < float(metadt4.b)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt1.b)/255.0-0.01 && TexCoord.x < float(metadt1.b)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-			}
-		}
-		return;
-	case 14:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt5.r)/255.0-0.01 && TexCoord.x < float(metadt5.r)/255.0+0.01){
-				FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt2.r)/255.0-0.01 && TexCoord.x < float(metadt2.r)/255.0+0.01){
-				FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-			}
-		}
-		return;
-	case 15:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt5.g)/255.0-0.01 && TexCoord.x < float(metadt5.g)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt2.g)/255.0-0.01 && TexCoord.x < float(metadt2.g)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-			}
-		}
-		return;
-	case 16:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt5.b)/255.0-0.01 && TexCoord.x < float(metadt5.b)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt2.b)/255.0-0.01 && TexCoord.x < float(metadt2.b)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-			}
-		}
-		return;
-	case 17:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt6.r)/255.0-0.01 && TexCoord.x < float(metadt6.r)/255.0+0.01){
-				FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt3.r)/255.0-0.01 && TexCoord.x < float(metadt3.r)/255.0+0.01){
-				FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
-			}
-		}
-		return;
-	case 18:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt6.g)/255.0-0.01 && TexCoord.x < float(metadt6.g)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt3.g)/255.0-0.01 && TexCoord.x < float(metadt3.g)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,1.0,0.0),1.0);
-			}
-		}
-		return;
-	case 19:
-		slider();
-		if(setting / 0x40 % 2==1){
-			if(TexCoord.x > float(metadt6.b)/255.0-0.01 && TexCoord.x < float(metadt6.b)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-			}
-		}
-		else{
-			if(TexCoord.x > float(metadt3.b)/255.0-0.01 && TexCoord.x < float(metadt3.b)/255.0+0.01){
-				FragColor = vec4(vec3(0.0,0.0,1.0),1.0);
-			}
-		}
-		return;
-	case 20:
-		slider();
-		if(TexCoord.x > fov.y-0.01 && TexCoord.x < fov.y+0.01){
-			FragColor = vec4(vec3(1.0,1.0,1.0),1.0);
-		}
-		return;
-	case 21:
-		slider();
-		if(TexCoord.x > sensitivity-0.01 && TexCoord.x < sensitivity+0.01){
-			FragColor = vec4(vec3(1.0,1.0,1.0),1.0);
 		}
 		return;
 	}

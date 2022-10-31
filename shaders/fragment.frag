@@ -457,7 +457,7 @@ void calcFog(){
 			FragColor.rgb += vec3(0.2)/sdSegment(ePos-enP,pos2,rad)*col;
 			break;
 		}
-		case 2:{;
+		case 2:{
 			vec3 pos2 = texelFetch(entity,i*5+2,0).xyz;
 			float rad = texelFetch(entity,i*5+1,0).w;
 			float e = iCylinder(Pos-enP-pos2*0.5,bAng,pos2*0.5,rad);
@@ -470,15 +470,27 @@ void calcFog(){
 			FragColor.rgb += vec3(2.0)/sdSegment(ePos-enP,pos2,rad)*col;
 			break;
 		}
+		case 3:{
+			vec3 pos2 = texelFetch(entity,i*5+2,0).xyz;
+			float rad = texelFetch(entity,i*5+1,0).w;
+			float e = iCylinder(Pos-enP-pos2*0.5,bAng,pos2*0.5,rad);
+			if(e > 0.0 && e < d){
+				vec3 col = texelFetch(entity,i*5+1,0).xyz;
+				vec3 spos = (Pos + bAng * e) - enP;
+				spos.xy = rotVEC2(spos.xy,texelFetch(entity,i*5+4,0).x);
+				vec2 textN = vec2((atan(spos.x,spos.y)/PI+1.0)*16.0,(spos.z+1.8)*16.0);
+				FragColor.rgb = texelFetch(entityTextures,ivec3(textN,texelFetch(entity,i*5+2,0).w),0).rgb*col;
+				return;
+			}
+			FragColor.rgb -= vec3(0.05)/sqrt(sdSegment(ePos-enP,pos2,rad));
+			break;
 		}
-
+		}
 	}
 	FragColor.rgb /= clamp(0.1/sdVerticalCapsule(Pos-ePos-vec3(0.0,0.0,0.3),1.2,0.1),-1.0,1.0)+1.0;
-	/*
-	ivec2 kon = ivec2((gl_FragCoord.x*128.0/reso.x),gl_FragCoord.y*128.0/reso.y);
-	vec4 gd = texelFetch(godraymap,kon,0);
-	FragColor.rgb = mix(FragColor.rgb,gd.rgb,gd.a);
-	*/
+	vec2 kon = vec2((gl_FragCoord.x/reso.x),gl_FragCoord.y/reso.y);
+	vec4 gd = texture(godraymap,kon);
+	FragColor = mix(FragColor,gd,distance(ePos,pos)*0.03);
 	FragColor.rgb = pow(FragColor.rgb,vec3(0.75));
 	if(wounded==1){
 		FragColor.r += 0.0006 * distance(gl_FragCoord.xy,vec2(reso)/2.0);
@@ -705,8 +717,7 @@ void main(){
 			switch(int(block[0])){
 			case 0:
 				FragColor.rgb = texelFetch(skybox,ivec2((atan(ang.x,ang.y)+PI)/PI_2*1023.0,(ang.z+1.0)*511.0),0).rgb;
-				FragColor.rgb *= filtr;
-				FragColor.rgb = mix(FragColor.rgb,fog.rgb,clamp(fog.a,0.0,1.0));
+				calcFog();
 				return;
 			case 9:{
 				vec3 spos = getSubCoords();
