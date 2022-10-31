@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "godrays.h"
 
 i8 chatLineSel = -1;
 
@@ -34,6 +35,11 @@ void executeCommand(u8 *cmd){
 			closeEngine();
 		}
 		break;
+	case 5:
+		if(!memcmp(cmd,"speed",5)){
+			player->movementSpeed = strtof(cmd+6,0);
+		}
+		break;
 	case 6:
 		if(!memcmp(cmd,"editor",6)){
 			settings ^= SETTINGS_LIGHTING;
@@ -59,24 +65,74 @@ void executeCommand(u8 *cmd){
 			glMesC++;
 		}
 		break;
+	case 7:
+		if(!memcmp(cmd,"gravity",7)){
+			properties->gravity = strtof(cmd+8,0);
+		}
+		break;
 	case 8:
 		if(!memcmp(cmd,"lightgen",8)){
 			CreateThread(0,0,updateLight2,0,0,0);
 		}
 		break;
-	case 10:
-		if(!memcmp(cmd,"textrndcol",10)){
-			for(u32 i = 0;i < lmapC;i++){
-				lmap[i] = (EXRGB){irnd(),irnd(),irnd()};
-			}
-			glMes[glMesC].id = 6;
-			glMesC++;
+	case 9:
+		if(!memcmp(cmd,"godrayres",9)){
+			u8 res = atoi(cmd+10);
+			godraymap  = HeapReAlloc(GetProcessHeap(),8,godraymap,sizeof(VEC3)*res*res);
+			godraymapB = HeapReAlloc(GetProcessHeap(),8,godraymapB,sizeof(VEC3)*res*res);
+			properties->godrayRes = res;
+		}
+		if(!memcmp(cmd,"godrayamm",9)){
+			properties->godrayAmm = strtof(cmd+10,0);
 		}
 		break;
 	case 11:
+		if(!memcmp(cmd,"flightspeed",11)){
+			player->flightSpeed = strtof(cmd+12,0);
+		}
 		if(!memcmp(cmd,"sensitivity",11)){
 			properties->sensitivity = strtof(cmd+12,0);
 		}
 		break;
+	case 13:
+		if(!memcmp(cmd,"texturecolrnd",13)){
+			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
+				lmap[i] = (EXRGB){(f32)bmap[i].r/(rnd()-1.0f),(f32)bmap[i].g/(rnd()-1.0f),(f32)bmap[i].b/(rnd()-1.0f)};
+			}
+			glMes[glMesC].id = 3;
+			glMesC++;
+			glMes[glMesC].id = 6;
+			glMesC++;
+		}
+		if(!memcmp(cmd,"texturemozaic",13)){
+			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
+				switch(irnd() & 3){
+				case 0:
+					lmap[i].r = bmap[i].r;
+					lmap[i].g = 0;
+					lmap[i].b = 0;
+					break;
+				case 1:
+					lmap[i].r = 0;
+					lmap[i].g = bmap[i].g;
+					lmap[i].b = 0;
+					break;
+				case 2:
+					lmap[i].r = 0;
+					lmap[i].g = 0;
+					lmap[i].b = bmap[i].b;
+					break;
+				case 3:
+					i--;
+					continue;
+				}
+			}
+			glMes[glMesC].id = 3;
+			glMesC++;
+			glMes[glMesC].id = 6;
+			glMesC++;
+		}
+		break;
 	}
+
 }

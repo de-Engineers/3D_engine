@@ -6,6 +6,7 @@
 #include <intrin.h>
 
 #include "tmgl.h"
+#include "godrays.h"
 
 #pragma comment(lib,"opengl32.lib")
 
@@ -60,6 +61,7 @@
 #define GL_TEXTURE31 0x84DF
 #define GL_TEXTURE_3D 0x806F
 #define GL_RGBA32F 0x8814
+#define GL_RGB32F 0x8815
 #define GL_FRAMEBUFFER 0x8D40
 #define GL_COLOR_ATTACHMENT0 0x8CE0
 #define GL_RENDERBUFFER 0x8D41
@@ -420,7 +422,7 @@ void openGL(){
 
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,godraysText);
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,godraySz,godraySz,0,GL_RGBA,GL_UNSIGNED_BYTE,godraymap);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,properties->godrayRes,properties->godrayRes,0,GL_RGBA,GL_UNSIGNED_BYTE,godraymap);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glActiveTexture(GL_TEXTURE3);
@@ -722,6 +724,9 @@ void openGL(){
 				glActiveTexture(GL_TEXTURE16);
 				glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA32F,entityC*20,0,GL_RGBA,GL_FLOAT,entity.gpu);
 				glGenerateMipmap(GL_TEXTURE_1D);
+				glActiveTexture(GL_TEXTURE2);
+				glTexImage2D(GL_TEXTURE_2D,0,GL_RGB32F,properties->godrayRes,properties->godrayRes,0,GL_RGB,GL_FLOAT,godraymap);
+				glGenerateMipmap(GL_TEXTURE_2D);
 				glDrawArrays(GL_TRIANGLES,0,6);
 				glUseProgram(shaderProgram);
 			}

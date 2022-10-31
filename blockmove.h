@@ -19,6 +19,7 @@ typedef struct{
 }BLOCKMOVE;
 
 extern BLOCKMOVE *blockmove;
+extern u8 blockmoveC;
 
 void createMoveBlock(u32 block);
 void moveBlocks();

@@ -2,8 +2,8 @@
 #include <math.h>
 #include <stdio.h> 
 #include <intrin.h>
-#include "cl.h"
 
+#include "cl.h"
 #include "main.h"
 #include "vec3.h"
 #include "ivec2.h"
@@ -14,7 +14,7 @@ u64 one = 0;
 
 unsigned char *openclKernel;
 
-unsigned int lmapC;
+u32 lmapC;
 
 EXRGB *lmap;
 
@@ -58,16 +58,29 @@ void initOpenCL(){
 	clAmbientX = clCreateKernel(clProgram,"ambientX",0);
 	clAmbientY = clCreateKernel(clProgram,"ambientY",0);
 	clAmbientZ = clCreateKernel(clProgram,"ambientZ",0);
+	HeapFree(GetProcessHeap(),0,openclKernel);
+}
+
+void openclSetKernelArgs(cl_kernel kernel){
+	clSetKernelArg(kernel,0,sizeof(cl_mem),(void*)&clMap);
+	clSetKernelArg(kernel,1,sizeof(cl_mem),(void*)&clMetadt);
+	clSetKernelArg(kernel,2,sizeof(cl_mem),(void*)&clMetadt2);
+	clSetKernelArg(kernel,3,sizeof(cl_mem),(void*)&clMetadt3);
+	clSetKernelArg(kernel,4,sizeof(cl_mem),(void*)&clMetadt4);
+	clSetKernelArg(kernel,5,sizeof(cl_mem),(void*)&clMetadt5);
+	clSetKernelArg(kernel,6,sizeof(cl_mem),(void*)&clMetadt6);
+	clSetKernelArg(kernel,7,sizeof(cl_mem),(void*)&clLightmap);
+	clSetKernelArg(kernel,8,sizeof(cl_mem),(void*)&clLpmap);
 }
 
 void GPUgenLight(u64 totalRays,u32 block){
-	RAY ray;
 	VEC3 bpos;
-	VEC3 lm = {1.0f-(f32)metadt[block].r/255.0f,1.0f-(f32)metadt[block].g/255.0f,1.0f-(f32){metadt[block].id/255.0f}};
-	VEC3 lmo = {1.0f-(f32)metadt2[block].r/127.5f,1.0f-(f32)metadt2[block].g/127.5f,1.0f-(f32){metadt2[block].id/127.5f}};
 	bpos.x = (f32)(block % properties->lvlSz)+0.5f;
 	bpos.y = (f32)(block / properties->lvlSz % properties->lvlSz) + 0.5f;
 	bpos.z = (f32)(block / (properties->lvlSz*properties->lvlSz)) + 0.5f;
+
+	VEC3 lm = {1.0f-(f32)metadt[block].r/255.0f,1.0f-(f32)metadt[block].g/255.0f,1.0f-(f32){metadt[block].id/255.0f}};
+	VEC3 lmo = {1.0f-(f32)metadt2[block].r/127.5f,1.0f-(f32)metadt2[block].g/127.5f,1.0f-(f32){metadt2[block].id/127.5f}};
 	VEC3 color = {(f32)(map[block].r)/255.0f,(f32)(map[block].g)/255.0f,(f32)(map[block].b)/255.0f};
 	f32 roff = (f32)metadt3[block].g/50.0f;
 
@@ -90,150 +103,25 @@ void GPUgenLight(u64 totalRays,u32 block){
 	clSetKernelArg(clKernel,22,sizeof(f32),&lmo.y);
 	clSetKernelArg(clKernel,23,sizeof(f32),&lmo.z);
 
-	u32 lmapCB = lmapC;
-
-	lmapC = lmapCB;
 	if(clKernel){
 		for(u32 i = 0;i < metadt3[block].id+1;i++){
-			lmapCB = lmapC;
+			clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 			printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clKernel,1,0,&totalRays,&one,0,0,0));
 			clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
-			lmapC = lmapCB;
+			clEnqueueReadBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 		}
 	}
 	else{
-
-		for (u32 i = 0; i < metadt3[block].id + 1; i++) {
-			cpuGenLight(bpos,color,totalRays);
+		for(u32 i = 0;i < metadt3[block].id+1;i++){
+			cpuGenLight(bpos,color,totalRays,roff);
 			printf("0\n");
 		}
 	}
 }
 
-inline IVEC2 lmapToCrds(u32 p){
+IVEC2 lmapToCrds(u32 p){
 	return (IVEC2){p/properties->lmapSz,p%properties->lmapSz};
-}
-
-inline void simulateLightRay(RAY ray,VEC3 col){
-	rayItterate(&ray);
-	while(ray.ix >= 0 && ray.iy >= 0 && ray.iz >= 0 && ray.ix < properties->lvlSz && ray.iy < properties->lvlSz && ray.iz < properties->lvlSz){
-		u32 block = crds2map(ray.ix,ray.iy,ray.iz);
-		switch(map[block].id){
-		case 28:{
-			VEC2 wall;
-			switch(ray.sid){
-			case 0:{
-				wall.x = fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
-				wall.y = fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z);
-				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
-				if(ray.dir.x>0.0f){
-					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].x += col.x;
-					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].y += col.y;
-					lmapb[lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset].z += col.z;
-					col.x *= (float)map[block].r/265.0f;
-					col.y *= (float)map[block].g/265.0f;
-					col.z *= (float)map[block].b/265.0f;
-					VEC3 dir;
-					dir.x = rnd()-2.0f;
-					dir.x = -sqrtf(-dir.x);
-					dir.y = rnd()*2.0f-3.0f;
-					dir.z = rnd()*2.0f-3.0f;
-					ray = rayCreate((VEC3){ray.ix,(float)ray.iy+wall.y,(float)ray.iz+wall.x},dir);
-				}
-				else{
-					lmapb[lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset].x += col.x;
-					lmapb[lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset].y += col.y;
-					lmapb[lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset].z += col.z;
-					col.x *= (float)map[block].r/265.0f;
-					col.y *= (float)map[block].g/265.0f;
-					col.z *= (float)map[block].b/265.0f;
-					VEC3 dir;
-					dir.x = rnd()-1.0f;
-					dir.x = sqrtf(dir.x);
-					dir.y = rnd()*2.0f-3.0f;
-					dir.z = rnd()*2.0f-3.0f;
-					ray = rayCreate((VEC3){ray.ix+1,(float)ray.iy+wall.y,(float)ray.iz+wall.x},dir);
-				}
-				break;
-				}
-			case 1:{
-				wall.x = fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x);
-				wall.y = fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z);
-				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
-				if(ray.dir.y>0.0f){
-					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].x += col.x;
-					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].y += col.y;
-					lmapb[lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset].z += col.z;
-					col.x *= (float)map[block].r/265.0f;
-					col.y *= (float)map[block].g/265.0f;
-					col.z *= (float)map[block].b/265.0f;
-					VEC3 dir;
-					dir.x = rnd()*2.0f-3.0f;
-					dir.y = rnd()-2.0f;
-					dir.y = -sqrtf(-dir.y);
-					dir.z = rnd()*2.0f-3.0f;
-					ray = rayCreate((VEC3){(float)ray.ix+wall.x,ray.iy,(float)ray.iz+wall.y},dir);
-				}
-				else{
-					lmapb[lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset].x += col.x;
-					lmapb[lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset].y += col.y;
-					lmapb[lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset].z += col.z;
-					col.x *= (float)map[block].r/265.0f;
-					col.y *= (float)map[block].g/265.0f;
-					col.z *= (float)map[block].r/265.0f;
-					VEC3 dir;
-					dir.x = rnd()*2.0f-3.0f;
-					dir.y = rnd()-1.0f;
-					dir.y = sqrtf(dir.y);
-					dir.z = rnd()*2.0f-3.0f;
-					ray = rayCreate((VEC3){(float)ray.ix+wall.x,ray.iy+1,(float)ray.iz+wall.y},dir);
-				}
-				break;
-			}
-			case 2:{	 
-				wall.x = fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x);
-				wall.y = fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y);
-				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
-				if(ray.dir.z>0.0f){
-					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].x += col.x;
-					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].y += col.y;
-					lmapb[lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset].z += col.z;
-					col.x *= (float)map[block].r/265.0f;
-					col.y *= (float)map[block].g/265.0f;
-					col.z *= (float)map[block].b/265.0f;
-					VEC3 dir;
-					dir.x = rnd()*2.0f-3.0f;
-					dir.y = rnd()*2.0f-3.0f;
-					dir.z = rnd()-2.0f;
-					dir.z = -sqrtf(-dir.z);
-					ray = rayCreate((VEC3){(float)ray.ix+wall.x,(float)ray.iy+wall.y,ray.iz},dir);
-				}
-				else{
-					lmapb[lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset].x += col.x;
-					lmapb[lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset].y += col.y;
-					lmapb[lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset].z += col.z;
-					col.x *= (float)map[block].r/265.0f;
-					col.y *= (float)map[block].g/265.0f;
-					col.z *= (float)map[block].b/265.0f;
-					VEC3 dir;
-					dir.x = rnd()*2.0f-3.0f;
-					dir.y = rnd()*2.0f-3.0f;
-					dir.z = rnd()-1.0f;
-					dir.z = sqrtf(dir.z);
-					ray = rayCreate((VEC3){(float)ray.ix+wall.x,(float)ray.iy+wall.y,ray.iz+1},dir);
-				}
-				break;
-			}
-			}
-			if(col.x < 0.01f || col.y < 0.01f || col.z < 0.01f){
-				return;
-			}
-			break;
-			}
-		}
-		rayItterate(&ray);
-	}
 }
 
 void updateLight2(){
@@ -241,6 +129,11 @@ void updateLight2(){
 	lmapC = 0;
 	for(u32 i = 0;i < BLOCKCOUNT;i++){
 		switch(map[i].id){
+		case BLOCK_AIR:
+			lpmap[i].p1 = 0;
+			lpmap[i].p2 = 0;
+			lpmap[i].p3 = 0;
+			break;
 		case 9:
 			lpmap[i].p1 = lmapC;
 			lpmap[i].p2 = lmapC+1;
@@ -459,45 +352,10 @@ void updateLight2(){
 	clEnqueueWriteBuffer(clCommandQueue,clMetadt6,1,0,sizeof(MAP)*BLOCKCOUNT,metadt6,0,0,0);
 	clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 
-	clSetKernelArg(clKernel,0,sizeof(cl_mem),(void*)&clMap);
-	clSetKernelArg(clKernel,1,sizeof(cl_mem),(void*)&clMetadt);
-	clSetKernelArg(clKernel,2,sizeof(cl_mem),(void*)&clMetadt2);
-	clSetKernelArg(clKernel,3,sizeof(cl_mem),(void*)&clMetadt3);
-	clSetKernelArg(clKernel,4,sizeof(cl_mem),(void*)&clMetadt4);
-	clSetKernelArg(clKernel,5,sizeof(cl_mem),(void*)&clMetadt5);
-	clSetKernelArg(clKernel,6,sizeof(cl_mem),(void*)&clMetadt6);
-	clSetKernelArg(clKernel,7,sizeof(cl_mem),(void*)&clLightmap);
-	clSetKernelArg(clKernel,8,sizeof(cl_mem),(void*)&clLpmap);
-
-	clSetKernelArg(clAmbientX,0,sizeof(cl_mem),(void*)&clMap);
-	clSetKernelArg(clAmbientX,1,sizeof(cl_mem),(void*)&clMetadt);
-	clSetKernelArg(clAmbientX,2,sizeof(cl_mem),(void*)&clMetadt2);
-	clSetKernelArg(clAmbientX,3,sizeof(cl_mem),(void*)&clMetadt3);
-	clSetKernelArg(clAmbientX,4,sizeof(cl_mem),(void*)&clMetadt4);
-	clSetKernelArg(clAmbientX,5,sizeof(cl_mem),(void*)&clMetadt5);
-	clSetKernelArg(clAmbientX,6,sizeof(cl_mem),(void*)&clMetadt6);
-	clSetKernelArg(clAmbientX,7,sizeof(cl_mem),(void*)&clLightmap);
-	clSetKernelArg(clAmbientX,8,sizeof(cl_mem),(void*)&clLpmap);
-
-	clSetKernelArg(clAmbientY,0,sizeof(cl_mem),(void*)&clMap);
-	clSetKernelArg(clAmbientY,1,sizeof(cl_mem),(void*)&clMetadt);
-	clSetKernelArg(clAmbientY,2,sizeof(cl_mem),(void*)&clMetadt2);
-	clSetKernelArg(clAmbientY,3,sizeof(cl_mem),(void*)&clMetadt3);
-	clSetKernelArg(clAmbientY,4,sizeof(cl_mem),(void*)&clMetadt4);
-	clSetKernelArg(clAmbientY,5,sizeof(cl_mem),(void*)&clMetadt5);
-	clSetKernelArg(clAmbientY,6,sizeof(cl_mem),(void*)&clMetadt6);
-	clSetKernelArg(clAmbientY,7,sizeof(cl_mem),(void*)&clLightmap);
-	clSetKernelArg(clAmbientY,8,sizeof(cl_mem),(void*)&clLpmap);
-
-	clSetKernelArg(clAmbientZ,0,sizeof(cl_mem),(void*)&clMap);
-	clSetKernelArg(clAmbientZ,1,sizeof(cl_mem),(void*)&clMetadt);
-	clSetKernelArg(clAmbientZ,2,sizeof(cl_mem),(void*)&clMetadt2);
-	clSetKernelArg(clAmbientZ,3,sizeof(cl_mem),(void*)&clMetadt3);
-	clSetKernelArg(clAmbientZ,4,sizeof(cl_mem),(void*)&clMetadt4);
-	clSetKernelArg(clAmbientZ,5,sizeof(cl_mem),(void*)&clMetadt5);
-	clSetKernelArg(clAmbientZ,6,sizeof(cl_mem),(void*)&clMetadt6);
-	clSetKernelArg(clAmbientZ,7,sizeof(cl_mem),(void*)&clLightmap);
-	clSetKernelArg(clAmbientZ,8,sizeof(cl_mem),(void*)&clLpmap);
+	openclSetKernelArgs(clKernel);
+	openclSetKernelArgs(clAmbientX);
+	openclSetKernelArgs(clAmbientY);
+	openclSetKernelArgs(clAmbientZ);
 
 	one = properties->lmapSz*properties->lmapSz;
 
@@ -578,9 +436,11 @@ void updateLight2(){
 			sampleC -= sampleC%one;
 
 			if(clAmbientX){
+				clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 				clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 				printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientX,1,0,&sampleC,&one,0,0,0));
 				clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+				clEnqueueReadBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 			}
 			else{
 				cpuGenLightAmbientX(ang,color2,sampleC);
@@ -590,9 +450,11 @@ void updateLight2(){
 			sampleC -= sampleC%one;
 
 			if(clAmbientY){
+				clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 				clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 				printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientZ,1,0,&sampleC,&one,0,0,0));
 				clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+				clEnqueueReadBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 			}
 			else{
 				cpuGenLightAmbientY(ang,color2,sampleC);
@@ -602,9 +464,11 @@ void updateLight2(){
 			sampleC -= sampleC%one;
 
 			if(clAmbientZ){
+				clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 				clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
 				printf("%i\n",clEnqueueNDRangeKernel(clCommandQueue,clAmbientZ,1,0,&sampleC,&one,0,0,0));
 				clEnqueueReadBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
+				clEnqueueReadBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 			}
 			else{
 				cpuGenLightAmbientZ(ang,color2,sampleC);

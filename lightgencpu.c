@@ -4,73 +4,58 @@
 
 VEC3 rayColor;
 
-typedef union {
-    VEC3 Pos;
-    VEC3 Dir;
+typedef struct {
+    union{
+        VEC3 Pos;
+        VEC3 Dir;
+    };
+    f32 rndOffset;
 }RAYPROP;
 
 RAYPROP rayy;
 
 u64 threadItt;
 
-inline void castLightRay(RAY ray,VEC3 color){
+void castLightRay(RAY ray,VEC3 color){
     VEC3 dir;
     VEC2 wall;
-    while (ray.ix >= 0 && ray.iy >= 0 && ray.iz >= 0 && ray.ix < 64 && ray.iy < 64 && ray.iz < 64) {
+    while(ray.ix >= 0 && ray.iy >= 0 && ray.iz >= 0 && ray.ix < 64 && ray.iy < 64 && ray.iz < 64){
         u32 block = crds2map(ray.ix, ray.iy, ray.iz);
-        switch (map[block].id) {
+        switch (map[block].id){
+        case BLOCK_AIR:
+            if((rnd()-1.0f)<16.0f/(properties->lmapSz*properties->lmapSz)){
+                lpmap[block].p1 = color.r*255.0f;
+                lpmap[block].p2 = color.g*255.0f;
+                lpmap[block].p3 = color.b*255.0f;
+            }
+            break;
         case BLOCK_CUBE:{
             VEC3 spos = getSubCoords(ray);
             VEC3 mtdt = { (f32)metadt[block].g / 255.0f,(f32)metadt[block].r / 255.0f,(f32)metadt[block].id / 255.0f };
             VEC3 mtdt2 = { (f32)metadt2[block].g / 255.0f,(f32)metadt2[block].r / 255.0f,(f32)metadt2[block].id / 255.0f };
             VEC3 rotdir = ray.dir;
-            VEC2 tempv;
-            tempv = rotVEC2((VEC2){mtdt.x,mtdt.y},(f32)metadt3[block].r / 255.0f * PI);
-            mtdt.x = tempv.x;
-            mtdt.y = tempv.y;
-            tempv = rotVEC2((VEC2){mtdt.x,mtdt.z},(f32)metadt3[block].g / 255.0f * PI);
-            mtdt.x = tempv.x;
-            mtdt.z = tempv.y;
-            tempv = rotVEC2((VEC2){mtdt.y,mtdt.z},(f32)metadt3[block].id / 255.0f * PI);
-            mtdt.y = tempv.x;
-            mtdt.z = tempv.y;
-            tempv = rotVEC2((VEC2){spos.x,spos.y},(f32)metadt3[block].r / 255.0f * PI);
-            spos.x = tempv.x;
-            spos.y = tempv.y;
-            tempv = rotVEC2((VEC2){spos.x,spos.z},(f32)metadt3[block].g / 255.0f * PI);
-            spos.x = tempv.x;
-            spos.z = tempv.y;
-            tempv = rotVEC2((VEC2){spos.y,spos.z},(f32)metadt3[block].id / 255.0f * PI);
-            spos.y = tempv.x;
-            spos.z = tempv.y;
-            tempv = rotVEC2((VEC2){rotdir.x,rotdir.y},(f32)metadt3[block].r / 255.0f * PI);
-            rotdir.x = tempv.x;
-            rotdir.y = tempv.y;
-            tempv = rotVEC2((VEC2){rotdir.x,rotdir.z},(f32)metadt3[block].g / 255.0f * PI);
-            rotdir.x = tempv.x;
-            rotdir.z = tempv.y;
-            tempv = rotVEC2((VEC2){rotdir.y,rotdir.z},(f32)metadt3[block].id / 255.0f * PI);
-            rotdir.y = tempv.x;
-            rotdir.z = tempv.y;
+            (VEC2){mtdt.x,mtdt.y}     = rotVEC2((VEC2){mtdt.x,mtdt.y},(f32)metadt3[block].r / 255.0f * PI);
+            (VEC2){mtdt.x,mtdt.z}     = rotVEC2((VEC2){mtdt.x,mtdt.z},(f32)metadt3[block].g / 255.0f * PI);
+            (VEC2){mtdt.y,mtdt.z}     = rotVEC2((VEC2){mtdt.y,mtdt.z},(f32)metadt3[block].id / 255.0f * PI);
+            (VEC2){spos.x,spos.y}     = rotVEC2((VEC2){spos.x,spos.y},(f32)metadt3[block].r / 255.0f * PI);
+            (VEC2){spos.x,spos.z}     = rotVEC2((VEC2){spos.x,spos.z},(f32)metadt3[block].g / 255.0f * PI);
+            (VEC2){spos.y,spos.z}     = rotVEC2((VEC2){spos.y,spos.z},(f32)metadt3[block].id / 255.0f * PI);
+            (VEC2){rotdir.x,rotdir.y} = rotVEC2((VEC2){rotdir.x,rotdir.y},(f32)metadt3[block].r / 255.0f * PI);
+            (VEC2){rotdir.x,rotdir.z} = rotVEC2((VEC2){rotdir.x,rotdir.z},(f32)metadt3[block].g / 255.0f * PI);
+            (VEC2){rotdir.y,rotdir.z} = rotVEC2((VEC2){rotdir.y,rotdir.z},(f32)metadt3[block].id / 255.0f * PI);
             f32 d = iBox(VEC3subVEC3R(spos,mtdt),rotdir,(VEC3){metadt2[block].g/255.0f,metadt2[block].r/255.0f,metadt2[block].id/255.0f});
             if(d > 0.0f){
                 VEC3addVEC3(&spos,VEC3mulR(rotdir,d));
                 VEC3 nspos = spos;
-                tempv = rotVEC2((VEC2){nspos.y,nspos.z}, -(f32)metadt3[block].r / 255.0f * PI);
-                nspos.y = tempv.x;
-                nspos.z = tempv.y;
-                tempv = rotVEC2((VEC2){nspos.x,nspos.z}, -(f32)metadt3[block].g / 255.0f * PI);
-                nspos.x = tempv.x;
-                nspos.z = tempv.y;
-                tempv = rotVEC2((VEC2){nspos.x,nspos.y}, -(f32)metadt3[block].id / 255.0f * PI);
-                nspos.x = tempv.x;
-                nspos.y = tempv.y;
-                if (nspos.x >= 0.0f && nspos.y >= 0.0f && nspos.z >= 0.0f && nspos.x <= 1.0f && nspos.y <= 1.0f && nspos.z <= 1.0f) {
+                (VEC2){nspos.y,nspos.z} = rotVEC2((VEC2){nspos.y,nspos.z}, -(f32)metadt3[block].r / 255.0f * PI);
+                (VEC2){nspos.x,nspos.z} = rotVEC2((VEC2){nspos.x,nspos.z}, -(f32)metadt3[block].g / 255.0f * PI);
+                (VEC2){nspos.x,nspos.y} = rotVEC2((VEC2){nspos.x,nspos.y}, -(f32)metadt3[block].id / 255.0f * PI);
+                if(nspos.x >= 0.0f && nspos.y >= 0.0f && nspos.z >= 0.0f && nspos.x <= 1.0f && nspos.y <= 1.0f && nspos.z <= 1.0f){
                     color.r *= (f32)map[block].r / 256.0f;
                     color.g *= (f32)map[block].g / 256.0f;
                     color.b *= (f32)map[block].b / 256.0f;
-                    if (spos.x > mtdt.x - mtdt2.x - 0.0001f && spos.x < mtdt.x - mtdt2.x + 0.0001f) {
-                        f32 mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0;
+                    if(spos.x > mtdt.x - mtdt2.x - 0.0001f && spos.x < mtdt.x - mtdt2.x + 0.0001f){
+                        f32 mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0f;
                         u32 xt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -82,8 +67,8 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 2.0f),(rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f });
                         }
                     }
-                    if (spos.y > mtdt.y - mtdt2.y - 0.0001f && spos.y < mtdt.y - mtdt2.y + 0.0001f) {
-                        f32 mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0;
+                    else if(spos.y > mtdt.y - mtdt2.y - 0.0001f && spos.y < mtdt.y - mtdt2.y + 0.0001f){
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0f;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -95,8 +80,8 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 1.5f) * 2.0f,(rnd() - 2.0f),(rnd() - 1.5f) * 2.0f });
                         }
                     }
-                    if (spos.z > mtdt.z - mtdt2.z - 0.0001f && spos.z < mtdt.z - mtdt2.z + 0.0001f) {
-                        f32 mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0;
+                    else if(spos.z > mtdt.z - mtdt2.z - 0.0001f && spos.z < mtdt.z - mtdt2.z + 0.0001f){
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0f;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -108,8 +93,8 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f,(rnd() - 2.0f) });
                         }
                     }
-                    if (spos.x > mtdt.x + mtdt2.x - 0.0001f && spos.x < mtdt.x + mtdt2.x + 0.0001f) {
-                        f32 mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0;
+                    else if(spos.x > mtdt.x + mtdt2.x - 0.0001f && spos.x < mtdt.x + mtdt2.x + 0.0001f){
+                        f32 mt = fmaxf(mtdt2.y, mtdt2.z) * 2.0f;
                         u32 xt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -121,8 +106,8 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 1.0f),(rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f });
                         }
                     }
-                    if (spos.y > mtdt.y + mtdt2.y - 0.0001f && spos.y < mtdt.y + mtdt2.y + 0.0001f) {
-                        f32 mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0;
+                    else if(spos.y > mtdt.y + mtdt2.y - 0.0001f && spos.y < mtdt.y + mtdt2.y + 0.0001f){
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.z) * 2.0f;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.z - mtdt.z + mtdt2.z) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -134,8 +119,8 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 1.5f) * 2.0f,(rnd() - 1.0f),(rnd() - 1.5f) * 2.0f });
                         }
                     }
-                    if (spos.z > mtdt.z + mtdt2.z - 0.0001f && spos.z < mtdt.z + mtdt2.z + 0.0001f) {
-                        f32 mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0;
+                    else if(spos.z > mtdt.z + mtdt2.z - 0.0001f && spos.z < mtdt.z + mtdt2.z + 0.0001f){
+                        f32 mt = fmaxf(mtdt2.x, mtdt2.y) * 2.0f;
                         u32 xt = (spos.x - mtdt.x + mtdt2.x) * properties->lmapSz / mt;
                         u32 yt = (spos.y - mtdt.y + mtdt2.y) * properties->lmapSz / mt;
                         u32 offset = xt + yt * properties->lmapSz;
@@ -147,30 +132,24 @@ inline void castLightRay(RAY ray,VEC3 color){
                             VEC3addVEC3(&dir,(VEC3){ (rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f,(rnd() - 1.0f) });
                         }
                     }
-                    tempv = rotVEC2((VEC2){dir.x,dir.y}, (f32) { metadt3[block].r } / 255.0 * PI);
-                    dir.x = tempv.x;
-                    dir.y = tempv.y;
-                    tempv = rotVEC2((VEC2){dir.x,dir.z}, (f32) { metadt3[block].g } / 255.0 * PI);
-                    dir.x = tempv.x;
-                    dir.z = tempv.y;
-                    tempv = rotVEC2((VEC2){dir.y,dir.z}, (f32) { metadt3[block].id } / 255.0 * PI);
-                    dir.y = tempv.x;
-                    dir.z = tempv.y;
+                    (VEC2){dir.x,dir.y} = rotVEC2((VEC2){dir.x,dir.y}, (f32) { metadt3[block].r } / 255.0f * PI);
+                    (VEC2){dir.x,dir.z} = rotVEC2((VEC2){dir.x,dir.z}, (f32) { metadt3[block].g } / 255.0f * PI);
+                    (VEC2){dir.y,dir.z} = rotVEC2((VEC2){dir.y,dir.z}, (f32) { metadt3[block].id } / 255.0f * PI);
                     ray = rayCreate(VEC3addVEC3R((VEC3){ray.ix,ray.iy,ray.iz },nspos), VEC3normalize(dir));
-                    if (color.r < 0.01f && color.g < 0.01f && color.b < 0.01f) {
+                    if(color.r < 0.01f && color.g < 0.01f && color.b < 0.01f){
                         return;
                     }
                 }
             }
             break;
         }
-        case 27:
-        case 28:
+        case BLOCK_REFLECTIVE:
+        case BLOCK_SOLID:
             color.r *= (f32)map[block].r / 255.0f;
             color.g *= (f32)map[block].g / 255.0f;
             color.b *= (f32)map[block].b / 255.0f;
-            switch (ray.sid) {
-            case 0: {
+            switch(ray.sid){
+            case 0:{
                 wall.x = fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
                 wall.y = fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z);
                 u32 offset = (int)(fract(wall.y) * properties->lmapSz) * properties->lmapSz + (int)(fract(wall.x) * properties->lmapSz);
@@ -198,7 +177,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                 }
                 break;
             }
-            case 1: {   
+            case 1:{   
                 wall.x = fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x);
                 wall.y = fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z);
                 u32 offset = (int)(fract(wall.y) * properties->lmapSz) * properties->lmapSz + (int)(fract(wall.x) * properties->lmapSz);
@@ -226,7 +205,7 @@ inline void castLightRay(RAY ray,VEC3 color){
                 }
                 break;
             }
-            case 2: {
+            case 2:{
                 wall.x = fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x);
                 wall.y = fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y);
                 u32 offset = (int)(fract(wall.y) * properties->lmapSz) * properties->lmapSz + (int)(fract(wall.x) * properties->lmapSz);
@@ -254,11 +233,11 @@ inline void castLightRay(RAY ray,VEC3 color){
                 }
                 break;
             }
+            }
             if(color.r < 0.01f && color.g < 0.01f && color.b < 0.01f){
                 return;
             }
             break;
-            }
         }
         rayItterate(&ray);
     }
@@ -268,10 +247,11 @@ void lightRaysGenerate(){
     for(u64 i = 0;i < threadItt;i++){
         VEC3 dir;
         for(int i = 0; i < 3; i++) {
-            VEC3addVEC3(&dir,(VEC3) { (rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f });
+            VEC3addVEC3(&dir,(VEC3){(rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f,(rnd() - 1.5f) * 2.0f});
         }
         dir = VEC3normalize(dir);
-        castLightRay(rayCreate(rayy.Pos,dir),rayColor);
+        VEC3 pos = VEC3addVEC3R(rayy.Pos,(VEC3){(rnd()-1.5f)*rayy.rndOffset,(rnd()-1.5f)*rayy.rndOffset,(rnd()-1.5f)*rayy.rndOffset});
+        castLightRay(rayCreate(pos,dir),rayColor);
         Sleep(0);
     }
 }
@@ -354,8 +334,9 @@ void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt){
     WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
 }
 
-void cpuGenLight(VEC3 pos,VEC3 color,u64 itt){
+void cpuGenLight(VEC3 pos,VEC3 color,u64 itt,f32 rndOffset){
     rayy.Pos = pos;
+    rayy.rndOffset = rndOffset;
     rayColor = color;
     threadItt = itt/8;
     HANDLE cpulightgenthreads[8];

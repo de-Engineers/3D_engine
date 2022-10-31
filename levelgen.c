@@ -1,7 +1,6 @@
 ﻿#include <windows.h>
 #include <intrin.h>
 #include <stdio.h>
-#include <shlwapi.h>
 
 #include "main.h"
 
@@ -13,9 +12,9 @@ void generateEmptyWorld(){
 	map[crds2map(32,32,5)].r  = 190;
 	map[crds2map(32,32,5)].g  = 190;
 	map[crds2map(32,32,5)].b  = 190;
-	metadt2[crds2map(32,32,7)].r   = 127;
-	metadt2[crds2map(32,32,7)].g   = 127;
-	metadt2[crds2map(32,32,7)].id  = 127;
+	metadt2[crds2map(32,32,7)].r   = 128;
+	metadt2[crds2map(32,32,7)].g   = 128;
+	metadt2[crds2map(32,32,7)].id  = 128;
 
 	map[crds2map(32,32,0)].id = BLOCK_SOLID;
 	map[crds2map(32,32,0)].r  = 190;

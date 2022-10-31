@@ -1,5 +1,7 @@
-﻿#include "main.h"
-#include <math.h>
+﻿#include <math.h>
+
+#include "main.h"
+#include "tools.h"
 #include "ray.h"
 
 CVEC3 selarea;
@@ -8,7 +10,9 @@ u32 editBlockSel;
 
 i16 pixelCrdB = -1;
 
-inline RAY rayCreate(VEC3 pos,VEC3 dir){
+RGB *textureBuf;
+
+RAY rayCreate(VEC3 pos,VEC3 dir){
 	RAY ray;
 
 	ray.pos = pos;
@@ -374,30 +378,20 @@ void tools(){
 		}
 	case 6:{
 		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
-			if(map[block].id!=BLOCK_AIR){
-				if(settings & SETTINGS_SUBBLOCK){
-					metadt6[block].r = metadt6Sel.r;
-					metadt6[block].g = metadt6Sel.g;
-					metadt6[block].b = metadt6Sel.b;
-					metadt6[block].id= metadt6Sel.a;
-				}
-				else{
-					metadt3[block].r = metadt3Sel.r;
-					metadt3[block].g = metadt3Sel.g;
-					metadt3[block].b = metadt3Sel.b;
-					metadt3[block].id= metadt3Sel.a;
-				}
-				glMes[glMesC].id = 3;
-				glMesC++;
-				break;
+		i32 l = getLmapLocation(&ray);
+		if(l!=-1){
+			l /= properties->lmapSz*properties->lmapSz;
+			l *= properties->lmapSz*properties->lmapSz;
+			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz;i++){
+				lmap[l+i].r = (f32)bmap[l+i].r * textureBuf[i].r / 255.0f;
+				lmap[l+i].g = (f32)bmap[l+i].g * textureBuf[i].g / 255.0f;
+				lmap[l+i].b = (f32)bmap[l+i].b * textureBuf[i].b / 255.0f;
 			}
-			rayItterate(&ray);
+			glMes[glMesC].data1 = l;
+			glMes[glMesC].id = 7;
+			glMesC++;
 		}
-		break;
 		}
-	case 7:
 		break;
 	case 8:{
 		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});

@@ -10,8 +10,6 @@
 
 #define skyboxSz 1024
 
-#define godraySz 128
-
 #define ENTITYTEXTSZ 32
 
 #define RENDERDISTANCE 32
@@ -40,6 +38,7 @@
 #define BLOCK_LIGHT4       6
 #define BLOCK_LIGHT5       7
 #define BLOCK_LIGHT6       8
+#define BLOCK_SPHERE       9
 #define BLOCK_CUBE         12
 #define BLOCK_GLASS        15
 #define BLOCK_SPAWN        25
@@ -72,10 +71,22 @@ typedef float              f32;
 typedef double             f64;
 
 typedef struct{
-	u32 x;
-	u32 y;
-	u32 z;
-	u32 w;
+	union{
+		u32 x;
+		u32 r;
+	};
+	union{
+		u32 y;
+		u32 g;
+	};
+	union{
+		u32 z;
+		u32 b;
+	};
+	union{
+		u32 w;
+		u32 a;
+	};
 }IVEC4;
 
 typedef struct{
@@ -136,6 +147,8 @@ typedef struct{
 	f32 hitboxWantedHeightQueued;
 
 	f32 flightSpeed;
+	f32 movementSpeed;
+	f32 jumpHeight;
 
 	u16 shotCooldown;
 	u8  weaponEquiped;
@@ -154,15 +167,24 @@ typedef struct{
 }IPADDRESS;
 
 typedef struct{
+	u8  godrayRes;
+
 	u16 xres;
 	u16 yres;
+	u16 windowOffsetX;
+	u16 windowOffsetY;
 	u16 lvlSz;
+
 	u32 lmapSzb;
 	u32 lmapSz;
 	u32 tex3DSzLimit;
+
 	f32 sensitivity;
-	u16 windowOffsetX;
-	u16 windowOffsetY;
+	f32 gravity;
+	f32 airFrictionVert;
+	f32 airFrictionHor;
+	f32 groundFriction;
+	f32 godrayAmm;
 }PROPERTIES;
 
 typedef struct{
@@ -321,7 +343,6 @@ extern MAP            *metadt6;
 extern LPMAP          *lpmap;
 extern EXRGB          *lmap;
 extern EXRGB          *bmap;
-extern RGBA           *godraymap;
 extern RGB            *entityTexture;
 extern RGB            *skyboxTexture;
 extern STAR           *star;
@@ -393,13 +414,12 @@ void initOpenCL();
 void HDR();
 void spawnEntity(VEC3 pos,VEC3 vel,u8 id);
 void spawnEntityEx(VEC3 pos,VEC3 pos2,VEC3 vel,u8 id,VEC3 color);
-void genGodraysMap();
 void playerWorldCollision();
 void generateSkyBox();
 void playerDeath();
 void networking();
 void spawnPlayer(u8 id);
-void cpuGenLight(VEC3 pos, VEC3 color,u64 itt);
+void cpuGenLight(VEC3 pos, VEC3 color,u64 itt,f32 rndOffset);
 void cpuGenLightAmbientX(VEC3 dir,VEC3 color,u64 itt);
 void cpuGenLightAmbientY(VEC3 dir,VEC3 color,u64 itt);
 void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt);

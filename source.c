@@ -4,12 +4,14 @@
 #include <stdio.h>
 
 #include "main.h"
+#include "tools.h"
 #include "network.h"
 #include "textbox.h"
 #include "ui.h"
 #include "console.h"
 #include "blockmove.h"
 #include "vec4.h"
+#include "godrays.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -76,8 +78,9 @@ HANDLE staticEntitiesThread;
 HANDLE ittmapThread;
 HANDLE godraysThread;
 HANDLE networkThread;
+HANDLE HDRthread;
 
-const u16 name[] = L"3D_engine";
+const u8 name[] = "3D_engine";
 
 HINSTANCE hInstance;
 HWND window;
@@ -280,7 +283,7 @@ void levelLoad(char *lname){
 			}
 			break;
 		case BLOCK_AMBIENTLIGHT:
-			star[starC].skyCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
+			star[starC].skyCol = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
 			star[starC].pos = VEC3normalize((VEC3){127.0f-metadt[i].r,127.0f-metadt[i].g,127.0f-metadt[i].id});
 			star[starC].col = (RGB){map[i].r,map[i].g,map[i].b};
 			starC++;
@@ -391,11 +394,13 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		}
 		switch(wParam){
 		case 0x54:
-			menuSel = 9;
-			ShowCursor(1);
-			textboxSel = textboxC;
-			textboxCreate((VEC2){-0.69f,0.8f},2);
-			buttonCreate((VEC2){-0.37f,0.76f},12);
+			if(menuSel==0){
+				menuSel = 9;
+				ShowCursor(1);
+				textboxSel = textboxC;
+				textboxCreate((VEC2){-0.69f,0.8f},2);
+				buttonCreate((VEC2){-0.37f,0.76f},12);
+			}
 			break;
 		case VK_ADD:
 			blockSel++;
@@ -669,6 +674,24 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		break;
 	case WM_MBUTTONDOWN:
 		switch(toolSel){
+		case 6:{
+			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			i32 lmapLoc = getLmapLocation(&ray);
+			if(lmapLoc!=-1){
+				lmapLoc /= properties->lmapSz*properties->lmapSz;
+				lmapLoc *= properties->lmapSz*properties->lmapSz;
+				for(u32 i = 0;i < properties->lmapSz*properties->lmapSz;i++){
+					VEC3 bcolor = {bmap[lmapLoc+i].r,bmap[lmapLoc+i].g,bmap[lmapLoc+i].b};
+					VEC3 lcolor = {lmap[lmapLoc+i].r,lmap[lmapLoc+i].g,lmap[lmapLoc+i].b};
+					f32 mcol = fmaxf(VEC3max(lcolor),VEC3max(bcolor));
+					VEC3 color = VEC3mulR(VEC3divVEC3R(lcolor,bcolor),255.0f);
+					textureBuf[i].r = color.r;
+					textureBuf[i].g = color.g;
+					textureBuf[i].b = color.b;
+				}
+			}
+			break;
+		}
 		case 7:{
 			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			i32 lmapLoc = getLmapLocation(&ray);
@@ -808,19 +831,6 @@ WNDCLASS wndclass = {0,proc,0,0,0,0,0,0,name,name};
 void physics(){
 	for (;;){
 		if(GetKeyState(VK_LBUTTON)&0x80){
-			for(u32 i = 0;i < sliderC;i++){
-				if(mousePos.x > slider[i].pos.x - 0.266666667f && mousePos.x < slider[i].pos.x + 0.26666667f
-					&& mousePos.y > slider[i].pos.y - 0.015f && mousePos.y < slider[i].pos.y + 0.015f){
-					sliderId = slider[i].id;
-					sliderPos = (mousePos.x-slider[i].pos.x+0.266666667f)*480.0f;
-				}
-			}
-			if(sliderId!=-1){
-				sliders[sliderId](sliderPos);
-				sliderId = -1;
-				glMes[glMesC].id = 13;
-				glMesC++;
-			}
 			switch(toolSel){
 			case 7:{
 				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
@@ -937,52 +947,52 @@ void physics(){
 				}
 			}
 			if(menuSel==0){
-				f32 amp = 1.0f;
+				f32 ampli = 1.0f;
 				if(player->hitboxHeight<1.7f){
-					amp = 0.33f;
+					ampli = 0.33f;
 				}
 				if(GetKeyState(0x57) & 0x80){
 					if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-						player->vel.x += player->xdir / 120 * amp * 0.7071f;
-						player->vel.y += player->ydir / 120 * amp * 0.7071f;
+						player->vel.x += player->xdir * player->movementSpeed * ampli * 0.7071f;
+						player->vel.y += player->ydir * player->movementSpeed * ampli * 0.7071f;
 					}
 					else{
-						player->vel.x += player->xdir / 120 * amp;
-						player->vel.y += player->ydir / 120 * amp;
+						player->vel.x += player->xdir * player->movementSpeed * ampli;
+						player->vel.y += player->ydir * player->movementSpeed * ampli;
 					}
 				}
 				if(GetKeyState(0x53) & 0x80){
 					if(GetKeyState(0x44) & 0x80 || GetKeyState(0x41) & 0x80){
-						player->vel.x -= player->xdir / 120 * amp * 0.7071f;
-						player->vel.y -= player->ydir / 120 * amp * 0.7071f;
+						player->vel.x -= player->xdir * player->movementSpeed * ampli * 0.7071f;
+						player->vel.y -= player->ydir * player->movementSpeed * ampli * 0.7071f;
 					}
 					else{
-						player->vel.x -= player->xdir / 120 * amp;
-						player->vel.y -= player->ydir / 120 * amp;
+						player->vel.x -= player->xdir * player->movementSpeed * ampli;
+						player->vel.y -= player->ydir * player->movementSpeed * ampli;
 					} 
 				}
 				if(GetKeyState(0x44) & 0x80){
 					if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-						player->vel.x += cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-						player->vel.y += sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+						player->vel.x += cosf(player->xangle + PI_05) * player->movementSpeed * ampli * 0.7071f;
+						player->vel.y += sinf(player->xangle + PI_05) * player->movementSpeed * ampli * 0.7071f;
 					}
 					else{
-						player->vel.x += cosf(player->xangle + PI_05) / 120 * amp;
-						player->vel.y += sinf(player->xangle + PI_05) / 120 * amp;
+						player->vel.x += cosf(player->xangle + PI_05) * player->movementSpeed * ampli;
+						player->vel.y += sinf(player->xangle + PI_05) * player->movementSpeed * ampli;
 					}
 				}
 				if(GetKeyState(0x41) & 0x80){
 					if(GetKeyState(0x53) & 0x80 || GetKeyState(0x57) & 0x80){
-						player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp * 0.7071f;
-						player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp * 0.7071f;
+						player->vel.x -= cosf(player->xangle + PI_05) * player->movementSpeed * ampli * 0.7071f;
+						player->vel.y -= sinf(player->xangle + PI_05) * player->movementSpeed * ampli * 0.7071f;
 					}
 					else{
-						player->vel.x -= cosf(player->xangle + PI_05) / 120 * amp;
-						player->vel.y -= sinf(player->xangle + PI_05) / 120 * amp;
+						player->vel.x -= cosf(player->xangle + PI_05) * player->movementSpeed * ampli;
+						player->vel.y -= sinf(player->xangle + PI_05) * player->movementSpeed * ampli;
 					}
 				}
 			}
-			player->vel.z -= 0.015f;
+			player->vel.z -= properties->gravity;
 
 			player->yangle += player->recoil.y / 4.0f;
 			player->recoil.y *= 0.75f; 
@@ -1011,18 +1021,34 @@ void physics(){
 		if(player->pos.z > properties->lvlSz){
 			player->pos.z = properties->lvlSz;
 		}
-		player->vel.z /= 1.003f;
+		player->vel.z *= properties->airFrictionVert;
 		tick++;
-		if(!(settings&SETTINGS_LIGHTING)&&lmapC!=0){
-			HDR();
-		}
-		Sleep(15);
+		Sleep(3);
 	}
 }
 
 
 void main(){
 	timeBeginPeriod(1);
+
+	player     = HeapAlloc(GetProcessHeap(),8,sizeof(PLAYERDATA));
+	properties = HeapAlloc(GetProcessHeap(),8,sizeof(PROPERTIES));
+
+	properties->lvlSz           = MAPSZ;
+	properties->lmapSzb         = LMAPSZ;
+	properties->gravity         = 0.0013f;
+	properties->airFrictionHor  = 0.987f;
+	properties->airFrictionVert = 0.998f;
+	properties->groundFriction  = 0.967f;
+	properties->godrayAmm       = 1.0f;
+	properties->godrayRes       = 64;
+
+	player->flightSpeed = 0.025f;
+	player->hitboxHeight = 1.7f;
+	player->hitboxWantedHeight = 1.7f;
+	player->health = 100;
+	player->jumpHeight = 0.06f;
+	player->movementSpeed = 0.0008f;
 
 	lpmap      = HeapAlloc(GetProcessHeap(),8,sizeof(LPMAP)*BLOCKCOUNT);
 	map        = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
@@ -1032,19 +1058,19 @@ void main(){
 	metadt4    = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
 	metadt5    = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
 	metadt6    = HeapAlloc(GetProcessHeap(),8,sizeof(MAP)*BLOCKCOUNT);
-	player     = HeapAlloc(GetProcessHeap(),8,sizeof(PLAYERDATA));
-	properties = HeapAlloc(GetProcessHeap(),8,sizeof(PROPERTIES));
 	entity.gpu = HeapAlloc(GetProcessHeap(),8,sizeof(GPUDATA) * 128);
 	entity.cpu = HeapAlloc(GetProcessHeap(),8,sizeof(CPUDATA) * 128);
 	button     = HeapAlloc(GetProcessHeap(),8,sizeof(BUTTON) * 256);
 	slider     = HeapAlloc(GetProcessHeap(),8,sizeof(BUTTON) * 256);
 	inputStr   = HeapAlloc(GetProcessHeap(),8,256);
-	godraymap  = HeapAlloc(GetProcessHeap(),8,godraySz*godraySz*sizeof(RGBA));
+	godraymap  = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->godrayRes*properties->godrayRes);
+	godraymapB = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->godrayRes*properties->godrayRes);
 	turret     = HeapAlloc(GetProcessHeap(),8,sizeof(TURRET) * 1024);
 	star       = HeapAlloc(GetProcessHeap(),8,sizeof(STAR)*3);
 	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
 	playerName = HeapAlloc(GetProcessHeap(),8,20);
 	blockmove  = HeapAlloc(GetProcessHeap(),8,sizeof(BLOCKMOVE)*64);
+	textureBuf = HeapAlloc(GetProcessHeap(),8,sizeof(RGB)*64*64);
 
 	for(u32 i = 0;i < CHATSZ;i++){
 		chat[i].text = HeapAlloc(GetProcessHeap(),8,40);
@@ -1065,15 +1091,6 @@ void main(){
 
 	HICON hIcon = LoadImageA(0,"textures/bol.ico",IMAGE_ICON,48,48,LR_LOADFROMFILE);
 	SendMessageA(window,WM_SETICON,ICON_SMALL,(long int)hIcon);
-
-	player->flightSpeed = 0.125f;
-
-	properties->lvlSz          = MAPSZ;
-	properties->lmapSzb        = LMAPSZ;
-
-	player->hitboxHeight = 1.7f;
-	player->hitboxWantedHeight = 1.7f;
-	player->health = 100;
 
 	renderingThread = CreateThread(0,0,openGL,0,0,0);
 	
@@ -1126,6 +1143,7 @@ void main(){
 	entitiesThread       = CreateThread(0,0,entities,0,0,0);
 	ittmapThread         = CreateThread(0,0,ittmap,0,0,0);
 	godraysThread        = CreateThread(0,0,genGodraysMap,0,0,0);
+	HDRthread            = CreateThread(0,0,HDR,0,0,0);
 
 	while(GetMessageA(&Msg,window,0,0)>0){
 		TranslateMessage(&Msg);

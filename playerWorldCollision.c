@@ -183,7 +183,7 @@ void playerWorldCollision(){
 			player->hitboxWantedHeight = player->hitboxWantedHeightQueued;
 			player->hitboxWantedHeightQueued = 0.0f;
 		}
-		if(player->vel.z < -0.15f){
+		if(player->vel.z < -0.03f){
 			switch(metadt6[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].r){
 			case 0:
 				playSound(landSound,0,-2000);
@@ -241,7 +241,7 @@ void playerWorldCollision(){
 			}
 		}
 		if((GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
-			player->vel.z += 0.2f * player->stamina;
+			player->vel.z += player->jumpHeight * player->stamina;
 			player->vel.x *= 1.7f * player->stamina;
 			player->vel.y *= 1.7f * player->stamina;
 			player->stamina = 0.0f;
@@ -283,8 +283,8 @@ void playerWorldCollision(){
 			break;
 		}
 		if(touchStatus == 0x04 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
-			player->vel.z += 0.25f * player->stamina;
-			player->vel.x += 0.25f * player->stamina;
+			player->vel.z += player->jumpHeight * player->stamina;
+			player->vel.x += player->jumpHeight * player->stamina;
 			player->stamina = 0.0f;
 		}
 	}
@@ -316,8 +316,8 @@ void playerWorldCollision(){
 			break;
 		}
 		if(touchStatus == 0x08 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
-			player->vel.z += 0.25f * player->stamina;
-			player->vel.x += -0.25f * player->stamina;
+			player->vel.z += player->jumpHeight * player->stamina;
+			player->vel.x += -player->jumpHeight * player->stamina;
 			player->stamina = 0.0f;
 		}
 	}
@@ -349,8 +349,8 @@ void playerWorldCollision(){
 			break;
 		}
 		if(touchStatus == 0x10 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
-			player->vel.z += 0.25f * player->stamina;
-			player->vel.y += 0.25f * player->stamina;
+			player->vel.z += player->jumpHeight * player->stamina;
+			player->vel.y += player->jumpHeight * player->stamina;
 			player->stamina = 0.0f;
 		}
 	}
@@ -379,8 +379,8 @@ void playerWorldCollision(){
 			break;
 		}
 		if(touchStatus == 0x20 && (GetKeyState(VK_SPACE) & 0x80) && touchedSpace == 0 && menuSel == 0){
-			player->vel.z += 0.25f * player->stamina;
-			player->vel.y += -0.25f * player->stamina;
+			player->vel.z += player->jumpHeight * player->stamina;
+			player->vel.y += -player->jumpHeight * player->stamina;
 			player->stamina = 0.0f;
 		}
 	}
@@ -405,12 +405,12 @@ void playerWorldCollision(){
 	}
 	switch(map[crds2map(player->pos.x,player->pos.y,player->pos.z-player->hitboxHeight-0.1f)].id){
 	case BLOCK_AIR:
-		player->vel.x /= 1.06f;
-		player->vel.y /= 1.06f;
+		player->vel.x *= properties->airFrictionHor;
+		player->vel.y *= properties->airFrictionHor;
 		break;
 	default:
-		player->vel.x /= 1.12f;
-		player->vel.y /= 1.12f;
+		player->vel.x *= properties->groundFriction;
+		player->vel.y *= properties->groundFriction;
 		break;
 	}
 	if((GetKeyState(VK_SPACE)&0x80) && menuSel == 0){

@@ -15,8 +15,8 @@ const char *words[]  = {"air","rgb","ambientlight","light1","light2","light3","l
 	"light6","sphere","customslope","glass","cube","mirror","spikes","normal",
 	"donut","shape1","greekpillar","","","","","","","playerspawn","clipblock","reflectiveblock","block"
 	};
-const char *words2[] = {"normal","cube","blockedit","changelight","changeproperties","changeproperties2","changeproperties3","paintpixel",
-"paintside","paintsiderandom"};
+const char *words2[] = {"normal","cube","blockedit","changelight","changeproperties","changeproperties2","paintside","paintpixel",
+"paintside2","paintsiderandom"};
 
 unsigned int totalCar;
 VEC2 mousePos;

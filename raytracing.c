@@ -18,8 +18,8 @@ f32 iSphere(VEC3 ro,VEC3 rd,f32 ra) {
     f32 b = VEC3dot(ro,rd);
     f32 c = VEC3dot(ro,ro) - ra * ra;
     f32 h = b * b - c;
-    if(h < 0.0) {
-        return -1.0;
+    if(h < 0.0f) {
+        return -1.0f;
     }
     return -b - sqrtf(h);
 }
@@ -35,12 +35,12 @@ f32 iCylinder(VEC3 ro,VEC3 rd,VEC3 pb,f32 ra){
     f32 b = caca*VEC3dot(oc,rd) - caoc*card;
     f32 c = caca*VEC3dot(oc,oc) - caoc*caoc - ra*ra*caca;
     f32 h = b*b - a*c;
-    if(h<0.0) return -1.0;
+    if(h<0.0f) return -1.0f;
     h = sqrtf(h);
     f32 t = (-b-h)/a;
     f32 y = caoc + t*card;
-    if(y>0.0 && y<caca) return t;
-    t = (((y<0.0)?0.0:caca) - caoc)/card;
+    if(y>0.0f && y<caca) return t;
+    t = (((y<0.0f)?0.0f:caca) - caoc)/card;
     if(fabsf(b+a*t)<h) return t;
-    return -1.0;
+    return -1.0f;
 }
