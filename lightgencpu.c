@@ -23,10 +23,10 @@ void castLightRay(RAY ray,VEC3 color){
         u32 block = crds2map(ray.ix, ray.iy, ray.iz);
         switch (map[block].id){
         case BLOCK_AIR:
-            if((rnd()-1.0f)<16.0f/(properties->lmapSz*properties->lmapSz)){
-                lpmap[block].p1 = color.r*255.0f;
-                lpmap[block].p2 = color.g*255.0f;
-                lpmap[block].p3 = color.b*255.0f;
+            if((rnd()-1.0f)<1.0f/(properties->lmapSz*properties->lmapSz)){
+                lpmap[block].p1 += color.r*255.0f;
+                lpmap[block].p2 += color.g*255.0f;
+                lpmap[block].p3 += color.b*255.0f;
             }
             break;
         case BLOCK_CUBE:{
@@ -143,6 +143,7 @@ void castLightRay(RAY ray,VEC3 color){
             }
             break;
         }
+        case BLOCK_REFLECTIVE2:
         case BLOCK_REFLECTIVE:
         case BLOCK_SOLID:
             color.r *= (f32)map[block].r / 255.0f;

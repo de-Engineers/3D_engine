@@ -13,7 +13,7 @@
 
 const char *words[]  = {"air","rgb","ambientlight","light1","light2","light3","light4","light5",
 	"light6","sphere","customslope","glass","cube","mirror","spikes","normal",
-	"donut","shape1","greekpillar","","","","","","","playerspawn","clipblock","reflectiveblock","block"
+	"donut","shape1","reflectiveblock2","","","","","","","playerspawn","clipblock","reflectiveblock","block"
 	};
 const char *words2[] = {"normal","cube","blockedit","changelight","changeproperties","changeproperties2","paintside","paintpixel",
 "paintside2","paintsiderandom"};

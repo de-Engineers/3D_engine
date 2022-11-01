@@ -18,6 +18,7 @@ i32 getLmapLocation(RAY *ray){
 	while(ray->ix >= 0 && ray->iy >= 0 && ray->iz >= 0 && ray->ix < properties->lvlSz && ray->iy < properties->lvlSz && ray->iz < properties->lvlSz){
 		u32 block = crds2map(ray->ix,ray->iy,ray->iz);
 		switch(map[block].id){
+		case BLOCK_REFLECTIVE2:
 		case BLOCK_REFLECTIVE:
 		case BLOCK_SOLID:{
 			VEC2 wall;

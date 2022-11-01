@@ -51,6 +51,7 @@ void blockDetection(VEC3 bpos,int axis){
 		}
 		break;
 	case BLOCK_CLIP:
+	case BLOCK_REFLECTIVE2:
 	case BLOCK_REFLECTIVE:
 	case BLOCK_SOLID:
 		if(spos.z > 0.5f && bpos.z > player->pos.z-player->hitboxHeight && bpos.z < player->pos.z-player->hitboxHeight+0.5f){

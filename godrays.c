@@ -40,12 +40,13 @@ void genGodraysMap(){
 						rayItterate(&ray); 
 					}
 				end:
-					godraymapB[i*properties->godrayRes+i2] = VEC3divR(colData,itt/properties->godrayAmm*64.0f);
+					VEC3div(&colData,itt/properties->godrayAmm*5000.0f);
+					godraymapB[i*properties->godrayRes+i2] = colData;
 				}
 			}
 			for(u32 i = 1;i < properties->godrayRes-1;i++){
 				for(u32 i2 = 1;i2 < properties->godrayRes-1;i2++){
-					godraymap[i*properties->godrayRes+i2] = VEC3mulR(godraymapB[i*properties->godrayRes+i2],0.5f);
+					godraymap[i*properties->godrayRes+i2] = godraymapB[i*properties->godrayRes+i2];
 					VEC3addVEC3(&godraymap[i*properties->godrayRes+i2],VEC3mulR(godraymapB[i*properties->godrayRes+i2+1],0.25f));
 					VEC3addVEC3(&godraymap[i*properties->godrayRes+i2],VEC3mulR(godraymapB[i*properties->godrayRes+i2-1],0.25f));
 					VEC3addVEC3(&godraymap[i*properties->godrayRes+i2],VEC3mulR(godraymapB[i*properties->godrayRes+i2+properties->godrayRes],0.25f));

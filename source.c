@@ -12,6 +12,7 @@
 #include "blockmove.h"
 #include "vec4.h"
 #include "godrays.h"
+#include "reflections.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -78,6 +79,7 @@ HANDLE staticEntitiesThread;
 HANDLE ittmapThread;
 HANDLE godraysThread;
 HANDLE networkThread;
+HANDLE reflectThread;
 HANDLE HDRthread;
 
 const u8 name[] = "3D_engine";
@@ -1042,6 +1044,8 @@ void main(){
 	properties->groundFriction  = 0.967f;
 	properties->godrayAmm       = 1.0f;
 	properties->godrayRes       = 64;
+	properties->reflectRes      = 128;
+	properties->rayAcceleration = 1;
 
 	player->flightSpeed = 0.025f;
 	player->hitboxHeight = 1.7f;
@@ -1065,6 +1069,7 @@ void main(){
 	inputStr   = HeapAlloc(GetProcessHeap(),8,256);
 	godraymap  = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->godrayRes*properties->godrayRes);
 	godraymapB = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->godrayRes*properties->godrayRes);
+	reflectmap = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->reflectRes*properties->reflectRes);
 	turret     = HeapAlloc(GetProcessHeap(),8,sizeof(TURRET) * 1024);
 	star       = HeapAlloc(GetProcessHeap(),8,sizeof(STAR)*3);
 	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
@@ -1143,6 +1148,8 @@ void main(){
 	entitiesThread       = CreateThread(0,0,entities,0,0,0);
 	ittmapThread         = CreateThread(0,0,ittmap,0,0,0);
 	godraysThread        = CreateThread(0,0,genGodraysMap,0,0,0);
+	reflectThread        = CreateThread(0,0,genReflectMap,0,0,0);
+
 	HDRthread            = CreateThread(0,0,HDR,0,0,0);
 
 	while(GetMessageA(&Msg,window,0,0)>0){

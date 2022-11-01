@@ -41,6 +41,7 @@
 #define BLOCK_SPHERE       9
 #define BLOCK_CUBE         12
 #define BLOCK_GLASS        15
+#define BLOCK_REFLECTIVE2  18
 #define BLOCK_SPAWN        25
 #define BLOCK_CLIP         26
 #define BLOCK_REFLECTIVE   27
@@ -167,8 +168,10 @@ typedef struct{
 }IPADDRESS;
 
 typedef struct{
-	u8  godrayRes;
+	u8  rayAcceleration;
 
+	u16  godrayRes;
+	u16  reflectRes;
 	u16 xres;
 	u16 yres;
 	u16 windowOffsetX;

@@ -1,12 +1,13 @@
 ﻿#include <windows.h>
 #include <GL/gl.h>
-#include "main.h"
 #include <stdio.h>
 #include <math.h>
 #include <intrin.h>
 
+#include "main.h"
 #include "tmgl.h"
 #include "godrays.h"
+#include "reflections.h"
 
 #pragma comment(lib,"opengl32.lib")
 
@@ -447,6 +448,7 @@ void openGL(){
 	glUniform1i(glGetUniformLocation(shaderProgram,"godraymap"),2);
 	glUniform1i(glGetUniformLocation(shaderProgram,"entityTextures"),3);
 	glUniform1i(glGetUniformLocation(shaderProgram,"skybox"),4);
+	glUniform1i(glGetUniformLocation(shaderProgram,"reflectmap"),5);
 	glUniform1i(glGetUniformLocation(shaderProgram,"lpmap"),6);
 	glUniform1i(glGetUniformLocation(shaderProgram,"lmap"),9);
 	glUniform1i(glGetUniformLocation(shaderProgram,"metadt"),10);
@@ -462,22 +464,22 @@ void openGL(){
 
 	glUseProgram(shaderProgramSmooth);
 
-	glUniform1i(glGetUniformLocation(shaderProgram,"map"),1);
-	glUniform1i(glGetUniformLocation(shaderProgram,"godraymap"),2);
-	glUniform1i(glGetUniformLocation(shaderProgram,"entityTextures"),3);
-	glUniform1i(glGetUniformLocation(shaderProgram,"skybox"),4);
-	glUniform1i(glGetUniformLocation(shaderProgram,"lpmap"),6);
-	glUniform1i(glGetUniformLocation(shaderProgram,"lmap"),9);
-	glUniform1i(glGetUniformLocation(shaderProgram,"metadt"),10);
-	glUniform1i(glGetUniformLocation(shaderProgram,"metadt2"),11);
-	glUniform1i(glGetUniformLocation(shaderProgram,"metadt3"),12);
-	glUniform1i(glGetUniformLocation(shaderProgram,"metadt4"),13);
-	glUniform1i(glGetUniformLocation(shaderProgram,"metadt5"),14);
-	glUniform1i(glGetUniformLocation(shaderProgram,"metadt6"),15);
-	glUniform1i(glGetUniformLocation(shaderProgram,"entity"),16);
-	glUniform1i(glGetUniformLocation(shaderProgram,"lmap2"),17);
-	glUniform1i(glGetUniformLocation(shaderProgram,"lmap3"),18);
-	glUniform1i(glGetUniformLocation(shaderProgram,"lmap4"),19);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"map"),1);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"godraymap"),2);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"entityTextures"),3);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"skybox"),4);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"lpmap"),6);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"lmap"),9);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"metadt"),10);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"metadt2"),11);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"metadt3"),12);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"metadt4"),13);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"metadt5"),14);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"metadt6"),15);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"entity"),16);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"lmap2"),17);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"lmap3"),18);
+	glUniform1i(glGetUniformLocation(shaderProgramSmooth,"lmap4"),19);
 
 	glUseProgram(shaderProgramEditor);
 
@@ -727,10 +729,13 @@ void openGL(){
 				glActiveTexture(GL_TEXTURE2);
 				glTexImage2D(GL_TEXTURE_2D,0,GL_RGB32F,properties->godrayRes,properties->godrayRes,0,GL_RGB,GL_FLOAT,godraymap);
 				glGenerateMipmap(GL_TEXTURE_2D);
+				glActiveTexture(GL_TEXTURE5);
+				glTexImage2D(GL_TEXTURE_2D,0,GL_RGB32F,properties->reflectRes,properties->reflectRes,0,GL_RGB,GL_FLOAT,reflectmap);
+				glGenerateMipmap(GL_TEXTURE_2D);
 				glDrawArrays(GL_TRIANGLES,0,6);
 				glUseProgram(shaderProgram);
 			}
-			if(settings & 0x20){
+			if(settings & SETTINGS_UI){
 				glUseProgram(shaderProgramFont);
 				drawSprite((VEC3){0.0,0.0,0.0},(VEC2){0.0,0.0},0.0);
 				glDrawArrays(GL_TRIANGLES,6,totalCar*6+6);

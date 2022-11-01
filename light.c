@@ -53,7 +53,7 @@ void initOpenCL(){
 	clContext      = clCreateContext(0,1,&clDeviceId,0,0,0);
 	clCommandQueue = clCreateCommandQueueWithProperties(clContext,clDeviceId,0,0);
 	clProgram      = clCreateProgramWithSource(clContext,1,(const char**)&openclKernel,0,0);
-	clBuildProgram(clProgram,0,0,0,0,0);
+	clBuildProgram(clProgram,0,0,"-Werror",0,0);
 	clKernel = clCreateKernel(clProgram,"lighting",0);
 	clAmbientX = clCreateKernel(clProgram,"ambientX",0);
 	clAmbientY = clCreateKernel(clProgram,"ambientY",0);
@@ -103,7 +103,7 @@ void GPUgenLight(u64 totalRays,u32 block){
 	clSetKernelArg(clKernel,22,sizeof(f32),&lmo.y);
 	clSetKernelArg(clKernel,23,sizeof(f32),&lmo.z);
 
-	if(clKernel){
+	if(clKernel && properties->rayAcceleration){
 		for(u32 i = 0;i < metadt3[block].id+1;i++){
 			clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
 			clEnqueueWriteBuffer(clCommandQueue,clLightmap,1,0,sizeof(VEC3)*properties->lmapSz*properties->lmapSz*lmapC,lmapb,0,0,0);
@@ -134,14 +134,14 @@ void updateLight2(){
 			lpmap[i].p2 = 0;
 			lpmap[i].p3 = 0;
 			break;
-		case 9:
+		case BLOCK_SPHERE:
 			lpmap[i].p1 = lmapC;
 			lpmap[i].p2 = lmapC+1;
 			lpmap[i].p3 = lmapC+2;
 			lpmap[i].p4 = lmapC+3;
 			lmapC+=4;
 			break;
-		case 12:
+		case BLOCK_CUBE:
 			lpmap[i].p1 = lmapC;
 			lpmap[i].p2 = lmapC+1;
 			lpmap[i].p3 = lmapC+2;
@@ -175,72 +175,9 @@ void updateLight2(){
 			lpmap[i].p12 = lmapC+11;
 			lmapC+=12;
 			break;
-		case 30:{
-			CVEC3 block = map2crds(i);
-			if(block.x > 0){
-				switch(map[i-1].id){
-				case 30:
-					break;
-				default:
-					lpmap[i].p7 = lmapC;
-					lmapC++;
-					break;
-				}
-			}
-			if(block.x < properties->lvlSz){
-				switch(map[i+1].id){
-				case 30:
-					break;
-				default:
-					lpmap[i].p8 = lmapC;
-					lmapC++;
-					break;
-				}
-			}
-			if(block.y > 0){
-				switch(map[i-properties->lvlSz].id){
-				case 30:
-					break;
-				default:
-					lpmap[i].p9 = lmapC;
-					lmapC++;
-					break;
-				}
-			}
-			if(block.y < properties->lvlSz){
-				switch(map[i+properties->lvlSz].id){
-				case 30:
-					break;
-				default:
-					lpmap[i].p10 = lmapC;
-					lmapC++;
-					break;
-				}
-			}
-			if(block.z > 0){
-				switch(map[i-properties->lvlSz*properties->lvlSz].id){
-				case 30:
-					break;
-				default:
-					lpmap[i].p11 = lmapC;
-					lmapC++;
-					break;
-				}
-			}
-			if(block.z < properties->lvlSz){
-				switch(map[i+properties->lvlSz*properties->lvlSz].id){
-				case 30:
-					break;
-				default:
-					lpmap[i].p12 = lmapC;
-					lmapC++;
-					break;
-				}
-			}
-		}
-		case 32:
-		case 27:
-		case 28:{
+		case BLOCK_REFLECTIVE2:
+		case BLOCK_REFLECTIVE:
+		case BLOCK_SOLID:{
 			CVEC3 block = map2crds(i);
 			if(block.x > 0){
 				switch(map[i-1].id){

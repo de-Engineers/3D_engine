@@ -133,6 +133,11 @@ void executeCommand(u8 *cmd){
 			glMesC++;
 		}
 		break;
+	case 15:
+		if(!memcmp(cmd,"rayacceleration",15)){
+			properties->rayAcceleration = atoi(cmd+16);
+		}
+		break;
 	}
 
 }
