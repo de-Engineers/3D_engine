@@ -30,6 +30,7 @@ uniform sampler1D entity;
 uniform sampler3D entityTextures;
 
 uniform sampler2D godraymap;
+uniform sampler2D reflectmap;
 
 uniform vec3 Pos;
 
@@ -39,7 +40,7 @@ uniform vec4 dir;
 uniform ivec2 reso;
 
 uniform int tick;
-uniform int wounded;
+uniform int health;
 
 uniform float brightness;
 
@@ -440,7 +441,7 @@ void calcFog(){
 				vec2 rot = texelFetch(entity,i*5+2,0).xy;
 				spos.xz = rotVEC2(spos.xz,rot.x);
 				spos.yz = rotVEC2(spos.yz,rot.y);
-				FragColor.rgb = texelFetch(entityTextures,ivec3((atan(spos.x,spos.y)/PI+1.0)*16.0,(spos.z+rad*0.5)/rad*16.0,texelFetch(entity,i*5+2,0).w),0).rgb * col;
+				FragColor.rgb = texelFetch(entityTextures,ivec3((atan(spos.x,spos.y)/PI+1.0)*16.0,(spos.z+rad)/rad*16.0,texelFetch(entity,i*5+2,0).w),0).rgb * col;
 				return;
 			}
 			}
@@ -488,13 +489,13 @@ void calcFog(){
 		}
 	}
 	FragColor.rgb /= clamp(0.1/sdVerticalCapsule(Pos-ePos-vec3(0.0,0.0,0.3),1.2,0.1),-1.0,1.0)+1.0;
+
 	vec2 kon = vec2((gl_FragCoord.x/reso.x),gl_FragCoord.y/reso.y);
 	vec4 gd = texture(godraymap,kon);
-	FragColor = mix(FragColor,gd,distance(ePos,pos)*0.03);
+	FragColor.rgb = mix(FragColor.rgb,gd.rgb,distance(pos,ePos)*0.03);
+	
 	FragColor.rgb = pow(FragColor.rgb,vec3(0.75));
-	if(wounded==1){
-		FragColor.r += 0.0006 * distance(gl_FragCoord.xy,vec2(reso)/2.0);
-	}
+	FragColor.r += 0.0006 * distance(gl_FragCoord.xy,vec2(reso)/2.0) * float(health) / 75.0;
 }
 
 void rayItterate(){
@@ -717,6 +718,7 @@ void main(){
 			switch(int(block[0])){
 			case 0:
 				FragColor.rgb = texelFetch(skybox,ivec2((atan(ang.x,ang.y)+PI)/PI_2*1023.0,(ang.z+1.0)*511.0),0).rgb;
+				ePos = pos + vec3(64.0,0.0,0.0);
 				calcFog();
 				return;
 			case 9:{
@@ -1037,6 +1039,14 @@ void main(){
 					return;
 				}
 				break;
+			}
+			case 18:{
+				uint pointer = texelFetch(lpmap,ivec3(x*12+bside,y,z),0).x;
+				FragColor.rgb = texelFetch(lmap,ivec3(wall.x*lmapsz,wall.y*lmapsz,pointer),0).rgb * 32767.0 / (brightness+1.0);
+				vec2 kon = vec2((gl_FragCoord.x/reso.x),gl_FragCoord.y/reso.y);
+				vec4 gd = texture(reflectmap,kon);
+				FragColor.rgb = mix(FragColor.rgb,gd.rgb,0.2);
+				return;
 			}
 			case 27:{
 				uint pointer = texelFetch(lpmap,ivec3(x*12+bside,y,z),0).x;

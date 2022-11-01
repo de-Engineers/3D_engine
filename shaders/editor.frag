@@ -527,7 +527,8 @@ void main(){
 			wall = fract(awall);
 			block[0] *= 255;
             if(wall.x < 0.02 || wall.y < 0.02 || wall.x > 0.98 || wall.y > 0.98){
-				FragColor.rgb = vec3(random(block[0]),random(block[0]+0.1),random(block[0]+0.2));
+				vec2 dtc = (abs(0.5-wall)-0.48) * 50.0;
+				FragColor.rgb = vec3(random(block[0]),random(block[0]+0.1),random(block[0]+0.2)) * max(dtc.x,dtc.y);
 				return;
 			}
             switch(int(block[0])){
