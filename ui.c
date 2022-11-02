@@ -213,8 +213,8 @@ void drawUI(){
 	if(~settings & SETTINGS_GAMEPLAY && (menuSel == 0 || menuSel == 4)){
 		drawChar(33,-0.9f,0.9f,-0.99f,0,0.04f,0.04f);
 		drawVar(-0.9f,0.9f,player->pos.x);
-		drawChar(34,-0.75,0.9,-0.99f,0,0.04f,0.04f);
-		drawVar(-0.75,0.9,player->pos.y);
+		drawChar(34,-0.75,0.9f,-0.99f,0,0.04f,0.04f);
+		drawVar(-0.75,0.9f,player->pos.y);
 		drawChar(35,-0.6f,0.9f,-0.99f,0,0.04f,0.04f);
 		drawVar(-0.6f,0.9f,player->pos.z);
 		drawChar(15,-0.96f,0.7f,-0.99f,0,0.04f,0.04f);
@@ -364,7 +364,7 @@ void drawUI(){
 		drawWord("ipaddress 2",-0.45f,-0.21f,0.0f);
 		drawWord("ipaddress 3",-0.45f,-0.28f,0.0f);
 		drawWord("ipaddress 4",-0.45f,-0.35f,0.0f);
-		drawWord("connect",-0.45f,-0.42,0.0f);
+		drawWord("connect",-0.45f,-0.42f,0.0f);
 		f32 offset = 0.0f;
 		drawVar(-0.06f,-0.415f,sliderValues.serverIP.p1);
 		if(sliderValues.serverIP.p1 >= 100){

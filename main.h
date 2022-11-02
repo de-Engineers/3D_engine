@@ -279,20 +279,6 @@ typedef struct{
 }OPENGLMESSAGE;
 
 typedef struct{
-	VEC3 pos;
-	VEC3 dir;
-	VEC3 delta;
-	VEC3 side;
-	int stepx;
-	int stepy;
-	int stepz;
-	int sid;
-	int ix;
-	int iy;
-	int iz;
-}RAY;
-
-typedef struct{
 	IVEC3 col;
 	IVEC4 metadt;
 	IVEC4 metadt2;
@@ -405,7 +391,6 @@ void sliderCreate(VEC2 pos,u8 id);
 void openGL();
 void levelgen();
 void entities();
-void rayItterate(RAY *ray);
 void initSound();
 void tools();
 void ittmap();
@@ -431,20 +416,15 @@ void closeEngine();
 
 void setBlock(u32 block);
 
-RAY rayCreate(VEC3 pos,VEC3 dir);
-
 unsigned int crds2map(int x,int y,int z);
 i32 irnd();
 f32 rnd();
 CVEC3 map2crds(u32 	map);
-VEC3 getCoords(RAY ray);
 VEC2 rotVEC2(VEC2 p,f32 rot);
-VEC3 getSubCoords(RAY ray);
 void entityDeath(int id);
 
 char *loadFile(char *name);
 
-i32 getLmapLocation(RAY *ray);
 f32 fract(f32 p);
 
 HANDLE physicsThread;

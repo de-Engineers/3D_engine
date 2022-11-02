@@ -3,43 +3,11 @@
 #include "vec3.h"
 #include "ivec2.h"
 #include "raytracing.h"
+#include "ray.h"
 
 f32 brightness;
 
 #define HDR_RES 60
-
-VEC3 getSubCoords(RAY ray){
-	VEC2 wall;
-    switch(ray.sid){
-    case 0:
-        wall.x = fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
-        wall.y = fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z);
-		if(ray.dir.x > 0.0f){
-            return (VEC3){0.0f,wall.x,wall.y};
-		}
-		else{
-            return (VEC3){1.0f,wall.x,wall.y};
-		}
-	case 1:
-        wall.x = fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x);
-        wall.y = fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z);
-		if(ray.dir.y > 0.0f){
-			return (VEC3){wall.x,0.0f,wall.y};
-		}
-		else{
-			return (VEC3){wall.x,1.0f,wall.y};
-		}
-	case 2:
-        wall.x = fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x);
-        wall.y = fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y);
-		if(ray.dir.z > 0.0f){
-            return (VEC3){wall.x,wall.y,0.0f};
-		}
-		else{
-			return (VEC3){wall.x,wall.y,1.0f};
-		}
-	}
-}
 
 void HDR(){
 	for(;;){
@@ -68,10 +36,10 @@ void HDR(){
 				ang.y = (player->ydir * player->xydir - player->ydir * player->zdir * px.y) + player->xdir * px.x; 
 				ang.z = player->zdir + player->xydir * px.y;
 				ang = VEC3normalize(ang);
-				RAY ray = rayCreate(player->pos,ang);
-				rayItterate(&ray);
-				while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-					u32 block = crds2map(ray.ix,ray.iy,ray.iz);
+				RAY3D ray = ray3dCreate(player->pos,ang);
+				ray3dItterate(&ray);
+				while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+					u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 					switch(map[block].id){ 
 					case 9:{
 						VEC3 spos = getSubCoords(ray);
@@ -164,7 +132,7 @@ void HDR(){
 					case BLOCK_SOLID:{
 						VEC2 wall;
 						u32 offset;
-						switch(ray.sid){
+						switch(ray.hitSide){
 						case 0:
 							wall.x = fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
 							wall.y = fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z);
@@ -202,7 +170,7 @@ void HDR(){
 						goto end;
 					}
 					}
-					rayItterate(&ray);
+					ray3dItterate(&ray);
 				}
 				continue;
 			end:

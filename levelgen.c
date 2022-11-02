@@ -32,7 +32,7 @@ void generateEmptyWorld(){
 
 void levelgen(){
 	HANDLE h = CreateFileA("levels/level.lvl",GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
-	if((int)h != -1){
+	if(h != -1){
 		CloseHandle(h);
 		levelLoad("level");
 	}

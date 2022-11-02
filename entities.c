@@ -5,6 +5,7 @@
 #include "network.h"
 #include "ivec3.h"
 #include "raytracing.h"
+#include "ray.h"
 
 #define LUMINANCESAMPLECOUNT 16
 
@@ -13,59 +14,6 @@ u32 entityC;
 ENTITY entity;
 
 RGB *entityTexture;
-
-i32 getLmapLocation(RAY *ray){
-	while(ray->ix >= 0 && ray->iy >= 0 && ray->iz >= 0 && ray->ix < properties->lvlSz && ray->iy < properties->lvlSz && ray->iz < properties->lvlSz){
-		u32 block = crds2map(ray->ix,ray->iy,ray->iz);
-		switch(map[block].id){
-		case BLOCK_REFLECTIVE2:
-		case BLOCK_REFLECTIVE:
-		case BLOCK_SOLID:{
-			VEC2 wall;
-			switch(ray->sid){
-			case 0:{
-				wall.x = fract(ray->pos.y + (ray->side.x - ray->delta.x) * ray->dir.y);
-				wall.y = fract(ray->pos.z + (ray->side.x - ray->delta.x) * ray->dir.z);
-				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
-				if(ray->dir.x>0.0f){
-					return lpmap[block].p1*properties->lmapSz*properties->lmapSz+offset;
-				}
-				else{
-					return lpmap[block].p2*properties->lmapSz*properties->lmapSz+offset;
-				}
-				break;
-				}
-			case 1:{
-				wall.x = fract(ray->pos.x + (ray->side.y - ray->delta.y) * ray->dir.x);
-				wall.y = fract(ray->pos.z + (ray->side.y - ray->delta.y) * ray->dir.z);
-				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
-				if(ray->dir.y>0.0f){
-					return lpmap[block].p3*properties->lmapSz*properties->lmapSz+offset;
-				}
-				else{
-					return lpmap[block].p4*properties->lmapSz*properties->lmapSz+offset;
-				}
-				break;
-			}
-			case 2:{	 
-				wall.x = fract(ray->pos.x + (ray->side.z - ray->delta.z) * ray->dir.x);
-				wall.y = fract(ray->pos.y + (ray->side.z - ray->delta.z) * ray->dir.y);
-				u32 offset = (int)(wall.y*properties->lmapSz)*properties->lmapSz+(int)(wall.x*properties->lmapSz);
-				if(ray->dir.z>0.0f){
-					return lpmap[block].p5*properties->lmapSz*properties->lmapSz+offset;
-				}
-				else{
-					return lpmap[block].p6*properties->lmapSz*properties->lmapSz+offset;
-				}
-				break;
-			}
-			}
-		}
-		}
-		rayItterate(ray);
-	}
-	return -1;
-}
 
 void spawnPlayer(u8 id){
 	for(u32 i = 0;i < ENTITYTEXTSZ;i++){
@@ -300,8 +248,8 @@ void calculateLuminance(u8 id){
 	u32 hits = 0;
 	for(i32 i2 = 0;i2 < LUMINANCESAMPLECOUNT;i2++){
 		for(i32 i3 = 0;i3 < LUMINANCESAMPLECOUNT;i3++){
-			RAY ray = rayCreate(entity.gpu[id].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
-			rayItterate(&ray);
+			RAY3D ray = ray3dCreate(entity.gpu[id].pos,(VEC3){sinf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),cosf((f32)i3/LUMINANCESAMPLECOUNT*PI_2)*-sinf((f32)i2/LUMINANCESAMPLECOUNT*PI),-cosf((f32)i2/LUMINANCESAMPLECOUNT*PI)});
+			ray3dItterate(&ray);
 			i32 l = getLmapLocation(&ray);
 			if(l != -1){
 				entityLuminance.r += lmap[l].r;

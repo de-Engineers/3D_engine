@@ -1,6 +1,7 @@
 #include "main.h"
 #include "vec3.h"
 #include "raytracing.h"
+#include "ray.h"
 
 VEC3 rayColor;
 
@@ -16,11 +17,11 @@ RAYPROP rayy;
 
 u64 threadItt;
 
-void castLightRay(RAY ray,VEC3 color){
+void castLightRay(RAY3D ray,VEC3 color){
     VEC3 dir;
     VEC2 wall;
-    while(ray.ix >= 0 && ray.iy >= 0 && ray.iz >= 0 && ray.ix < 64 && ray.iy < 64 && ray.iz < 64){
-        u32 block = crds2map(ray.ix, ray.iy, ray.iz);
+    while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+        u32 block = crds2map(ray.roundPos.x, ray.roundPos.y, ray.roundPos.z);
         switch (map[block].id){
         case BLOCK_AIR:
             if((rnd()-1.0f)<1.0f/(properties->lmapSz*properties->lmapSz)){
@@ -135,7 +136,7 @@ void castLightRay(RAY ray,VEC3 color){
                     (VEC2){dir.x,dir.y} = rotVEC2((VEC2){dir.x,dir.y}, (f32) { metadt3[block].r } / 255.0f * PI);
                     (VEC2){dir.x,dir.z} = rotVEC2((VEC2){dir.x,dir.z}, (f32) { metadt3[block].g } / 255.0f * PI);
                     (VEC2){dir.y,dir.z} = rotVEC2((VEC2){dir.y,dir.z}, (f32) { metadt3[block].id } / 255.0f * PI);
-                    ray = rayCreate(VEC3addVEC3R((VEC3){ray.ix,ray.iy,ray.iz },nspos), VEC3normalize(dir));
+                    ray = ray3dCreate(VEC3addVEC3R((VEC3){ray.roundPos.x,ray.roundPos.y,ray.roundPos.z },nspos), VEC3normalize(dir));
                     if(color.r < 0.01f && color.g < 0.01f && color.b < 0.01f){
                         return;
                     }
@@ -149,7 +150,7 @@ void castLightRay(RAY ray,VEC3 color){
             color.r *= (f32)map[block].r / 255.0f;
             color.g *= (f32)map[block].g / 255.0f;
             color.b *= (f32)map[block].b / 255.0f;
-            switch(ray.sid){
+            switch(ray.hitSide){
             case 0:{
                 wall.x = fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y);
                 wall.y = fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z);
@@ -163,7 +164,7 @@ void castLightRay(RAY ray,VEC3 color){
                         VEC3addVEC3(&dir, (VEC3) { (rnd() - 2.0f), (rnd() - 1.5f) * 2.0f, (rnd() - 1.5f) * 2.0f });
                     }
                     dir = VEC3normalize(dir);
-                    ray = rayCreate((VEC3) { ray.ix, ray.iy + fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y), ray.iz + fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z) }, dir);
+                    ray = ray3dCreate((VEC3) { ray.roundPos.x, ray.roundPos.y+ fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y), ray.roundPos.z + fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z) }, dir);
                 }
                 else {
                     lmapb[(lpmap[block].p2 * properties->lmapSz * properties->lmapSz + offset)].r += color.r;
@@ -174,7 +175,7 @@ void castLightRay(RAY ray,VEC3 color){
                         VEC3addVEC3(&dir, (VEC3) { (rnd() - 1.0f), (rnd() - 1.5f) * 2.0f, (rnd() - 1.5f) * 2.0f });
                     }
                     dir = VEC3normalize(dir);
-                    ray = rayCreate((VEC3) { ray.ix + 1, ray.iy + fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y), ray.iz + fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z) }, dir);
+                    ray = ray3dCreate((VEC3) { ray.roundPos.x + 1, ray.roundPos.y + fract(ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y), ray.roundPos.z + fract(ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z) }, dir);
                 }
                 break;
             }
@@ -191,7 +192,7 @@ void castLightRay(RAY ray,VEC3 color){
                         VEC3addVEC3(&dir, (VEC3) { (rnd() - 1.5f) * 2.0f, (rnd() - 2.0f), (rnd() - 1.5f) * 2.0f });
                     }
                     dir = VEC3normalize(dir);
-                    ray = rayCreate((VEC3) { ray.ix + fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x), ray.iy, ray.iz + fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z) }, dir);
+                    ray = ray3dCreate((VEC3) { ray.roundPos.x + fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x), ray.roundPos.y, ray.roundPos.z + fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z) }, dir);
                 }
                 else {
                     lmapb[(lpmap[block].p4 * properties->lmapSz * properties->lmapSz + offset)].r += color.r;
@@ -202,7 +203,7 @@ void castLightRay(RAY ray,VEC3 color){
                         VEC3addVEC3(&dir, (VEC3) { (rnd() - 1.5f) * 2.0f, (rnd() - 1.0f), (rnd() - 1.5f) * 2.0f });
                     }
                     dir = VEC3normalize(dir);
-                    ray = rayCreate((VEC3) { ray.ix + fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x), ray.iy + 1, ray.iz + fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z) }, dir);
+                    ray = ray3dCreate((VEC3) { ray.roundPos.x + fract(ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x), ray.roundPos.y + 1, ray.roundPos.z + fract(ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z) }, dir);
                 }
                 break;
             }
@@ -219,7 +220,7 @@ void castLightRay(RAY ray,VEC3 color){
                         VEC3addVEC3(&dir, (VEC3) { (rnd() - 1.5f) * 2.0f, (rnd() - 1.5f) * 2.0f, (rnd() - 2.0f) });
                     }
                     dir = VEC3normalize(dir);
-                    ray = rayCreate((VEC3) { ray.ix + fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x), ray.iy + fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y), ray.iz }, dir);
+                    ray = ray3dCreate((VEC3) { ray.roundPos.x + fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x), ray.roundPos.y + fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y), ray.roundPos.z }, dir);
                 }
                 else {
                     lmapb[(lpmap[block].p6 * properties->lmapSz * properties->lmapSz + offset)].r += color.r;
@@ -230,7 +231,7 @@ void castLightRay(RAY ray,VEC3 color){
                         VEC3addVEC3(&dir, (VEC3) { (rnd() - 1.5f) * 2.0f, (rnd() - 1.5f) * 2.0f, (rnd() - 1.0f) });
                     }
                     dir = VEC3normalize(dir);
-                    ray = rayCreate((VEC3) { ray.ix + fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x), ray.iy + fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y), ray.iz + 1 }, dir);
+                    ray = ray3dCreate((VEC3) { ray.roundPos.x + fract(ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x), ray.roundPos.y + fract(ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y), ray.roundPos.z + 1 }, dir);
                 }
                 break;
             }
@@ -240,7 +241,7 @@ void castLightRay(RAY ray,VEC3 color){
             }
             break;
         }
-        rayItterate(&ray);
+        ray3dItterate(&ray);
     }
 }
 
@@ -252,7 +253,7 @@ void lightRaysGenerate(){
         }
         dir = VEC3normalize(dir);
         VEC3 pos = VEC3addVEC3R(rayy.Pos,(VEC3){(rnd()-1.5f)*rayy.rndOffset,(rnd()-1.5f)*rayy.rndOffset,(rnd()-1.5f)*rayy.rndOffset});
-        castLightRay(rayCreate(pos,dir),rayColor);
+        castLightRay(ray3dCreate(pos,dir),rayColor);
         Sleep(0);
     }
 }
@@ -260,13 +261,13 @@ void lightRaysGenerate(){
 void lightRaysGenerateAmbientX(){
     if(rayy.Dir.x < 0.0f){
         for(u64 i = 0;i < threadItt;i++){
-            castLightRay(rayCreate((VEC3){ (f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            castLightRay(ray3dCreate((VEC3){ (f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
             Sleep(0);
         }
     }
     else{
         for(u64 i = 0;i < threadItt;i++){
-            castLightRay(rayCreate((VEC3){ 0.0f, (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            castLightRay(ray3dCreate((VEC3){ 0.0f, (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
             Sleep(0);
         }
     }
@@ -275,13 +276,13 @@ void lightRaysGenerateAmbientX(){
 void lightRaysGenerateAmbientY(){
     if(rayy.Dir.y < 0.0f){
         for(u64 i = 0;i < threadItt;i++){
-            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
             Sleep(0);
         }
     }
     else{
         for(u64 i = 0;i < threadItt;i++){
-            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
+            castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
             Sleep(0);
         }
     }
@@ -290,13 +291,13 @@ void lightRaysGenerateAmbientY(){
 void lightRaysGenerateAmbientZ(){
     if(rayy.Dir.z < 0.0f){
         for(u64 i = 0;i < threadItt;i++){
-            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f},rayy.Dir),rayColor);
+            castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f},rayy.Dir),rayColor);
             Sleep(0);
         }
     }
     else{
         for(u64 i = 0;i < threadItt;i++){
-            castLightRay(rayCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f },rayy.Dir),rayColor);
+            castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f },rayy.Dir),rayColor);
             Sleep(0);
         }
     }

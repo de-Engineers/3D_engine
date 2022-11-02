@@ -1,5 +1,6 @@
 #include "main.h"
 #include "godrays.h"
+#include "ray.h"
 
 VEC3 *godraymap;
 VEC3 *godraymapB;
@@ -15,14 +16,14 @@ void genGodraysMap(){
 					ang.y = (player->ydir * player->xydir - player->ydir * player->zdir * px.y) + player->xdir * px.x; 
 					ang.z = player->zdir + player->xydir * px.y;
 					ang = VEC3normalize(ang);
-					RAY ray = rayCreate(player->pos,ang);
+					RAY3D ray = ray3dCreate(player->pos,ang);
 					VEC3 colData = {0.0f,0.0f,0.0f};
 					VEC3 pPos = player->pos;
 					f32 itt = 1.0f;
-					rayItterate(&ray);
-					while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-						u32 block = crds2map(ray.ix,ray.iy,ray.iz);
-						VEC3 hPos = VEC3addVEC3R((VEC3){ray.ix,ray.iy,ray.iz},getSubCoords(ray));
+					ray3dItterate(&ray);
+					while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+						u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
+						VEC3 hPos = VEC3addVEC3R((VEC3){ray.roundPos.x,ray.roundPos.y,ray.roundPos.z},getSubCoords(ray));
 						switch(map[block].id){
 						case 28:
 							goto end;
@@ -37,7 +38,7 @@ void genGodraysMap(){
 						}
 						}
 						pPos = hPos;
-						rayItterate(&ray); 
+						ray3dItterate(&ray); 
 					}
 				end:
 					VEC3div(&colData,itt/properties->godrayAmm*5000.0f);

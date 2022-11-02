@@ -36,7 +36,7 @@ void EnumLevelsButton(){
 	buttonC = 0;
 	WIN32_FIND_DATAA windt;
 	HANDLE h = FindFirstFileA("levels/*.lvl",&windt);
-	if((int)h!=-1){
+	if(h!=-1){
 		fileNames.str = HeapAlloc(GetProcessHeap(),8,sizeof(char*)*(fileNames.strC+1));
 		fileNames.str[fileNames.strC] = HeapAlloc(GetProcessHeap(),8,strlen(windt.cFileName)+1);
 		memcpy(fileNames.str[fileNames.strC],windt.cFileName,strlen(windt.cFileName)-4);
@@ -104,7 +104,7 @@ void multiplayerButton(){
 	sliderCreate((VEC2){0.190f,-0.19f},18);
 	sliderCreate((VEC2){0.190f,-0.26f},19);
 	sliderCreate((VEC2){0.190f,-0.33f},20);
-	buttonCreate((VEC2){-0.059f,-0.40},10);
+	buttonCreate((VEC2){-0.059f,-0.40f},10);
 	textboxCreate((VEC2){0.190f,0.02f},0);
 	menuSel = 6;
 }

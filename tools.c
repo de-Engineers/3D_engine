@@ -12,44 +12,6 @@ i16 pixelCrdB = -1;
 
 RGB *textureBuf;
 
-RAY rayCreate(VEC3 pos,VEC3 dir){
-	RAY ray;
-
-	ray.pos = pos;
-	ray.dir = dir;
-	
-	ray.delta = VEC3absR(VEC3divFR(ray.dir,1.0f));
-
-	if(ray.dir.x < 0.0f){
-		ray.stepx = -1;
-		ray.side.x = (ray.pos.x-(int)ray.pos.x) * ray.delta.x;
-	}
-	else{
-		ray.stepx = 1;
-		ray.side.x = ((int)ray.pos.x + 1.0f - ray.pos.x) * ray.delta.x;
-	}
-	if(ray.dir.y < 0.0f){
-		ray.stepy = -1;
-		ray.side.y = (ray.pos.y-(int)ray.pos.y) * ray.delta.y;
-	}
-	else{
-		ray.stepy = 1;
-		ray.side.y = ((int)ray.pos.y + 1.0f - ray.pos.y) * ray.delta.y;
-	}
-	if(ray.dir.z < 0.0f){
-		ray.stepz = -1;
-		ray.side.z = (ray.pos.z-(int)ray.pos.z) * ray.delta.z;
-	}
-	else{
-		ray.stepz = 1;
-		ray.side.z = ((int)ray.pos.z + 1.0f - ray.pos.z) * ray.delta.z;
-	}
-	ray.ix = ray.pos.x;
-	ray.iy = ray.pos.y;
-	ray.iz = ray.pos.z;
-	return ray;
-}
-
 void setBlock(u32 block){
 	lpmap[block].p1 = 0;
 	lpmap[block].p2 = 0;
@@ -95,9 +57,9 @@ void tools(){
 	switch(toolSel){
 	case 0:{
 		if(GetKeyState(VK_LCONTROL)&0x80){
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-				u32 block = crds2map(ray.ix,ray.iy,ray.iz);
+			RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+				u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 				if(map[block].id!=BLOCK_AIR){
 					ShowCursor(1);
 					SetCursorPos(properties->xres/2,properties->yres/2);
@@ -151,15 +113,15 @@ void tools(){
 					sliderCreate((VEC2){0.59f, 0.275f},14);
 					break;
 				}
-				rayItterate(&ray);
+				ray3dItterate(&ray);
 			}
 		}
 		else{
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-			while(ray.ix>=0&&ray.ix<=properties->lvlSz&&ray.iy>=0&&ray.iy<=properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-				int block = crds2map(ray.ix,ray.iy,ray.iz);
+			RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+				int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 				if(map[block].id!=BLOCK_AIR){
-					switch(ray.sid){
+					switch(ray.hitSide){
 					case 0:
 						if(ray.dir.x < 0.0f){
 							ray.pos.x+=1.0f;
@@ -195,39 +157,39 @@ void tools(){
 					glMesC++;
 					break;
 				}
-				rayItterate(&ray);
+				ray3dItterate(&ray);
 			}
 		}
 		break;
 	}
 	case 1:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+			int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 			if(map[block].id!=BLOCK_AIR){
 				if(!selarea.x && !selarea.y && !selarea.z){
-					selarea.x = ray.ix;
-					selarea.y = ray.iy;
-					selarea.z = ray.iz;
+					selarea.x = ray.roundPos.x;
+					selarea.y = ray.roundPos.y;
+					selarea.z = ray.roundPos.z;
 				}
 				else{
-					u8 x = ray.ix;
-					u8 y = ray.iy;
-					u8 z = ray.iz;
-					if(selarea.z > ray.iz){
-						selarea.z ^= z;
-						z ^= selarea.z;
-						selarea.z ^= z;
-					}
-					if(selarea.x > ray.ix){
+					u8 x = ray.roundPos.x;
+					u8 y = ray.roundPos.y;
+					u8 z = ray.roundPos.z;
+					if(selarea.x > ray.roundPos.x){
 						selarea.x ^= x;
 						x ^= selarea.x;
 						selarea.x ^= x;
 					}
-					if(selarea.y > ray.iy){
+					if(selarea.y > ray.roundPos.y){
 						selarea.y ^= y;
 						y ^= selarea.y;
 						selarea.y ^= y;
+					}
+					if(selarea.z > ray.roundPos.z){
+						selarea.z ^= z;
+						z ^= selarea.z;
+						selarea.z ^= z;
 					}
 					for(int i = selarea.x;i <= x;i++){
 						for(int i2 = selarea.y;i2 <= y;i2++){
@@ -244,38 +206,38 @@ void tools(){
 				}
 				break;
 			}
-			rayItterate(&ray);
+			ray3dItterate(&ray);
 		}
 		break;
 	}
 	case 2:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+			int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 			if(map[block].id!=BLOCK_AIR){
 				if(!selarea.x && !selarea.y && !selarea.z){
-					selarea.x = ray.ix;
-					selarea.y = ray.iy;
-					selarea.z = ray.iz;
+					selarea.x = ray.roundPos.x;
+					selarea.y = ray.roundPos.y;
+					selarea.z = ray.roundPos.z;
 				}
 				else{
-					u8 x = ray.ix;
-					u8 y = ray.iy;
-					u8 z = ray.iz;
-					if(selarea.z > ray.iz){
-						selarea.z ^= z;
-						z ^= selarea.z;
-						selarea.z ^= z;
-					}
-					if(selarea.x > ray.ix){
+					u8 x = ray.roundPos.x;
+					u8 y = ray.roundPos.y;
+					u8 z = ray.roundPos.z;
+					if(selarea.x > ray.roundPos.x){
 						selarea.x ^= x;
 						x ^= selarea.x;
 						selarea.x ^= x;
 					}
-					if(selarea.y > ray.iy){
+					if(selarea.y > ray.roundPos.y){
 						selarea.y ^= y;
 						y ^= selarea.y;
 						selarea.y ^= y;
+					}
+					if(selarea.z > ray.roundPos.z){
+						selarea.z ^= z;
+						z ^= selarea.z;
+						selarea.z ^= z;
 					}
 					for(int i = selarea.x;i <= x;i++){
 						for(int i2 = selarea.y;i2 <= y;i2++){
@@ -305,15 +267,15 @@ void tools(){
 				}
 				break;
 			}
-			rayItterate(&ray);
+			ray3dItterate(&ray);
 		}
 		break;
 		break;
 	}
 	case 3:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+			int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 			if(map[block].id!=BLOCK_AIR){
 				map[block].r = colorSel.r;
 				map[block].g = colorSel.g;
@@ -322,14 +284,14 @@ void tools(){
 				glMesC++;
 				break;
 			}
-			rayItterate(&ray);
+			ray3dItterate(&ray);
 		}
 		break;	
 	}
 	case 4:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+			int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 			if(map[block].id!=BLOCK_AIR){
 				if(settings & SETTINGS_SUBBLOCK){
 					metadt4[block].r = metadt4Sel.r;
@@ -347,14 +309,14 @@ void tools(){
 				glMesC++;
 				break;
 			}
-			rayItterate(&ray);
+			ray3dItterate(&ray);
 		}
 		break;
 	}
 	case 5:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-		while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-			int block = crds2map(ray.ix,ray.iy,ray.iz);
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+			int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 			if(map[block].id!=BLOCK_AIR){
 				if(settings & SETTINGS_SUBBLOCK){
 					metadt5[block].r = metadt5Sel.r;
@@ -372,12 +334,12 @@ void tools(){
 				glMesC++;
 				break;
 			}
-			rayItterate(&ray);
+			ray3dItterate(&ray);
 		}
 		break;
 		}
 	case 6:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
 		if(l!=-1){
 			l /= properties->lmapSz*properties->lmapSz;
@@ -394,7 +356,7 @@ void tools(){
 		}
 		break;
 	case 8:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
 		if(l!=-1){
 			OpenClipboard(window);
@@ -411,9 +373,9 @@ void tools(){
 			l *= properties->lmapSz*properties->lmapSz;
 			for(u32 i = 0;i < bmp.bmiHeader.biHeight/properties->lmapSz;i++){
 				for(u32 i2 = 0;i2 < bmp.bmiHeader.biWidth/properties->lmapSz;i2++){
-				switch(ray.sid){
+				switch(ray.hitSide){
 				case 0:{
-					u32 block = crds2map(ray.ix,ray.iy+i,ray.iz+i2);
+					u32 block = crds2map(ray.roundPos.x,ray.roundPos.y+i,ray.roundPos.z+i2);
 					if(ray.dir.x>0.0f){
 						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
 							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
@@ -447,7 +409,7 @@ void tools(){
 					break;
 				}
 				case 1:{
-					u32 block = crds2map(ray.ix+i,ray.iy,ray.iz+i2);
+					u32 block = crds2map(ray.roundPos.x+i,ray.roundPos.y,ray.roundPos.z+i2);
 					if(ray.dir.y>0.0f){
 						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
 							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
@@ -481,7 +443,7 @@ void tools(){
 					break;
 				}
 				case 2:{
-					u32 block = crds2map(ray.ix+i,ray.iy+i2,ray.iz);
+					u32 block = crds2map(ray.roundPos.x+i,ray.roundPos.y+i2,ray.roundPos.z);
 					if(ray.dir.z>0.0f){
 						for(u32 i3 = 0;i3 < properties->lmapSz;i3++){
 							for(u32 i4 = 0;i4 < properties->lmapSz;i4++){
@@ -528,9 +490,9 @@ void tools(){
 		break;
 	}
 	case 9:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
-		rayItterate(&ray);
+		ray3dItterate(&ray);
 		if(l!=-1){
 			RGBA *clipTexture = HeapAlloc(GetProcessHeap(),8,properties->lmapSz*properties->lmapSz*sizeof(RGBA));
 			OpenClipboard(window);
@@ -618,13 +580,13 @@ void tools(){
 		break;
 		}
 	case 10:{
-		RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+		RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 		i32 l = getLmapLocation(&ray);
 		if(l!=-1){
 			if(!selarea.x && !selarea.y && !selarea.z){
-				selarea.x = ray.ix;
-				selarea.y = ray.iy;
-				selarea.z = ray.iz;
+				selarea.x = ray.roundPos.x;
+				selarea.y = ray.roundPos.y;
+				selarea.z = ray.roundPos.z;
 			}
 			else{
 				RGBA *clipTexture = HeapAlloc(GetProcessHeap(),8,properties->lmapSz*properties->lmapSz*sizeof(RGBA));
@@ -635,23 +597,23 @@ void tools(){
 				GlobalUnlock(h);
 				CloseHandle(h);
 				CloseClipboard();
-				u8 x = ray.ix;
-				u8 y = ray.iy;
-				u8 z = ray.iz;
-				if(selarea.z > ray.iz){
-					selarea.z ^= z;
-					z ^= selarea.z;
-					selarea.z ^= z;
-				}
-				if(selarea.x > ray.ix){
+				u8 x = ray.roundPos.x;
+				u8 y = ray.roundPos.y;
+				u8 z = ray.roundPos.z;
+				if(selarea.x > ray.roundPos.x){
 					selarea.x ^= x;
 					x ^= selarea.x;
 					selarea.x ^= x;
 				}
-				if(selarea.y > ray.iy){
+				if(selarea.y > ray.roundPos.y){
 					selarea.y ^= y;
 					y ^= selarea.y;
 					selarea.y ^= y;
+				}
+				if(selarea.z > ray.roundPos.z){
+					selarea.z ^= z;
+					z ^= selarea.z;
+					selarea.z ^= z;
 				}
 				for(int i = selarea.x;i <= x;i++){
 					for(int i2 = selarea.y;i2 <= y;i2++){
@@ -661,7 +623,7 @@ void tools(){
 							}
 							u32 block = (i + i2 * properties->lvlSz + i3 * properties->lvlSz * properties->lvlSz);
 							
-							switch(ray.sid){
+							switch(ray.hitSide){
 							case 0:
 								if(ray.dir.x>0.0f){
 									for(u32 i = 0;i < properties->lmapSz*properties->lmapSz;i++){

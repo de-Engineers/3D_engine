@@ -13,6 +13,7 @@
 #include "vec4.h"
 #include "godrays.h"
 #include "reflections.h"
+#include "ray.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -134,64 +135,6 @@ f32 rnd() {
 
 i32 irnd(){
 	return hash(__rdtsc());
-}
-
-void rayItterate(RAY *ray){
-    if(ray->side.x < ray->side.y){
-        if(ray->side.x < ray->side.z){
-			ray->ix += ray->stepx;
-			ray->side.x += ray->delta.x;
-			ray->sid = 0;
-        }
-        else{
-			ray->iz += ray->stepz;
-			ray->side.z += ray->delta.z;
-			ray->sid = 2;
-        }
-    }
-    else if(ray->side.y < ray->side.z){
-		ray->iy += ray->stepy;
-		ray->side.y += ray->delta.y;
-		ray->sid = 1;
-    }
-    else{
-		ray->iz += ray->stepz;
-		ray->side.z += ray->delta.z;
-		ray->sid = 2;
-    }
-}
-
-VEC3 getCoords(RAY ray){
-	VEC2 wall;
-    switch(ray.sid){
-    case 0:
-        wall.x = ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y;
-        wall.y = ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z;
-		if(ray.dir.x > 0.0f){
-            return (VEC3){ray.ix,wall.x,wall.y};
-		}
-		else{
-            return (VEC3){ray.ix+1.0f,wall.x,wall.y};
-		}
-	case 1:
-        wall.x = ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x;
-        wall.y = ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z;
-		if(ray.dir.y > 0.0f){
-			return (VEC3){wall.x,ray.iy,wall.y};
-		}
-		else{
-			return (VEC3){wall.x,ray.iy+1.0f,wall.y};
-		}
-	case 2:
-        wall.x = ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x;
-        wall.y = ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y;
-		if(ray.dir.z > 0.0f){
-            return (VEC3){wall.x,wall.y,ray.iz};
-		}
-		else{
-			return (VEC3){wall.x,wall.y,ray.iz+1.0f};
-		}
-	}
 }
 
 void updateBlockLight(int pos){
@@ -677,7 +620,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	case WM_MBUTTONDOWN:
 		switch(toolSel){
 		case 6:{
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			i32 lmapLoc = getLmapLocation(&ray);
 			if(lmapLoc!=-1){
 				lmapLoc /= properties->lmapSz*properties->lmapSz;
@@ -695,7 +638,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 		case 7:{
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 			i32 lmapLoc = getLmapLocation(&ray);
 			if(lmapLoc!=-1){
 				VEC3 bcolor = {bmap[lmapLoc].r,bmap[lmapLoc].g,bmap[lmapLoc].b};
@@ -707,9 +650,9 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		}
 		default:{
-			RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-			while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-				u32 block = crds2map(ray.ix,ray.iy,ray.iz);
+			RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+			while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+				u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 				if(map[block].id!=1){
 					blockSel   = map[block].id;
 					colorSel.r = map[block].r;
@@ -741,7 +684,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					metadt6Sel.a = metadt6[block].id;
 					break;
 				}
-				rayItterate(&ray);
+				ray3dItterate(&ray);
 			}
 			}
 			break;
@@ -751,9 +694,9 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		switch(menuSel){
 		case 0:
 			if(settings & SETTINGS_GAMEPLAY){
-				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-				while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-					u32 block = crds2map(ray.ix,ray.iy,ray.iz);
+				RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+				while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+					u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 					switch(map[block].id){
 					case BLOCK_CUBE:
 						if(metadt4[block].b==1){
@@ -767,7 +710,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 						}
 						break;
 					}
-					rayItterate(&ray);
+					ray3dItterate(&ray);
 					continue;
 				end:
 					break;
@@ -812,14 +755,14 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			switch(toolSel){
 			case 0:	
 			case 1:{
-				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
-				while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-					int block = crds2map(ray.ix,ray.iy,ray.iz);
+				RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+				while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
+					int block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
 					if(map[block].id!=1){
 						deleteBlock(block);
 						break;
 					}
-					rayItterate(&ray);
+					ray3dItterate(&ray);
 				}
 				break;
 			}
@@ -835,7 +778,7 @@ void physics(){
 		if(GetKeyState(VK_LBUTTON)&0x80){
 			switch(toolSel){
 			case 7:{
-				RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
+				RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir,player->ydir*player->xydir,player->zdir});
 				i32 l = getLmapLocation(&ray);
 				if(l!=-1){
 					lmap[l].r = (f32)bmap[l].r * colorSel.r / 255.0f;
@@ -922,7 +865,7 @@ void physics(){
 						if(!player->shotCooldown){
 							player->recoil.y += 0.1f;
 							player->recoil.x += (rnd()-1.5f)/15.0f;
-							RAY ray = rayCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
+							RAY3D ray = ray3dCreate(player->pos,(VEC3){player->xdir*player->xydir*0.5f,player->ydir*player->xydir*0.5f,player->zdir*0.5f});
 							getLmapLocation(&ray);
 							for(u32 i = 0;i < entityC;i++){
 								if(entity.cpu[i].id==4){
