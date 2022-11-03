@@ -16,9 +16,6 @@ void genReflectMap(){
 					ang.z = player->zdir + player->xydir * px.y;
 					ang = VEC3normalize(ang);
 					RAY3D ray = ray3dCreate(player->pos,ang);
-					VEC3 colData = {0.0f,0.0f,0.0f};
-					VEC3 pPos = player->pos;
-					f32 itt = 1.0f;
 					ray3dItterate(&ray);
 					while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
 						u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
