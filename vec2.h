@@ -162,6 +162,34 @@ inline VEC2 VEC2floorR(VEC2 p){
 	p.y = (int)p.y;
 	return p;
 }
+
+inline VEC2 VEC2fractR(VEC2 p){
+	return VEC2subVEC2R(p,VEC2floorR(p));
+}
+
+inline int VEC2hash(int x){
+	x += (x << 10);
+	x ^= (x >> 6);
+	x += (x << 3);
+	x ^= (x >> 11);
+	x += (x << 15);
+	return x;
+}
+
+inline float VEC2rnd(VEC2 p){
+	union u{
+		VEC2 f;
+		struct{
+			int x;
+			int y;
+		}i;
+	}r;
+	r.f = p;
+	r.i.x = VEC2hash(VEC2hash(r.i.x) ^ r.i.y); 
+	r.i.x &= 0x007fffff;
+	r.i.x |= 0x3f800000;
+	return r.f.x;
+}
 /*
 inline VEC2 VEC2reflect(VEC2 p,VEC2 p2){
 	VEC2 r;

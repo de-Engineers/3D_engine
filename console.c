@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "godrays.h"
+#include "reflections.h"
 
 i8 chatLineSel = -1;
 
@@ -77,13 +78,20 @@ void executeCommand(u8 *cmd){
 		break;
 	case 9:
 		if(!memcmp(cmd,"godrayres",9)){
-			u8 res = atoi(cmd+10);
+			u16 res = atoi(cmd+10);
 			godraymap  = HeapReAlloc(GetProcessHeap(),8,godraymap,sizeof(VEC3)*res*res);
 			godraymapB = HeapReAlloc(GetProcessHeap(),8,godraymapB,sizeof(VEC3)*res*res);
 			properties->godrayRes = res;
 		}
 		if(!memcmp(cmd,"godrayamm",9)){
 			properties->godrayAmm = strtof(cmd+10,0);
+		}
+		break;
+	case 10:
+		if(!memcmp(cmd,"reflectres",10)){
+			u16 res = atoi(cmd+11);
+			reflectmap  = HeapReAlloc(GetProcessHeap(),8,reflectmap,sizeof(VEC3)*res*res);
+			properties->reflectRes = res;
 		}
 		break;
 	case 11:

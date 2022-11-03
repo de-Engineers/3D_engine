@@ -148,6 +148,14 @@ void deleteBlock(int pos){
 	glMesC++;
 }
 
+VEC3 screenUVto3D(VEC2 uv){
+	VEC3 ang;
+	ang.x = (player->xdir * player->xydir - player->xdir * player->zdir * uv.y) - player->ydir * uv.x;
+	ang.y = (player->ydir * player->xydir - player->ydir * player->zdir * uv.y) + player->xdir * uv.x;
+	ang.z = player->zdir + player->xydir * uv.y;
+	return VEC3normalize(ang);
+}
+
 void levelSave(char *lname){
 	char *name = HeapAlloc(GetProcessHeap(),8,strlen(lname)+18);
 	memcpy(name,"levels/",7);

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "vec2.h"
-#include "vec3.h"
 #include "ivec2.h"
-#include "ivec3.h"
 
 typedef struct{
 	VEC2 pos;
@@ -36,3 +33,6 @@ void ray3dItterate(RAY3D *ray);
 i32 getLmapLocation(RAY3D *ray);
 VEC3 getSubCoords(RAY3D ray);
 VEC3 getCoords(RAY3D ray);
+VEC2 getXside(RAY3D ray);
+VEC2 getYside(RAY3D ray);
+VEC2 getZside(RAY3D ray);

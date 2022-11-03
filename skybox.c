@@ -22,7 +22,7 @@ f32 rndS(VEC2 seed) {
 	return r.f;
 }
 
-inline f32 mix(f32 p,f32 p2,f32 p3){
+f32 mix(f32 p,f32 p2,f32 p3){
 	return p * (1.0f - p3) + p2 * p3;
 }
 

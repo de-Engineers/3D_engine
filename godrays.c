@@ -11,11 +11,7 @@ void genGodraysMap(){
 			for(u32 i = 0;i < properties->godrayRes;i++){
 				for(u32 i2 = 0;i2 < properties->godrayRes;i2++){
 					VEC2 px = {player->fov.x*((f32)i2/properties->godrayRes*2.0f-1.0f+1.0f/properties->godrayRes),player->fov.y*((f32)i/properties->godrayRes*2.0f-1.0f+1.0f/properties->godrayRes)};
-					VEC3 ang;
-					ang.x = (player->xdir * player->xydir - player->xdir * player->zdir * px.y) - player->ydir * px.x;
-					ang.y = (player->ydir * player->xydir - player->ydir * player->zdir * px.y) + player->xdir * px.x; 
-					ang.z = player->zdir + player->xydir * px.y;
-					ang = VEC3normalize(ang);
+					VEC3 ang = screenUVto3D(px);
 					RAY3D ray = ray3dCreate(player->pos,ang);
 					VEC3 colData = {0.0f,0.0f,0.0f};
 					VEC3 pPos = player->pos;
@@ -23,7 +19,7 @@ void genGodraysMap(){
 					ray3dItterate(&ray);
 					while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
 						u32 block = crds2map(ray.roundPos.x,ray.roundPos.y,ray.roundPos.z);
-						VEC3 hPos = VEC3addVEC3R((VEC3){ray.roundPos.x,ray.roundPos.y,ray.roundPos.z},getSubCoords(ray));
+						VEC3 hPos = getCoords(ray);
 						switch(map[block].id){
 						case 28:
 							goto end;

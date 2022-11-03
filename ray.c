@@ -287,3 +287,24 @@ VEC3 getCoords(RAY3D ray){
 		}
 	}
 }
+
+VEC2 getXside(RAY3D ray){
+	VEC2 r;
+	r.x = ray.pos.y + (ray.side.x - ray.delta.x) * ray.dir.y;
+	r.y = ray.pos.z + (ray.side.x - ray.delta.x) * ray.dir.z;
+	return r;
+}
+
+VEC2 getYside(RAY3D ray){
+	VEC2 r;
+	r.x = ray.pos.x + (ray.side.y - ray.delta.y) * ray.dir.x;
+	r.y = ray.pos.z + (ray.side.y - ray.delta.y) * ray.dir.z;
+	return r;
+}
+
+VEC2 getZside(RAY3D ray){
+	VEC2 r;
+	r.x = ray.pos.x + (ray.side.z - ray.delta.z) * ray.dir.x;
+	r.y = ray.pos.y + (ray.side.z - ray.delta.z) * ray.dir.y;
+	return r;
+}

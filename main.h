@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <windows.h>
+
 #include "ivec3.h"
 #include "vec3.h"
 #include "vec2.h"
@@ -421,11 +422,13 @@ i32 irnd();
 f32 rnd();
 CVEC3 map2crds(u32 	map);
 VEC2 rotVEC2(VEC2 p,f32 rot);
+VEC3 screenUVto3D(VEC2 uv);
 void entityDeath(int id);
 
 char *loadFile(char *name);
 
 f32 fract(f32 p);
+f32 mix(f32 p,f32 p2,f32 p3);
 
 HANDLE physicsThread;
 HANDLE entityThread;
