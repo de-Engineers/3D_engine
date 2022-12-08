@@ -216,5 +216,36 @@ inline VEC3 VEC3fractR(VEC3 p){
 	return (VEC3){p.x-(int)p.x,p.y-(int)p.y,p.z-(int)p.z};
 }
 
+inline VEC3 VEC3floorR(VEC3 p){
+	p.x = floorf(p.x);
+	p.y = floorf(p.y);
+	p.z = floorf(p.z);
+	return p;
+}
+
+inline int VEC3hash(int x){
+	x += (x << 10);
+	x ^= (x >> 6);
+	x += (x << 3);
+	x ^= (x >> 11);
+	x += (x << 15);
+	return x;
+}
+
+inline float VEC3rnd(VEC3 p){
+	union u{
+		VEC3 f;
+		struct{
+			int x;
+			int y;
+			int z;
+		}i;
+	}r;
+	r.f = p;
+	r.i.x = VEC3hash(VEC3hash(VEC3hash(r.i.x) ^ r.i.y) ^ r.i.z); 
+	r.i.x &= 0x007fffff;
+	r.i.x |= 0x3f800000;
+	return r.f.x;
+}
 
 

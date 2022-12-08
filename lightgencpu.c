@@ -23,13 +23,6 @@ void castLightRay(RAY3D ray,VEC3 color){
     while(ray.roundPos.x>=0&&ray.roundPos.x<properties->lvlSz&&ray.roundPos.y>=0&&ray.roundPos.y<properties->lvlSz&&ray.roundPos.z>=0&&ray.roundPos.z<properties->lvlSz){
         u32 block = crds2map(ray.roundPos.x, ray.roundPos.y, ray.roundPos.z);
         switch (map[block].id){
-        case BLOCK_AIR:
-            if((rnd()-1.0f)<1.0f/(properties->lmapSz*properties->lmapSz)){
-                lpmap[block].p1 += color.r*255.0f;
-                lpmap[block].p2 += color.g*255.0f;
-                lpmap[block].p3 += color.b*255.0f;
-            }
-            break;
         case BLOCK_CUBE:{
             VEC3 spos = getSubCoords(ray);
             VEC3 mtdt = { (f32)metadt[block].g / 255.0f,(f32)metadt[block].r / 255.0f,(f32)metadt[block].id / 255.0f };
@@ -254,7 +247,6 @@ void lightRaysGenerate(){
         dir = VEC3normalize(dir);
         VEC3 pos = VEC3addVEC3R(rayy.Pos,(VEC3){(rnd()-1.5f)*rayy.rndOffset,(rnd()-1.5f)*rayy.rndOffset,(rnd()-1.5f)*rayy.rndOffset});
         castLightRay(ray3dCreate(pos,dir),rayColor);
-        Sleep(0);
     }
 }
 
@@ -262,13 +254,11 @@ void lightRaysGenerateAmbientX(){
     if(rayy.Dir.x < 0.0f){
         for(u64 i = 0;i < threadItt;i++){
             castLightRay(ray3dCreate((VEC3){ (f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
-            Sleep(0);
         }
     }
     else{
         for(u64 i = 0;i < threadItt;i++){
             castLightRay(ray3dCreate((VEC3){ 0.0f, (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
-            Sleep(0);
         }
     }
 }
@@ -277,13 +267,11 @@ void lightRaysGenerateAmbientY(){
     if(rayy.Dir.y < 0.0f){
         for(u64 i = 0;i < threadItt;i++){
             castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
-            Sleep(0);
         }
     }
     else{
         for(u64 i = 0;i < threadItt;i++){
             castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f,(rnd()-1.0f)*(properties->lvlSz-1.0f)},rayy.Dir),rayColor);
-            Sleep(0);
         }
     }
 }
@@ -292,13 +280,11 @@ void lightRaysGenerateAmbientZ(){
     if(rayy.Dir.z < 0.0f){
         for(u64 i = 0;i < threadItt;i++){
             castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),(f32)properties->lvlSz-1.0f},rayy.Dir),rayColor);
-            Sleep(0);
         }
     }
     else{
         for(u64 i = 0;i < threadItt;i++){
             castLightRay(ray3dCreate((VEC3){ (rnd()-1.0f)*(properties->lvlSz-1.0f),(rnd()-1.0f)*(properties->lvlSz-1.0f),0.0f },rayy.Dir),rayColor);
-            Sleep(0);
         }
     }
 }
@@ -310,6 +296,7 @@ void cpuGenLightAmbientX(VEC3 dir,VEC3 color,u64 itt){
     HANDLE cpulightgenthreads[8];
     for(u64 i = 0;i < 8;i++){
         cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerateAmbientX,0,0,0);
+        SetThreadPriority(cpulightgenthreads[i],THREAD_PRIORITY_BELOW_NORMAL);
     }
     WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
 }
@@ -321,6 +308,7 @@ void cpuGenLightAmbientY(VEC3 dir,VEC3 color,u64 itt){
     HANDLE cpulightgenthreads[8];
     for(u64 i = 0;i < 8;i++){
         cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerateAmbientY,0,0,0);
+        SetThreadPriority(cpulightgenthreads[i],THREAD_PRIORITY_BELOW_NORMAL);
     }
     WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
 }
@@ -332,6 +320,7 @@ void cpuGenLightAmbientZ(VEC3 dir,VEC3 color,u64 itt){
     HANDLE cpulightgenthreads[8];
     for(u64 i = 0;i < 8;i++){
         cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerateAmbientZ,0,0,0);
+        SetThreadPriority(cpulightgenthreads[i],THREAD_PRIORITY_BELOW_NORMAL);
     }
     WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
 }
@@ -344,6 +333,7 @@ void cpuGenLight(VEC3 pos,VEC3 color,u64 itt,f32 rndOffset){
     HANDLE cpulightgenthreads[8];
     for(u64 i = 0;i < 8;i++){
         cpulightgenthreads[i] = CreateThread(0,0,lightRaysGenerate,0,0,0);
+        SetThreadPriority(cpulightgenthreads[i],THREAD_PRIORITY_BELOW_NORMAL);
     }
     WaitForMultipleObjects(8,cpulightgenthreads,1,INFINITE);
 }

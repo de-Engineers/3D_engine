@@ -367,11 +367,11 @@ extern void (*sliders[32])(u8 pos);
 extern void (*buttons[32])();
 extern u8 menuSel;
 extern STRINGS fileNames;
-extern unsigned char tempVar[2];
+extern u8 tempVar[2];
 extern f32 quad[8192];
-extern unsigned int totalCar;
-extern unsigned int lmapC;
-extern long long fps;
+extern u32 totalCar;
+extern u32 lmapC;
+extern u64 fps;
 extern f32 brightness;
 extern u32 skyboxText;
 extern u8 touchedSpace;
@@ -380,10 +380,13 @@ extern u8 networkSettings;
 extern u8 openglINIT;
 extern SLIDERVALUE sliderValues;
 extern HANDLE networkThread;
+extern HANDLE physicsThread;
+extern HANDLE entityThread;
+extern HANDLE HDRthread;
 extern u8 playerspawnC;
 extern VEC3 playerspawn[16];
 
-extern unsigned char *inputStr;
+extern u8 *inputStr;
 
 void buttonCreate(VEC2 pos,unsigned char id);
 void sliderCreate(VEC2 pos,u8 id);
@@ -429,9 +432,6 @@ char *loadFile(char *name);
 
 f32 fract(f32 p);
 f32 mix(f32 p,f32 p2,f32 p3);
-
-HANDLE physicsThread;
-HANDLE entityThread;
 
 
 

@@ -39,10 +39,8 @@ void spawnPlayer(u8 id){
 	entity.gpu[entityC].color = (VEC3){0.5f,0.5f,0.5f};
 	entity.cpu[entityC].baseColor = (VEC3){0.5f,0.5f,0.5f};
 	entity.cpu[entityC].playerid = id;
-	entity.gpu[entityC].tId = entityC;
-	entityC++;
-	glMes[glMesC].id = 12;
-	glMesC++;
+	entity.gpu[entityC++].tId = entityC;
+	glMes[glMesC++].id = 12;
 }
 
 void spawnEntityEx(VEC3 pos,VEC3 pos2,VEC3 vel,u8 id,VEC3 color){
@@ -307,101 +305,6 @@ void entities(){
 				}
 				break;
 			}
-			case 4:
-				break;/*
-			case 5:{
-				if(ss.x<0||ss.y<0||ss.z<0||ss.x>properties->lvlSz-1||ss.y>properties->lvlSz-1||ss.z>properties->lvlSz-1){
-					entityDeath(i);
-					continue;
-				}
-				if(ss.x < 1){
-					ss.x = 1;
-				}
-				if(ss.y < 1){
-					ss.y = 1;
-				}
-				if(ss.z < 1){
-					ss.z = 1;
-				}
-				if(ss.x > properties->lvlSz - 2){
-					ss.x = properties->lvlSz - 2;
-				}
-				if(ss.y > properties->lvlSz - 2){
-					ss.y = properties->lvlSz - 2;
-				}
-				if(ss.z > properties->lvlSz - 2){
-					ss.z = properties->lvlSz - 2;
-				}
-				for(i32 i2 = -1;i2 < 2;i2++){
-					for(i32 i3 = -1;i3 < 2;i3++){
-						for(i32 i4 = -1;i4 < 2;i4++){
-							switch(map[crds2map(ss.x+i2,ss.y+i3,ss.z+i4)].id){
-							case BLOCK_SOLID:{
-								VEC4 p = PointBoxDistance(entity.gpu[i].pos,(VEC3){ss.x+i2+0.5f,ss.y+i3+0.5f,ss.z+i4+0.5f},(VEC3){0.5f,0.5f,0.5f});
-								if(p.x < entity.gpu[i].rad){
-									VEC2 rp = VEC2normalize(VEC2subVEC2R((VEC2){entity.gpu[i].pos.x,entity.gpu[i].pos.y},(VEC2){player->pos.x,player->pos.y}));
-									if(p.y < entity.gpu[i].rad){
-										entity.gpu[i].pos.x-=entity.cpu[i].vel.x;
-										entity.cpu[i].vel.x = 0.0;
-									}
-									if(p.z < entity.gpu[i].rad){
-										entity.gpu[i].pos.y-=entity.cpu[i].vel.y;
-										entity.cpu[i].vel.y = 0.0f;
-									}
-									if(p.w < entity.gpu[i].rad){
-										entity.gpu[i].pos.z-=entity.cpu[i].vel.z;
-										entity.cpu[i].vel.x /= 1.1f;
-										entity.cpu[i].vel.y /= 1.1f;
-										entity.cpu[i].vel.z = 0.0f;
-									}
-									if(irnd()%40==1){
-										RAY ray = rayCreate(entity.gpu[i].pos,VEC3subVEC3R(player->pos,entity.gpu[i].pos));
-										rayItterate(&ray);
-										while(ray.ix>=0&&ray.ix<properties->lvlSz&&ray.iy>=0&&ray.iy<properties->lvlSz&&ray.iz>=0&&ray.iz<properties->lvlSz){
-											u32 block = crds2map(ray.ix,ray.iy,ray.iz);
-											switch(map[block].id){
-											case BLOCK_AIR:
-												break;
-											default:
-												goto end;
-											}
-											if((u32)player->pos.x == ray.ix && (u32)player->pos.y == ray.iy && (u32)player->pos.z == ray.iz){
-												entity.cpu[i].vel.x = -rp.x/5.0f;
-												entity.cpu[i].vel.y = -rp.y/5.0f;
-												entity.cpu[i].vel.z = 0.21f;
-												break;
-											}
-											rayItterate(&ray);
-											continue;
-										end:
-											break;
-										}
-									}
-									goto end2;
-								}
-								break;
-							}
-							}
-						}
-					}
-				}
-			end2:
-				entity.cpu[i].vel.z -= 0.015f;
-				if(player->pos.x > entity.gpu[i].pos.x - 0.3f  && player->pos.x < entity.gpu[i].pos.x + 0.3f &&
-					player->pos.y > entity.gpu[i].pos.y - 0.3f && player->pos.y < entity.gpu[i].pos.y + 0.3f && 
-					player->pos.z > entity.gpu[i].pos.z - 0.2f && player->pos.z < entity.gpu[i].pos.z + 2.0f){
-					if(!player->wounded){
-						player->wounded = 1;
-						player->aniType = 1;
-						player->aniTime = 30;
-					}
-					else if(!player->aniTime||player->aniType!=1){
-						playerDeath();
-					}
-				}
-				calculateLuminance(i);
-				break;
-			}*/
 			case 6:
 				if(!entity.cpu[i].health){
 					entityDeath(i);
@@ -586,10 +489,9 @@ void entities(){
 				}
 				break;
 			}
-			default:{
+			default:
 				calculateLuminance(i);
 				break;
-			}
 			}
 		}
 		u32 s = 1;

@@ -158,8 +158,8 @@ inline VEC2 VEC2absR(VEC2 p){
 }
 
 inline VEC2 VEC2floorR(VEC2 p){
-	p.x = (int)p.x;
-	p.y = (int)p.y;
+	p.x = floorf(p.x);
+	p.y = floorf(p.y);
 	return p;
 }
 

@@ -2,7 +2,6 @@
 #include "vec2.h"
 #include "vec3.h"
 #include "ivec2.h"
-#include "raytracing.h"
 #include "ray.h"
 
 f32 brightness;
@@ -32,7 +31,6 @@ void HDR(){
 			for(u32 i2 = 0;i2 < HDR_RES;i2++){
 				VEC2 px = {player->fov.x*(((f32)i2/HDR_RES*2.0f)-1.0f),player->fov.y*(((f32)i/HDR_RES*2.0f)-1.0f)};
 				VEC3 ang = screenUVto3D(px);
-				ang = VEC3normalize(ang);
 				RAY3D ray = ray3dCreate(player->pos,ang);
 				i32 lmapLoc = getLmapLocation(&ray);
 				if(lmapLoc!=-1){

@@ -1,6 +1,6 @@
 #include "main.h"
 #include "ray.h"
-#include "smallTypes.h"
+#include "raytracing.h"
 
 RAY2D ray2dCreate(VEC2 pos,VEC2 dir){
 	RAY2D ray;

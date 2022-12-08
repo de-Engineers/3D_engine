@@ -31,7 +31,7 @@ MAP   *metadt6;
 
 u8 menuSel;
 
-unsigned char tempVar[2];
+u8 tempVar[2];
 
 u32 settings;
 
@@ -64,8 +64,8 @@ RGBA metadt4Sel;
 RGBA metadt5Sel;
 RGBA metadt6Sel;
 
-unsigned char blockSel = 1;
-unsigned char toolSel;	
+u8 blockSel = 1;
+u8 toolSel;	
 
 f32 mousex;
 f32 mousey;
@@ -75,7 +75,7 @@ BITMAPINFO bmi = { sizeof(BITMAPINFOHEADER),resx,resy,1,32,BI_RGB };
 HANDLE renderingThread;
 HANDLE consoleThread;
 HANDLE physicsThread;
-HANDLE entitiesThread;
+HANDLE entityThread;
 HANDLE staticEntitiesThread;
 HANDLE ittmapThread;
 HANDLE godraysThread;
@@ -104,10 +104,6 @@ void playerDeath(){
 		player->pos = (VEC3){5.5f,5.5f,2.8f};
 	}
 	player->vel = (VEC3){0.0f,0.0f,0.0f};
-	/*
-	if(!connectStatus){
-		entityC = 0;
-	}*/
 	for(u32 i = 0;i < turretC;i++){
 		turret[i].cooldown = 0;
 	}
@@ -138,14 +134,12 @@ i32 irnd(){
 }
 
 void updateBlockLight(int pos){
-	glMes[glMesC].id = 3;
-	glMesC++;
+	glMes[glMesC++].id = 3;
 }
 
 void deleteBlock(int pos){
 	map[pos].id = 1;
-	glMes[glMesC].id = 3;
-	glMesC++;
+	glMes[glMesC++].id = 3;
 }
 
 VEC3 screenUVto3D(VEC2 uv){
@@ -221,8 +215,7 @@ void levelLoad(char *lname){
 		switch(map[i].id){
 		case BLOCK_SPAWN:{
 			CVEC3 spwncrd = map2crds(i);
-			playerspawn[playerspawnC] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.25f};
-			playerspawnC++;
+			playerspawn[playerspawnC++] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.25f};
 			break;
 		}
 		case BLOCK_CUBE:
@@ -231,15 +224,13 @@ void levelLoad(char *lname){
 				turret[turretC].pos = (VEC3){(f32)crd.x+0.5f,(f32)crd.y+0.5f,(f32)crd.z+0.5f};
 				turret[turretC].id  = metadt4[i].b-2;
 				turret[turretC].power = metadt4[i].g;
-				turret[turretC].totalCooldown = metadt4[i].id+1;
-				turretC++;
+				turret[turretC++].totalCooldown = metadt4[i].id+1;
 			}
 			break;
 		case BLOCK_AMBIENTLIGHT:
 			star[starC].skyCol = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
 			star[starC].pos = VEC3normalize((VEC3){127.0f-metadt[i].r,127.0f-metadt[i].g,127.0f-metadt[i].id});
-			star[starC].col = (RGB){map[i].r,map[i].g,map[i].b};
-			starC++;
+			star[starC++].col = (RGB){map[i].r,map[i].g,map[i].b};
 			break;
 		}
 	}
@@ -247,10 +238,8 @@ void levelLoad(char *lname){
 		bmap[i] = lmap[i];
 	}
 	CloseHandle(h);
-	glMes[glMesC].id = 3;
-	glMesC++;
-	glMes[glMesC].id = 6;
-	glMesC++;
+	glMes[glMesC++].id = 3;
+	glMes[glMesC++].id = 6;
 }
 
 void levelDelete(char *lname){
@@ -301,11 +290,11 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		switch(wParam){
 		case WA_INACTIVE:
 			SuspendThread(physicsThread);
-			SuspendThread(entitiesThread);
+			SuspendThread(entityThread);
 			settings ^= SETTINGS_PAUZE;
 			break;
 		default:
-			ResumeThread(entitiesThread);
+			ResumeThread(entityThread);
 			ResumeThread(physicsThread);
 			settings ^= SETTINGS_PAUZE;
 			break;
@@ -320,8 +309,7 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 		properties->yres = lParam >> 16;
 		player->fov.x = player->fov.y*((f32)properties->xres/properties->yres);
 		if(renderingThread){
-			glMes[glMesC].id = 0;
-			glMesC++;
+			glMes[glMesC++].id = 0;
 		}
 		break;
 	case WM_KEYDOWN:
@@ -408,9 +396,11 @@ long _stdcall proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				while(metadtSel.a - metadtSel.b < 0 || metadtSel.a + metadtSel.b > 255);
 			}
 			else{
-				colorSel.r = irnd();
-				colorSel.g = irnd();
-				colorSel.b = irnd();
+				if(menuSel == 0){
+					colorSel.r = irnd();
+					colorSel.g = irnd();
+					colorSel.b = irnd();
+				}
 			}
 			break;
 		case VK_OEM_PERIOD:
@@ -793,8 +783,7 @@ void physics(){
 					lmap[l].g = (f32)bmap[l].g * colorSel.g / 255.0f;
 					lmap[l].b = (f32)bmap[l].b * colorSel.b / 255.0f;
 					glMes[glMesC].data1 = l;
-					glMes[glMesC].id = 7;
-					glMesC++;
+					glMes[glMesC++].id = 7;
 				}
 				break;
 			}
@@ -1021,6 +1010,7 @@ void main(){
 	godraymap  = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->godrayRes*properties->godrayRes);
 	godraymapB = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->godrayRes*properties->godrayRes);
 	reflectmap = HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->reflectRes*properties->reflectRes);
+	reflectmapB= HeapAlloc(GetProcessHeap(),8,sizeof(VEC3)*properties->reflectRes*properties->reflectRes);
 	turret     = HeapAlloc(GetProcessHeap(),8,sizeof(TURRET) * 1024);
 	star       = HeapAlloc(GetProcessHeap(),8,sizeof(STAR)*3);
 	textbox    = HeapAlloc(GetProcessHeap(),8,sizeof(TEXTBOX)*16);
@@ -1065,10 +1055,8 @@ void main(){
 		sliderValues.fov = player->fov.y*127.5f;
 		sliderValues.sensitivity = properties->sensitivity*255.0f;
 
-		glMes[glMesC].id = 10;
-		glMesC++;
-		glMes[glMesC].id = 13;
-		glMesC++;
+		glMes[glMesC++].id = 10;
+		glMes[glMesC++].id = 13;
 
 		player->fov.x = player->fov.y*16.0f/9.0f;
 	}
@@ -1096,7 +1084,7 @@ void main(){
 	initOpenCL();
 
 	physicsThread        = CreateThread(0,0,physics,0,0,0);
-	entitiesThread       = CreateThread(0,0,entities,0,0,0);
+	entityThread       = CreateThread(0,0,entities,0,0,0);
 	ittmapThread         = CreateThread(0,0,ittmap,0,0,0);
 	godraysThread        = CreateThread(0,0,genGodraysMap,0,0,0);
 	reflectThread        = CreateThread(0,0,genReflectMap,0,0,0);

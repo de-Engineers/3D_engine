@@ -6,6 +6,26 @@
 
 i8 chatLineSel = -1;
 
+f32 tnoise3(VEC3 pos){
+	VEC3 fpos = VEC3floorR(pos);
+	VEC3 fpos2 = VEC3fractR(pos);
+	f32 r1 = VEC3rnd(fpos);
+	f32 r2 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){1.0f,0.0f,0.0f}));
+	f32 r3 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){0.0f,1.0f,0.0f}));
+	f32 r4 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){1.0f,1.0f,0.0f}));
+	f32 r5 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){0.0f,0.0f,1.0f}));
+	f32 r6 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){1.0f,0.0f,1.0f}));
+	f32 r7 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){0.0f,1.0f,1.0f}));
+	f32 r8 = VEC3rnd(VEC3addVEC3R(fpos,(VEC3){1.0f,1.0f,1.0f}));
+	f32 m1 = mix(r1,r2,fpos2.x);
+	f32 m2 = mix(r3,r4,fpos2.x);
+	f32 m3 = mix(r5,r6,fpos2.x);
+	f32 m4 = mix(r7,r8,fpos2.x);
+	f32 mm1= mix(m1,m2,fpos2.y);
+	f32 mm2= mix(m3,m4,fpos2.y);
+	return mix(mm1,mm2,fpos2.z);
+}
+
 void executeCommand(u8 *cmd){
 	u8 cmdlen = 20;
 	for(u32 i = 0;i < 20;i++){
@@ -27,13 +47,27 @@ void executeCommand(u8 *cmd){
 		if(!memcmp(cmd,"fov",3)){
 			player->fov.y = strtof(cmd+4,0);
 			player->fov.x = player->fov.y*16.0f/9.0f;
-			glMes[glMesC].id = 10;
-			glMesC++;
+			glMes[glMesC++].id = 10;
 		}
 		break;
 	case 4:
 		if(!memcmp(cmd,"quit",4)){
 			closeEngine();
+		}
+		if(!memcmp(cmd,"rand",4)){
+			for(u32 i = 0;i < properties->lvlSz;i++){
+				for(u32 i2 = 0;i2 < properties->lvlSz;i2++){
+					for(u32 i3 = 0;i3 < properties->lvlSz;i3++){
+						if(tnoise3(VEC3divR((VEC3){i,i2,i3},4.0f))<1.06f){
+							setBlock(crds2map(i,i2,i3));
+						}
+						else{
+							map[crds2map(i,i2,i3)].id = BLOCK_AIR;
+						}
+					}
+				}
+			}
+			glMes[glMesC++].id = 3;
 		}
 		break;
 	case 5:
@@ -62,8 +96,7 @@ void executeCommand(u8 *cmd){
 					}
 				}
 			}
-			glMes[glMesC].id = 3;
-			glMesC++;
+			glMes[glMesC++].id = 3;
 		}
 		break;
 	case 7:
@@ -91,6 +124,7 @@ void executeCommand(u8 *cmd){
 		if(!memcmp(cmd,"reflectres",10)){
 			u16 res = atoi(cmd+11);
 			reflectmap  = HeapReAlloc(GetProcessHeap(),8,reflectmap,sizeof(VEC3)*res*res);
+			reflectmapB = HeapReAlloc(GetProcessHeap(),8,reflectmapB,sizeof(VEC3)*res*res);
 			properties->reflectRes = res;
 		}
 		break;
@@ -107,10 +141,8 @@ void executeCommand(u8 *cmd){
 			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
 				lmap[i] = (EXRGB){(f32)bmap[i].r/(rnd()-1.0f),(f32)bmap[i].g/(rnd()-1.0f),(f32)bmap[i].b/(rnd()-1.0f)};
 			}
-			glMes[glMesC].id = 3;
-			glMesC++;
-			glMes[glMesC].id = 6;
-			glMesC++;
+			glMes[glMesC++].id = 3;
+			glMes[glMesC++].id = 6;
 		}
 		if(!memcmp(cmd,"texturemozaic",13)){
 			for(u32 i = 0;i < properties->lmapSz*properties->lmapSz*lmapC;i++){
@@ -135,10 +167,8 @@ void executeCommand(u8 *cmd){
 					continue;
 				}
 			}
-			glMes[glMesC].id = 3;
-			glMesC++;
-			glMes[glMesC].id = 6;
-			glMesC++;
+			glMes[glMesC++].id = 3;
+			glMes[glMesC++].id = 6;
 		}
 		break;
 	case 15:

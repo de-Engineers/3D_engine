@@ -3,8 +3,9 @@
 #include "ray.h"
 
 VEC3 *reflectmap;
+VEC3 *reflectmapB;
 
-float tnoise2(VEC2 pos){
+f32 tnoise2(VEC2 pos){
 	VEC2 fpos = VEC2floorR(pos);
 	VEC2 fpos2 = VEC2fractR(pos);
 	f32 r1 = VEC2rnd(fpos);
@@ -17,6 +18,7 @@ float tnoise2(VEC2 pos){
 }
 
 void genReflectMap(){
+	return;
 	for(;;){
 		if(lmapC){
 			for(u32 i = 0;i < properties->reflectRes;i++){
@@ -37,6 +39,7 @@ void genReflectMap(){
 								if(ray.dir.x > 0.0f){
 									ray.roundPos.x-=2;
 								}
+								
 								ray.dir.x = -ray.dir.x;
 								ray = ray3dCreate(raycrd,ray.dir);
 								break;
@@ -68,14 +71,14 @@ void genReflectMap(){
 							}
 							goto end;
 						}
-						default:
+						default:	
 							goto end;
 						}
 						ray3dItterate(&ray); 
 					}
 				end:
 					continue;
-				}
+				} 
 			}
 		}
 		Sleep(15);

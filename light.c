@@ -73,7 +73,18 @@ void openclSetKernelArgs(cl_kernel kernel){
 	clSetKernelArg(kernel,8,sizeof(cl_mem),(void*)&clLpmap);
 }
 
-void GPUgenLight(u64 totalRays,u32 block){
+void openclSetKernelArgs2(cl_kernel kernel,VEC3 color,VEC3 ang){
+	clSetKernelArg(kernel,9,sizeof(f32),&properties->lvlSz);
+	clSetKernelArg(kernel,10,sizeof(f32),&properties->lmapSz);
+	clSetKernelArg(kernel,11,sizeof(f32),&color.x);
+	clSetKernelArg(kernel,12,sizeof(f32),&color.y);
+	clSetKernelArg(kernel,13,sizeof(f32),&color.z);
+	clSetKernelArg(kernel,14,sizeof(f32),&ang.x);
+	clSetKernelArg(kernel,15,sizeof(f32),&ang.y);
+	clSetKernelArg(kernel,16,sizeof(f32),&ang.z);
+}
+
+void genLight(u64 totalRays,u32 block){
 	VEC3 bpos;
 	bpos.x = (f32)(block % properties->lvlSz)+0.5f;
 	bpos.y = (f32)(block / properties->lvlSz % properties->lvlSz) + 0.5f;
@@ -103,6 +114,7 @@ void GPUgenLight(u64 totalRays,u32 block){
 	clSetKernelArg(clKernel,22,sizeof(f32),&lmo.y);
 	clSetKernelArg(clKernel,23,sizeof(f32),&lmo.z);
 
+	u64 t = __rdtsc();
 	if(clKernel && properties->rayAcceleration){
 		for(u32 i = 0;i < metadt3[block].id+1;i++){
 			clEnqueueWriteBuffer(clCommandQueue,clLpmap,1,0,sizeof(LPMAP)*BLOCKCOUNT,lpmap,0,0,0);
@@ -118,6 +130,7 @@ void GPUgenLight(u64 totalRays,u32 block){
 			printf("0\n");
 		}
 	}
+	printf("time = %i\n",__rdtsc()-t>>16);
 }
 
 IVEC2 lmapToCrds(u32 p){
@@ -125,6 +138,7 @@ IVEC2 lmapToCrds(u32 p){
 }
 
 void updateLight2(){
+	SuspendThread(HDRthread);
 	HeapFree(GetProcessHeap(),0,lmap);
 	lmapC = 0;
 	for(u32 i = 0;i < BLOCKCOUNT;i++){
@@ -187,12 +201,11 @@ void updateLight2(){
 				case 32:
 					break;
 				default:
-					lpmap[i].p1 = lmapC;
-					lmapC++;
+					lpmap[i].p1 = lmapC++;
 					break;
 				}
 			}
-			if(block.x < properties->lvlSz){
+			if(block.x < properties->lvlSz-1){
 				switch(map[i+1].id){
 				case 27:
 				case 28:
@@ -200,8 +213,7 @@ void updateLight2(){
 				case 32:
 					break;
 				default:
-					lpmap[i].p2 = lmapC;
-					lmapC++;
+					lpmap[i].p2 = lmapC++;
 					break;
 				}
 			}
@@ -213,12 +225,11 @@ void updateLight2(){
 				case 32:
 					break;
 				default:
-					lpmap[i].p3 = lmapC;
-					lmapC++;
+					lpmap[i].p3 = lmapC++;
 					break;
 				}
 			}
-			if(block.y < properties->lvlSz){
+			if(block.y < properties->lvlSz-1){
 				switch(map[i+properties->lvlSz].id){
 				case 27:
 				case 28:
@@ -226,8 +237,7 @@ void updateLight2(){
 				case 32:
 					break;
 				default:
-					lpmap[i].p4 = lmapC;
-					lmapC++;
+					lpmap[i].p4 = lmapC++;
 					break;
 				}
 			}
@@ -239,12 +249,11 @@ void updateLight2(){
 				case 32:
 					break;
 				default:
-					lpmap[i].p5 = lmapC;
-					lmapC++;
+					lpmap[i].p5 = lmapC++;
 					break;
 				}
 			}
-			if(block.z < properties->lvlSz){
+			if(block.z < properties->lvlSz-1){
 				switch(map[i+properties->lvlSz*properties->lvlSz].id){
 				case 27:
 				case 28:
@@ -252,8 +261,7 @@ void updateLight2(){
 				case 32:
 					break;
 				default:
-					lpmap[i].p6 = lmapC;
-					lmapC++;
+					lpmap[i].p6 = lmapC++;
 					break;
 				}
 			}
@@ -311,17 +319,9 @@ void updateLight2(){
 
 			star[starC].pos = ang;
 			star[starC].col = (RGB){map[i].r,map[i].g,map[i].b};
-			star[starC].skyCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
-			starC++;
+			star[starC++].skyCol  = (RGB){metadt2[i].r,metadt2[i].g,metadt2[i].id};
 
-			clSetKernelArg(clAmbientX,9,sizeof(f32),&properties->lvlSz);
-			clSetKernelArg(clAmbientX,10,sizeof(f32),&properties->lmapSz);
-			clSetKernelArg(clAmbientX,11,sizeof(f32),&color2.x);
-			clSetKernelArg(clAmbientX,12,sizeof(f32),&color2.y);
-			clSetKernelArg(clAmbientX,13,sizeof(f32),&color2.z);
-			clSetKernelArg(clAmbientX,14,sizeof(f32),&ang.x);
-			clSetKernelArg(clAmbientX,15,sizeof(f32),&ang.y);
-			clSetKernelArg(clAmbientX,16,sizeof(f32),&ang.z);
+			openclSetKernelArgs2(clAmbientX,color2,ang);
 
 			if(ang.x > 0.0f){
 				float temp = 0.0f;
@@ -332,14 +332,7 @@ void updateLight2(){
 				clSetKernelArg(clAmbientX,17,sizeof(f32),&temp);
 			}
 
-			clSetKernelArg(clAmbientY,9,sizeof(f32),&properties->lvlSz);
-			clSetKernelArg(clAmbientY,10,sizeof(f32),&properties->lmapSz);
-			clSetKernelArg(clAmbientY,11,sizeof(f32),&color2.x);
-			clSetKernelArg(clAmbientY,12,sizeof(f32),&color2.y);
-			clSetKernelArg(clAmbientY,13,sizeof(f32),&color2.z);
-			clSetKernelArg(clAmbientY,14,sizeof(f32),&ang.x);
-			clSetKernelArg(clAmbientY,15,sizeof(f32),&ang.y);
-			clSetKernelArg(clAmbientY,16,sizeof(f32),&ang.z);
+			openclSetKernelArgs2(clAmbientY,color2,ang);
 
 			if(ang.y > 0.0f){
 				float temp = 0.0f;
@@ -350,14 +343,7 @@ void updateLight2(){
 				clSetKernelArg(clAmbientY,17,sizeof(f32),&temp);
 			}
 
-			clSetKernelArg(clAmbientZ,9,sizeof(f32),&properties->lvlSz);
-			clSetKernelArg(clAmbientZ,10,sizeof(f32),&properties->lmapSz);
-			clSetKernelArg(clAmbientZ,11,sizeof(f32),&color2.x);
-			clSetKernelArg(clAmbientZ,12,sizeof(f32),&color2.y);
-			clSetKernelArg(clAmbientZ,13,sizeof(f32),&color2.z);
-			clSetKernelArg(clAmbientZ,14,sizeof(f32),&ang.x);
-			clSetKernelArg(clAmbientZ,15,sizeof(f32),&ang.y);
-			clSetKernelArg(clAmbientZ,16,sizeof(f32),&ang.z);
+			openclSetKernelArgs2(clAmbientZ,color2,ang);
 
 			if(ang.z > 0.0f){
 				float temp = 0.0f;
@@ -414,22 +400,22 @@ void updateLight2(){
 			break;
 		}
 		case 3:
-			GPUgenLight(properties->lmapSz*properties->lmapSz*0x000800,i);
+			genLight(properties->lmapSz*properties->lmapSz*0x000800,i);
 			break;
 		case 4:
-			GPUgenLight(properties->lmapSz*properties->lmapSz*0x002000,i);
+			genLight(properties->lmapSz*properties->lmapSz*0x002000,i);
 			break;
 		case 5:
-			GPUgenLight(properties->lmapSz*properties->lmapSz*0x008000,i);
+			genLight(properties->lmapSz*properties->lmapSz*0x008000,i);
 			break;
 		case 6:
-			GPUgenLight(properties->lmapSz*properties->lmapSz*0x020000,i);
+			genLight(properties->lmapSz*properties->lmapSz*0x020000,i);
 			break;
 		case 7:
-			GPUgenLight(properties->lmapSz*properties->lmapSz*0x080000,i);
+			genLight(properties->lmapSz*properties->lmapSz*0x080000,i);
 			break;
 		case 8:{
-			GPUgenLight(properties->lmapSz*properties->lmapSz*0x200000,i);
+			genLight(properties->lmapSz*properties->lmapSz*0x200000,i);
 			break;	
 			}
 		}
@@ -440,8 +426,7 @@ void updateLight2(){
 		switch(map[i].id){
 		case BLOCK_SPAWN:{
 			CVEC3 spwncrd = map2crds(i);
-			playerspawn[playerspawnC] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.0f};
-			playerspawnC++;
+			playerspawn[playerspawnC++] = (VEC3){spwncrd.x+0.5f,spwncrd.y+0.5f,spwncrd.z+2.0f};
 			break;
 		}
 		case BLOCK_CUBE:
@@ -450,8 +435,7 @@ void updateLight2(){
 				turret[turretC].pos = (VEC3){(f32)crd.x+0.5f,(f32)crd.y+0.5f,(f32)crd.z+0.5f};
 				turret[turretC].id  = metadt4[i].b-2;
 				turret[turretC].power = metadt4[i].g;
-				turret[turretC].totalCooldown = metadt4[i].id+1;
-				turretC++;
+				turret[turretC++].totalCooldown = metadt4[i].id+1;
 			}
 		}
 	}
@@ -465,16 +449,12 @@ void updateLight2(){
 		if(lmapb[i].z>65535.0f){
 			lmapb[i].z = 65535.0f;
 		}
-		lmap[i].r = lmapb[i].x;
-		lmap[i].g = lmapb[i].y;
-		lmap[i].b = lmapb[i].z;
-		bmap[i].r = lmapb[i].x;
-		bmap[i].g = lmapb[i].y;
-		bmap[i].b = lmapb[i].z;
+		lmap[i] = (EXRGB){lmapb[i].x,lmapb[i].y,lmapb[i].z};
+		bmap[i] = (EXRGB){lmapb[i].x,lmapb[i].y,lmapb[i].z};
 	}
 	HeapFree(GetProcessHeap(),0,lmapb);
-	glMes[glMesC].id = 6;
-	glMesC++;
+	glMes[glMesC++].id = 6;
 	levelSave("level");
 	printf("done\n");
+	ResumeThread(HDRthread);
 }
